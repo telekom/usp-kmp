@@ -14,6 +14,7 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "USP_Controller"
+rootProject.name = "USP-Library"
 include(":lib")
 include(":base")
+include(":proto")

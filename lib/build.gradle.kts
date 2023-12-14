@@ -25,7 +25,9 @@ kotlin {
 
     sourceSets {
         commonMain.dependencies {
-            //put your multiplatform dependencies here
+            implementation(project(":base"))
+            implementation(project(":proto"))
+            api(libs.wire.runtime)
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)
