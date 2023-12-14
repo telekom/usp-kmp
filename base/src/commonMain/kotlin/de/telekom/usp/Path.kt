@@ -74,5 +74,7 @@ fun Path(text: String): Path {
     })
 }
 
+inline fun List<Path>.toStrings() : List<String> = this.map { it.toString() }
+
 // Dots '.' inside of brackets ('[' and ']') must not be treated as object separators
 private val dotsOutsideOfBrackets = Regex("""\.\s*(?![^\[\]]*])""")
