@@ -26,7 +26,7 @@ kotlin {
     sourceSets {
         commonMain.dependencies {
             implementation(project(":base"))
-            implementation(project(":proto"))
+            implementation(project(":mtp"))
             api(libs.wire.runtime)
         }
         commonTest.dependencies {
