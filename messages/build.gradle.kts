@@ -30,11 +30,13 @@ kotlin {
             dependencies {
                 implementation(project(":base"))
                 implementation(libs.kotlinx.coroutines.core)
+                implementation(libs.kermit)
             }
         }
         commonTest {
             dependencies {
                 implementation(libs.kotlin.test)
+                implementation(libs.kotlinx.coroutines.test)
             }
         }
         val androidMain by getting {

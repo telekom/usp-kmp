@@ -12,6 +12,8 @@ data class EndpointIdentifier(
         "$BBF_NAMESPACE:${scheme.value}:${authorityId.authority}:${instanceId.instance}"
 
     fun toShortString() = "${scheme.value}:${authorityId.authority}:${instanceId.instance}"
+
+    override fun toString() = toShortString()
 }
 
 fun EndpointIdentifier(text: String): EndpointIdentifier {

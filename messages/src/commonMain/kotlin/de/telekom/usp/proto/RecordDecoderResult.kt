@@ -1,8 +1,8 @@
 package de.telekom.usp.proto
 
-import de.telekom.usp.Error
-
 sealed class RecordDecoderResult {
 
-    data class DecoderError(val error: Error) : RecordDecoderResult()
+    data class Error(val error: de.telekom.usp.Error) : RecordDecoderResult()
+
+    data class RestartSession(val sessionId: Long) : RecordDecoderResult()
 }
