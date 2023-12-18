@@ -69,11 +69,6 @@ class RecordDecoderImpl(private val context: SessionContext) : RecordDecoder {
         }
     }
 
-    private suspend fun handleDisconnect(disconnect: DisconnectRecord) {
-        Logger.d { "Received disconnect record: reason='${disconnect.reason}' (${disconnect.reason_code})" }
-        _results.emit(Disconnect(disconnect.reason, disconnect.reason_code))
-    }
-
     private suspend fun handleNoSessionConnect(record: NoSessionContextRecord) {
         Logger.d { "Received no session connect record with payload size=${record.payload.size}" }
         _results.emit(Message(Msg.ADAPTER.decode(record.payload)))
@@ -102,5 +97,10 @@ class RecordDecoderImpl(private val context: SessionContext) : RecordDecoder {
                 stompConnect.subscribed_destination
             )
         )
+    }
+
+    private suspend fun handleDisconnect(disconnect: DisconnectRecord) {
+        Logger.d { "Received disconnect record: reason='${disconnect.reason}' (${disconnect.reason_code})" }
+        _results.emit(Disconnect(disconnect.reason, disconnect.reason_code))
     }
 }

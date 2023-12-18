@@ -12,7 +12,6 @@ import de.telekom.usp.proto.record.Record
 import de.telekom.usp.proto.record.STOMPConnectRecord
 import de.telekom.usp.proto.record.WebSocketConnectRecord
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.TestScope
@@ -48,11 +47,8 @@ class RecordDecoderImplTest {
             "some-invalid-proto-data".encodeUtf8()
         ).forEach { data ->
             runTest {
-                launch {
-                    assertTrue(decoder.results.first() is RecordDecoderResult.DecoderError)
-                }
-                launch {
-                    decoder.next(data)
+                withResultOf(data) {
+                    assertTrue(it is RecordDecoderResult.DecoderError)
                 }
             }
         }
@@ -147,13 +143,17 @@ class RecordDecoderImplTest {
     }
 
 
-    @OptIn(ExperimentalCoroutinesApi::class)
     private fun TestScope.withResultOf(record: Record, asserter: (RecordDecoderResult?) -> Unit) {
+        withResultOf(Record.ADAPTER.encodeByteString(record), asserter)
+    }
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    private fun TestScope.withResultOf(data: ByteString, asserter: (RecordDecoderResult?) -> Unit) {
         val resultCollectorJob = launch {
             asserter(decoder.results.firstOrNull())
         }
         launch {
-            decoder.next(Record.ADAPTER.encodeByteString(record))
+            decoder.next(data)
         }
 
         // Normally we could return here, but in case nothing is emitted from the flow, we want to
