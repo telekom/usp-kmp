@@ -17,5 +17,5 @@ sealed class RecordDecoderResult {
 
     data class StompConnect(val version: String, val subscribedDestination: String) : RecordDecoderResult()
 
-    data class Disconnect(val reason: String, val reasonCode: Int) : RecordDecoderResult()
+    data class Disconnect(val error: Error) : RecordDecoderResult()
 }

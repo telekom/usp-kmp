@@ -2,6 +2,7 @@ package de.telekom.usp.messages
 
 import co.touchlab.kermit.Logger
 import de.telekom.usp.EndpointIdentifier
+import de.telekom.usp.Error
 import de.telekom.usp.MessageNotSupported
 import de.telekom.usp.SessionContextNotAllowed
 import de.telekom.usp.Versions
@@ -19,6 +20,7 @@ import de.telekom.usp.proto.record.NoSessionContextRecord
 import de.telekom.usp.proto.record.Record
 import de.telekom.usp.proto.record.STOMPConnectRecord
 import de.telekom.usp.proto.record.SessionContextRecord
+import de.telekom.usp.proto.record.hasPayload
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import okio.ByteString
@@ -85,7 +87,7 @@ class RecordDecoderImpl(
         }
 
         val session = validSessionFor(fromId, record)
-        if (record.payload.isNotEmpty() && record.payload[0].size > 0) {
+        if (record.hasPayload) {
 
         }
     }
@@ -135,7 +137,7 @@ class RecordDecoderImpl(
     }
 
     private suspend fun handleDisconnect(disconnect: DisconnectRecord) {
-        Logger.d { "Received disconnect record: reason='${disconnect.reason}' (${disconnect.reason_code})" }
-        _results.emit(Disconnect(disconnect.reason, disconnect.reason_code))
+        Logger.d { "[R-E2E.6b] Received disconnect record: reason='${disconnect.reason}' (${disconnect.reason_code})" }
+        _results.emit(Disconnect(Error.from(disconnect.reason_code)))
     }
 }
