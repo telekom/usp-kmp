@@ -9,8 +9,6 @@ sealed class RecordDecoderResult {
 
     data class UspError(val error: Error) : RecordDecoderResult()
 
-    data class RestartSession(val sessionId: Long) : RecordDecoderResult()
-
     data class Message(val msg: Msg) : RecordDecoderResult()
 
     data object WebSocketConnect : RecordDecoderResult()

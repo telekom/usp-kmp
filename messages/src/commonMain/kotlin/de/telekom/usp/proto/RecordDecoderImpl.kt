@@ -1,7 +1,9 @@
 package de.telekom.usp.proto
 
 import co.touchlab.kermit.Logger
+import de.telekom.usp.EndpointIdentifier
 import de.telekom.usp.MessageNotSupported
+import de.telekom.usp.SessionContextNotAllowed
 import de.telekom.usp.Versions
 import de.telekom.usp.proto.RecordDecoderResult.DecoderError
 import de.telekom.usp.proto.RecordDecoderResult.Disconnect
@@ -16,14 +18,20 @@ import de.telekom.usp.proto.record.MQTTConnectRecord
 import de.telekom.usp.proto.record.NoSessionContextRecord
 import de.telekom.usp.proto.record.Record
 import de.telekom.usp.proto.record.STOMPConnectRecord
+import de.telekom.usp.proto.record.SessionContextRecord
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import okio.ByteString
 
-class RecordDecoderImpl(private val context: SessionContext) : RecordDecoder {
+class RecordDecoderImpl(
+    private val self: EndpointIdentifier,
+    private val allowSessionContext: Boolean = true
+) : RecordDecoder {
 
     private val _results = MutableSharedFlow<RecordDecoderResult>()
     override val results = _results.asSharedFlow()
+
+    private var currentContext: SessionContext? = null
 
     override suspend fun next(data: ByteString) {
         try {
@@ -36,13 +44,13 @@ class RecordDecoderImpl(private val context: SessionContext) : RecordDecoder {
             val record = Record.ADAPTER.decode(data)
 
             if (!Versions.isSupported(record.version)) {
-                Logger.d { "Rejecting USP record with unsupported version: '${record.version}' ($record)" }
+                Logger.w { "Rejecting USP record with unsupported version: '${record.version}' ($record)" }
                 _results.emit(UspError(MessageNotSupported))
                 return
             }
 
-            if (!context.isEndpointMatching(record)) {
-                Logger.d { "[R-E2E.1] Ignoring USP record with wrong to-endpoint: expecting=${context.to}, received=$record" }
+            if (self.toShortString() != record.to_id) {
+                Logger.w { "[R-E2E.1] Ignoring USP record with wrong to-endpoint ID: expecting=$self, received=${record.to_id}" }
                 return
             }
 
@@ -51,9 +59,9 @@ class RecordDecoderImpl(private val context: SessionContext) : RecordDecoder {
             }
 
             if (record.session_context != null) {
-
+                handleSessionContext(record.from_id, record.session_context)
             } else if (record.no_session_context != null) {
-                handleNoSessionConnect(record.no_session_context)
+                handleNoSessionContext(record.no_session_context)
             } else if (record.websocket_connect != null) {
                 handleWebSocketConnect()
             } else if (record.mqtt_connect != null) {
@@ -69,7 +77,34 @@ class RecordDecoderImpl(private val context: SessionContext) : RecordDecoder {
         }
     }
 
-    private suspend fun handleNoSessionConnect(record: NoSessionContextRecord) {
+    private suspend fun handleSessionContext(fromId: String, record: SessionContextRecord) {
+        if (!allowSessionContext) {
+            Logger.w("[R-E2E.6a] This controller is not allowed to establish a session context, rejecting request")
+            _results.emit(UspError(SessionContextNotAllowed))
+            return
+        }
+
+        val session = validSessionFor(fromId, record)
+        if (record.payload.isNotEmpty() && record.payload[0].size > 0) {
+
+        }
+    }
+
+    private fun validSessionFor(fromId: String, record: SessionContextRecord): SessionContext {
+        return currentContext?.let { context ->
+            if (!context.isSessionMatching(record.session_id)) {
+                currentContext = context.restartWith(record.session_id)
+                Logger.d { "[R-E2E.3] Received new session ID, restarted $currentContext" }
+            }
+            currentContext
+        } ?: run {
+            currentContext = SessionContext(EndpointIdentifier(fromId), record.session_id)
+            Logger.d { "New $currentContext established"}
+            currentContext!!
+        }
+    }
+
+    private suspend fun handleNoSessionContext(record: NoSessionContextRecord) {
         Logger.d { "Received no session connect record with payload size=${record.payload.size}" }
         _results.emit(Message(Msg.ADAPTER.decode(record.payload)))
     }

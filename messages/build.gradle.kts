@@ -29,6 +29,7 @@ kotlin {
         commonMain {
             dependencies {
                 implementation(project(":base"))
+                implementation(libs.kotlinx.datetime)
                 implementation(libs.kotlinx.coroutines.core)
                 implementation(libs.kermit)
             }

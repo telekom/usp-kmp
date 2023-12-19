@@ -2,6 +2,7 @@ package de.telekom.usp.proto
 
 import de.telekom.usp.EndpointIdentifier
 import de.telekom.usp.MessageNotSupported
+import de.telekom.usp.SessionContextNotAllowed
 import de.telekom.usp.Versions
 import de.telekom.usp.proto.msg.Header
 import de.telekom.usp.proto.msg.Msg
@@ -10,6 +11,7 @@ import de.telekom.usp.proto.record.MQTTConnectRecord
 import de.telekom.usp.proto.record.NoSessionContextRecord
 import de.telekom.usp.proto.record.Record
 import de.telekom.usp.proto.record.STOMPConnectRecord
+import de.telekom.usp.proto.record.SessionContextRecord
 import de.telekom.usp.proto.record.WebSocketConnectRecord
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.firstOrNull
@@ -36,8 +38,7 @@ class RecordDecoderImplTest {
 
     @BeforeTest
     fun setup() {
-        val ctx = SessionContext(EndpointIdentifier(from), EndpointIdentifier(to), 42L)
-        decoder = RecordDecoderImpl(ctx)
+        decoder = RecordDecoderImpl(EndpointIdentifier(to))
     }
 
     @Test
@@ -140,6 +141,35 @@ class RecordDecoderImplTest {
             assertEquals(it.version, "V1_2")
             assertEquals(it.subscribedDestination, "stomp-dest")
         }
+    }
+
+    // Session Context Tests -----------------------------------------------------------------------
+
+    @Test
+    fun `reject session creation when not allowed to`() = runTest {
+        decoder = RecordDecoderImpl(EndpointIdentifier(to), false)
+        val start = Record(
+            version = Versions.mostRecent,
+            to_id = to,
+            session_context = SessionContextRecord(43L)
+        )
+        withResultOf(start) {
+            assertTrue(it is RecordDecoderResult.UspError)
+            assertNotNull(it.error == SessionContextNotAllowed)
+        }
+    }
+
+    @Test
+    fun `restart session when session ID does not match`() = runTest {
+//        val restart = Record(
+//            version = Versions.mostRecent,
+//            to_id = to,
+//            session_context = SessionContextRecord(43L)
+//        )
+//        withResultOf(restart) {
+//            assertTrue(it is RecordDecoderResult.RestartSession)
+//            assertNotNull(it.sessionId == 43L)
+//        }
     }
 
 
