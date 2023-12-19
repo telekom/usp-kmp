@@ -1,4 +1,4 @@
-package de.telekom.usp.proto
+package de.telekom.usp.messages
 
 class AndroidPlatform : Platform {
     override val name: String = "Android ${android.os.Build.VERSION.SDK_INT}"

@@ -1,4 +1,4 @@
-package de.telekom.usp.proto.util
+package de.telekom.usp.messages.util
 
 import com.squareup.moshi.Moshi
 import com.squareup.wire.WireJsonAdapterFactory

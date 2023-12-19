@@ -1,4 +1,4 @@
-package de.telekom.usp.proto
+package de.telekom.usp.messages
 
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock

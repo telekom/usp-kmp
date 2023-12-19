@@ -1,9 +1,9 @@
-package de.telekom.usp.proto
+package de.telekom.usp.messages
 
 import de.telekom.usp.DeviceInfo
+import de.telekom.usp.messages.util.Json
 import de.telekom.usp.proto.msg.Get
 import de.telekom.usp.proto.msg.GetSupportedProtocol
-import de.telekom.usp.proto.util.Json
 import de.telekom.usp.toStrings
 import kotlin.test.Test
 

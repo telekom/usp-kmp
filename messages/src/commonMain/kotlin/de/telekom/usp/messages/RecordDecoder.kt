@@ -1,4 +1,4 @@
-package de.telekom.usp.proto
+package de.telekom.usp.messages
 
 import kotlinx.coroutines.flow.SharedFlow
 import okio.ByteString

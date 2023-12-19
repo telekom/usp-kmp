@@ -1,17 +1,17 @@
-package de.telekom.usp.proto
+package de.telekom.usp.messages
 
 import co.touchlab.kermit.Logger
 import de.telekom.usp.EndpointIdentifier
 import de.telekom.usp.MessageNotSupported
 import de.telekom.usp.SessionContextNotAllowed
 import de.telekom.usp.Versions
-import de.telekom.usp.proto.RecordDecoderResult.DecoderError
-import de.telekom.usp.proto.RecordDecoderResult.Disconnect
-import de.telekom.usp.proto.RecordDecoderResult.Message
-import de.telekom.usp.proto.RecordDecoderResult.MqttConnect
-import de.telekom.usp.proto.RecordDecoderResult.StompConnect
-import de.telekom.usp.proto.RecordDecoderResult.UspError
-import de.telekom.usp.proto.RecordDecoderResult.WebSocketConnect
+import de.telekom.usp.messages.RecordDecoderResult.DecoderError
+import de.telekom.usp.messages.RecordDecoderResult.Disconnect
+import de.telekom.usp.messages.RecordDecoderResult.Message
+import de.telekom.usp.messages.RecordDecoderResult.MqttConnect
+import de.telekom.usp.messages.RecordDecoderResult.StompConnect
+import de.telekom.usp.messages.RecordDecoderResult.UspError
+import de.telekom.usp.messages.RecordDecoderResult.WebSocketConnect
 import de.telekom.usp.proto.msg.Msg
 import de.telekom.usp.proto.record.DisconnectRecord
 import de.telekom.usp.proto.record.MQTTConnectRecord

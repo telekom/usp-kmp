@@ -1,4 +1,4 @@
-package de.telekom.usp.proto
+package de.telekom.usp.messages
 
 interface Platform {
     val name: String

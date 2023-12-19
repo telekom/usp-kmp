@@ -1,4 +1,4 @@
-package de.telekom.usp.proto
+package de.telekom.usp.messages
 
 import de.telekom.usp.Error
 import de.telekom.usp.proto.msg.Msg

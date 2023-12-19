@@ -1,4 +1,4 @@
-package de.telekom.usp.proto
+package de.telekom.usp.messages
 
 import de.telekom.usp.EndpointIdentifier
 import de.telekom.usp.MessageNotSupported

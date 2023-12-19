@@ -1,4 +1,4 @@
-package de.telekom.usp.proto.util
+package de.telekom.usp.messages.util
 
 import okio.BufferedSink
 import okio.BufferedSource
