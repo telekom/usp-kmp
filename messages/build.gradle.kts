@@ -6,6 +6,7 @@ plugins {
 }
 
 kotlin {
+    jvm()
     androidTarget {
         compilations.all {
             kotlinOptions {
@@ -41,6 +42,12 @@ kotlin {
             }
         }
         val androidMain by getting {
+            dependencies {
+                implementation(libs.moshi.kotlin)
+                implementation(libs.wire.moshi)
+            }
+        }
+        val jvmMain by getting {
             dependencies {
                 implementation(libs.moshi.kotlin)
                 implementation(libs.wire.moshi)
