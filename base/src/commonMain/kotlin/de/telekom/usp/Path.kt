@@ -74,6 +74,20 @@ fun Path(text: String): Path {
     })
 }
 
+/**
+ * Determines whether the specified text is a syntactically valid path. This does not check if the
+ * path actually exists on a device. For example "Device" (without trailing dot) is not correct,
+ * but we treat it as valid here.
+ */
+fun isValidPath(text: String): Boolean {
+    return try {
+        Path(text)
+        true
+    } catch (ex: Exception) {
+        false
+    }
+}
+
 inline fun List<Path>.toStrings() : List<String> = this.map { it.toString() }
 
 // Dots '.' inside of brackets ('[' and ']') must not be treated as object separators

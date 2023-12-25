@@ -8,6 +8,8 @@ import de.telekom.usp.proto.msg.Request
 class Main : CliktCommand(invokeWithoutSubcommand = true) {
 
     override fun run() {
+        // The run method of the main command is run BEFORE the run method of child commands, hence
+        // we cannot retrieve information from the subcommand but must pass a kind of handler to it:
         val subcommand = currentContext.invokedSubcommand
         if (subcommand is RequestCommand) {
             subcommand.requestExecutor = { request: Request ->
