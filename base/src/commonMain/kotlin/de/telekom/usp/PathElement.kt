@@ -31,8 +31,6 @@ sealed class PathElement(val text: String) {
 
     companion object {
 
-        private val WILDCARD = Object("*.")
-
         private val nameRegex = Regex("""[A-Za-z_][A-Za-z_0-9]*""")
 
         internal fun from(text: String): PathElement {
@@ -40,9 +38,8 @@ sealed class PathElement(val text: String) {
                 Search(text)
             } else if (text.endsWith(".")) {
                 when (text) {
-                    "*." -> WILDCARD
                     "Device." -> Device.first()
-                    else -> Object(text)
+                    else -> Object(text, 0, "")
                 }
             } else if (text.endsWith("()")) {
                 Command(text)
@@ -56,47 +53,23 @@ sealed class PathElement(val text: String) {
         internal fun isValidName(name: String) = nameRegex.matches(name)
     }
 
-    class Object internal constructor(text: String) : PathElement(text) {
+    class Object internal constructor(text: String, val instance: Int? = null, val refFollow: String? = null) : PathElement(text) {
 
         /**
          * If this is a wildcard object ('*.') instance is zero, if it is an instance object, it
          * matches the instance number, i.e. 2 for '2.', otherwise it is `null`.
          */
-        val instance: Int?
+        //val instance: Int?
 
         /**
          * The complete reffollow string if there is any, otherwise `null`. Valid examples are:
          * '#*+' or '#2+' or just '+'
          */
-        val refFollow: String?
-
-        init {
-            val name = text.substring(0, text.length - 1)
-            instance = if (name == "*") 0 else name.toIntOrNull()
-
-            if (name != "*" && instance == null) {
-                val ref = refRegex.find(name)
-                if (ref != null) {
-                    refFollow = ref.value
-                    require(isValidName(name.substring(0, name.length - refFollow.length))) {
-                        "'$text' is not a valid object name"
-                    }
-                } else {
-                    refFollow = null
-                    require(isValidName(name)) { "'$text' is not a valid object name" }
-                }
-            } else {
-                refFollow = null
-            }
-        }
+        //val refFollow: String?
 
         override val isTerminal = false
 
-        companion object {
-
-            // Matches for example '#*+' or '#2+' or just '+'
-            private val refRegex = Regex("""(#(\*|\d+))?\+$""")
-        }
+        val isWildcard = instance == 0
     }
 
     class Search internal constructor(text: String) : PathElement(text) {
