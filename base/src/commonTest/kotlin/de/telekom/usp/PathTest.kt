@@ -29,15 +29,15 @@ class PathTest {
             "Device.IP.Interface.[Alias==\"WAN\"]." to "Alias==\"WAN\""
         ).forEach { pair ->
             val path = Path(pair.first)
-            assertTrue(path.last() is PathElement.Search)
-            assertEquals(path.lastAs<PathElement.Search>().expression, pair.second)
+            assertTrue(path.last() is PathElement.Expression)
+            assertEquals(path.lastAs<PathElement.Expression>().value, pair.second)
         }
     }
 
     @Test
     fun `returns proper expression components for search paths`() {
         val path = Path("Device.NAT.PortMapping.[RemoteHost==\"\"&&ExternalPort==0&&Protocol==\"TCP\"].")
-        val components = path.lastAs<PathElement.Search>().components
+        val components = path.lastAs<PathElement.Expression>().components
         assertEquals(listOf("RemoteHost==\"\"", "ExternalPort==0", "Protocol==\"TCP\""), components)
     }
 

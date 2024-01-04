@@ -35,7 +35,7 @@ sealed class PathElement(val text: String) {
 
         internal fun from(text: String): PathElement {
             return if (text.startsWith("[") && (text.endsWith("]."))) {
-                Search(text)
+                Expression(text)
             } else if (text.endsWith(".")) {
                 when (text) {
                     "Device." -> Device.first()
@@ -72,7 +72,7 @@ sealed class PathElement(val text: String) {
         val isWildcard = instance == 0
     }
 
-    class Search internal constructor(text: String) : PathElement(text) {
+    class Expression internal constructor(text: String) : PathElement(text) {
 
 
         override val isTerminal = false
@@ -80,13 +80,13 @@ sealed class PathElement(val text: String) {
         /**
          * The search expression, i.e. the text without leading "[" and trailing "]".
          */
-        val expression = text.substring(1..<text.lastIndexOf(']'))
+        val value = text.substring(1..<text.lastIndexOf(']'))
 
         /**
          * The search expression components, i.e. the parts which are separated by "&&"
          */
         val components: List<String>
-            get() = expression.split("&&")
+            get() = value.split("&&")
     }
 
     class Parameter internal constructor(text: String) : PathElement(text) {
