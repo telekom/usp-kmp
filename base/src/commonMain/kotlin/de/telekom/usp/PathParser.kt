@@ -9,6 +9,9 @@ internal class PathParser(private val text: String) {
         get() = current >= text.length
 
     fun parse(): Path {
+        current = 0
+        elements.clear()
+
         while (!isAtEnd) {
             start = current
             parseElement()
@@ -49,11 +52,12 @@ internal class PathParser(private val text: String) {
 
     private fun objectPath() {
         when (val base: String = text.substring(start, current - 1)) {
-            "*" -> add(WILDCARD)
+            "*" -> add(wildcard)
             "Device" -> add(Device.first())
             else -> {
                 val instance = base.toIntOrNull()
-                val name = text.substring(start, current)
+                val name = text.substring(start, current) // Includes the terminal dot
+
                 if (instance == null) {
                     val ref = refRegex.find(base)
                     if (ref != null) {
@@ -68,24 +72,36 @@ internal class PathParser(private val text: String) {
         }
     }
 
-    private fun event() {
+    private fun expression() {
+        while (peek() != ']' && !isAtEnd) {
+            advance()
+        }
         if (isAtEnd) {
-            val base = text.substring(start, current - 1)
-            if (isValidName(base)) {
-                add(PathElement.Event(text.substring(start, current)))
-            } else {
-                error("Illegal name '$base'")
-            }
+            error("Unmatched '['")
+        }
+
+        // Consume the closing ].
+        advance()
+
+        if (advance() != '.') {
+            error("Missing '.' after expression")
+        }
+
+        // Good enough for now, later we might need to parse the search expression separately...
+        add(PathElement.Expression(text.substring(start, current)))
+    }
+
+    private fun event() {
+        val base = text.substring(start, current - 1)
+        if (isValidName(base)) {
+            add(PathElement.Event(text.substring(start, current)))
         } else {
-            error("An event must be the last element in a path")
+            error("Illegal name '$base'")
         }
     }
 
     private fun command() {
         if (advance() == ')') {
-            if (!isAtEnd) {
-                error("A command must be the last element in a path")
-            }
             val base = text.substring(start, current - 2)
             if (isValidName(base)) {
                 add(PathElement.Command(text.substring(start, current)))
@@ -97,42 +113,21 @@ internal class PathParser(private val text: String) {
         }
     }
 
-    private fun expression() {
-        while (peek() != ']' && !isAtEnd) {
-            advance()
-        }
-        if (isAtEnd) {
-            error("Unmatched '['")
-        }
-
-        // The closing ].
-        advance()
-
-        if (advance() != '.') {
-            error("Missing '.' after expression")
-        }
-
-        // Good enough for now, later we might need to parse the search string separately...
-        val value: String = text.substring(start, current)
-        add(PathElement.Expression(value))
-    }
-
     private fun parameter() {
-        if (isAtEnd) {
-            val name = text.substring(start, current)
-            if (isValidName(name)) {
-                add(PathElement.Parameter(name))
-            } else {
-                error("Illegal name '$name'")
-            }
+        val name = text.substring(start, current)
+        if (isValidName(name)) {
+            add(PathElement.Parameter(name))
         } else {
-            error("A parameter must be the last element in a path")
+            error("Illegal name '$name'")
         }
     }
 
     private fun isValidName(name: String) = validName.matches(name)
 
     private fun add(element: PathElement) {
+        if (element.isTerminal && !isAtEnd) {
+            error("'$element' must be the last element in a path")
+        }
         elements.add(element)
     }
 
@@ -149,7 +144,7 @@ internal class PathParser(private val text: String) {
 
     companion object {
 
-        private val WILDCARD = PathElement.Object("*.", 0, null)
+        private val wildcard = PathElement.Object("*.", 0, null)
 
         // Matches for example '#*+' or '#2+' or just '+'
         private val refRegex = Regex("""(#(\*|\d+))?\+$""")

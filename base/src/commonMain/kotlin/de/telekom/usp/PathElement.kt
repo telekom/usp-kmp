@@ -7,8 +7,8 @@ sealed class PathElement(val text: String) {
     }
 
     /**
-     * Determines whether this element is always the last element in a path. This is true for
-     * parameter, command and event elements.
+     * Determines whether this element must always be the last element in a path. This is true for
+     * parameter, command and event path elements.
      */
     abstract val isTerminal: Boolean
 
@@ -20,52 +20,28 @@ sealed class PathElement(val text: String) {
         if (this === other) return true
         if (other == null || this::class != other::class) return false
 
-        other as PathElement
-
-        return text == other.text
+        return text == (other as PathElement).text
     }
 
     override fun toString(): String {
         return text
     }
 
-    companion object {
-
-        private val nameRegex = Regex("""[A-Za-z_][A-Za-z_0-9]*""")
-
-        internal fun from(text: String): PathElement {
-            return if (text.startsWith("[") && (text.endsWith("]."))) {
-                Expression(text)
-            } else if (text.endsWith(".")) {
-                when (text) {
-                    "Device." -> Device.first()
-                    else -> Object(text, 0, "")
-                }
-            } else if (text.endsWith("()")) {
-                Command(text)
-            } else if (text.endsWith("!")) {
-                Event(text)
-            } else {
-                Parameter(text)
-            }
-        }
-
-        internal fun isValidName(name: String) = nameRegex.matches(name)
-    }
-
-    class Object internal constructor(text: String, val instance: Int? = null, val refFollow: String? = null) : PathElement(text) {
-
-        /**
-         * If this is a wildcard object ('*.') instance is zero, if it is an instance object, it
-         * matches the instance number, i.e. 2 for '2.', otherwise it is `null`.
-         */
-        //val instance: Int?
-
-        /**
-         * The complete reffollow string if there is any, otherwise `null`. Valid examples are:
-         * '#*+' or '#2+' or just '+'
-         */
-        //val refFollow: String?
+    /**
+     * Represents an object reference
+     *
+     * @property text the text of this object for example 'Device.' or '*.'
+     * @property instance if this is a wildcard object (i.e. '*.') instance is zero, if it is an
+     *           instance object, it matches the instance number, i.e. 2 for '2.', otherwise it is
+     *           `null`.
+     * @property refFollow the complete reffollow string if there is any, otherwise `null`.
+     *           Valid examples are: `#*+` or `#2+` or just `+`
+     */
+    class Object internal constructor(
+        text: String,
+        val instance: Int? = null,
+        val refFollow: String? = null
+    ) : PathElement(text) {
 
         override val isTerminal = false
 
@@ -73,7 +49,6 @@ sealed class PathElement(val text: String) {
     }
 
     class Expression internal constructor(text: String) : PathElement(text) {
-
 
         override val isTerminal = false
 
@@ -91,31 +66,15 @@ sealed class PathElement(val text: String) {
 
     class Parameter internal constructor(text: String) : PathElement(text) {
 
-        init {
-            require(isValidName(text)) { "'$text' is not a valid parameter name" }
-        }
-
         override val isTerminal = true
     }
 
     class Command internal constructor(text: String) : PathElement(text) {
 
-        init {
-            require(text.length > 2 || isValidName(text.substring(0, text.length - 2))) {
-                "'$text' is not a valid command name"
-            }
-        }
-
         override val isTerminal = true
     }
 
     class Event internal constructor(text: String) : PathElement(text) {
-
-        init {
-            require(text.length > 1 || isValidName(text.substring(0, text.length - 1))) {
-                "'$text' is not a valid event name"
-            }
-        }
 
         override val isTerminal = true
     }
