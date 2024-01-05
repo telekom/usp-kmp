@@ -1,5 +1,6 @@
 package de.telekom.usp.messages
 
+import de.telekom.usp.CommandCanceled
 import de.telekom.usp.EndpointIdentifier
 import de.telekom.usp.MessageNotSupported
 import de.telekom.usp.SessionContextNotAllowed
@@ -90,13 +91,13 @@ class RecordDecoderImplTest {
         val disconnect = Record(
             version = Versions.mostRecent,
             to_id = to,
-            disconnect = DisconnectRecord("XUIHOIUFDUTR", 42)
+            disconnect = DisconnectRecord(CommandCanceled.name, CommandCanceled.code)
         )
 
         withResultOf(disconnect) {
             assertTrue(it is RecordDecoderResult.Disconnect)
-            assertEquals(it.reason, "XUIHOIUFDUTR")
-            assertEquals(it.reasonCode, 42)
+            assertEquals(it.error.name, CommandCanceled.name)
+            assertEquals(it.error.code, CommandCanceled.code)
         }
     }
 
