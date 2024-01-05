@@ -25,15 +25,18 @@ import okio.ByteString.Companion.encodeUtf8
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
+import kotlin.test.assertIs
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
+import kotlin.test.assertSame
 import kotlin.test.assertTrue
 
 
 class RecordDecoderImplTest {
 
-    private val from = "proto::test-from"
-    private val to = "proto::test-to"
+    private val from = "self::usp-controller"
+    private val to = "self::usp-agent"
 
     private lateinit var decoder: RecordDecoderImpl
 
@@ -50,7 +53,7 @@ class RecordDecoderImplTest {
         ).forEach { data ->
             runTest {
                 withResultOf(data) {
-                    assertTrue(it is RecordDecoderResult.DecoderError)
+                    assertIs<RecordDecoderResult.DecoderError>(it)
                 }
             }
         }
@@ -59,14 +62,14 @@ class RecordDecoderImplTest {
     @Test
     fun `reject record with invalid version`() = runTest {
         withResultOf(Record(version = "1.0")) {
-            assertTrue(it is RecordDecoderResult.UspError)
+            assertIs<RecordDecoderResult.UspError>(it)
             assertEquals(it.error, MessageNotSupported)
         }
     }
 
     @Test
     fun `ignore record with unknown endpoint`() = runTest {
-        withResultOf(Record(version = Versions.mostRecent, to_id = "proto::incorrect")) {
+        withResultOf(Record(version = Versions.mostRecent, to_id = "self::unknown")) {
             assertNull(it)
         }
     }
@@ -80,7 +83,7 @@ class RecordDecoderImplTest {
             no_session_context = NoSessionContextRecord(payload)
         )
         withResultOf(noSession) {
-            assertTrue(it is RecordDecoderResult.Message)
+            assertIs<RecordDecoderResult.Message>(it)
             assertNotNull(it.msg.header_)
             assertEquals(it.msg.header_!!.msg_id, "test-hdr")
         }
@@ -95,7 +98,7 @@ class RecordDecoderImplTest {
         )
 
         withResultOf(disconnect) {
-            assertTrue(it is RecordDecoderResult.Disconnect)
+            assertIs<RecordDecoderResult.Disconnect>(it)
             assertEquals(it.error.name, CommandCanceled.name)
             assertEquals(it.error.code, CommandCanceled.code)
         }
@@ -110,7 +113,7 @@ class RecordDecoderImplTest {
         )
 
         withResultOf(webSocket) {
-            assertTrue(it is RecordDecoderResult.WebSocketConnect)
+            assertIs<RecordDecoderResult.WebSocketConnect>(it)
         }
     }
 
@@ -123,7 +126,7 @@ class RecordDecoderImplTest {
         )
 
         withResultOf(mqtt) {
-            assertTrue(it is RecordDecoderResult.MqttConnect)
+            assertIs<RecordDecoderResult.MqttConnect>(it)
             assertEquals(it.version, "V3_1_1")
             assertEquals(it.subscribedTopic, "mqtt-topic")
         }
@@ -138,7 +141,7 @@ class RecordDecoderImplTest {
         )
 
         withResultOf(stomp) {
-            assertTrue(it is RecordDecoderResult.StompConnect)
+            assertIs<RecordDecoderResult.StompConnect>(it)
             assertEquals(it.version, "V1_2")
             assertEquals(it.subscribedDestination, "stomp-dest")
         }
@@ -148,29 +151,57 @@ class RecordDecoderImplTest {
 
     @Test
     fun `reject session creation when not allowed to`() = runTest {
-        decoder = RecordDecoderImpl(EndpointIdentifier(to), false)
+        decoder = RecordDecoderImpl(EndpointIdentifier(to), allowSessionContext = false)
         val start = Record(
             version = Versions.mostRecent,
             to_id = to,
             session_context = SessionContextRecord(43L)
         )
         withResultOf(start) {
-            assertTrue(it is RecordDecoderResult.UspError)
-            assertNotNull(it.error == SessionContextNotAllowed)
+            assertIs<RecordDecoderResult.UspError>(it)
+            assertSame(SessionContextNotAllowed, it.error)
         }
     }
 
     @Test
-    fun `restart session when session ID does not match`() = runTest {
-//        val restart = Record(
-//            version = Versions.mostRecent,
-//            to_id = to,
-//            session_context = SessionContextRecord(43L)
-//        )
-//        withResultOf(restart) {
-//            assertTrue(it is RecordDecoderResult.RestartSession)
-//            assertNotNull(it.sessionId == 43L)
-//        }
+    fun `start a new session when receiving an initial session context record`() = runTest {
+        val start = Record(
+            version = Versions.mostRecent,
+            to_id = to,
+            from_id = from,
+            session_context = SessionContextRecord(43L)
+        )
+        withResultOf(start) {
+            assertIs<RecordDecoderResult.SessionEstablished>(it)
+            assertEquals(43L, it.sessionContext.sessionId)
+            assertEquals(1L, it.sessionContext.sequenceId)
+            assertFalse(it.isRestarted)
+        }
+    }
+
+    @Test
+    fun `restart the session when receiving a session context with a new session ID`() = runTest {
+        val start = Record(
+            version = Versions.mostRecent,
+            to_id = to,
+            from_id = from,
+            session_context = SessionContextRecord(43L)
+        )
+        decoder.next(Record.ADAPTER.encodeByteString(start))
+
+        val restart = Record(
+            version = Versions.mostRecent,
+            to_id = to,
+            from_id = from,
+            session_context = SessionContextRecord(4711L)
+        )
+        withResultOf(restart) {
+            assertIs<RecordDecoderResult.SessionEstablished>(it)
+            assertEquals(4711, it.sessionContext.sessionId)
+            assertEquals(1L, it.sessionContext.sequenceId) // See R-E2E.6
+            assertNotNull(it.previousSessionContext)
+            assertTrue(it.isRestarted)
+        }
     }
 
 

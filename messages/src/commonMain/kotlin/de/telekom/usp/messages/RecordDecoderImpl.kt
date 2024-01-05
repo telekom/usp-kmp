@@ -10,6 +10,7 @@ import de.telekom.usp.messages.RecordDecoderResult.DecoderError
 import de.telekom.usp.messages.RecordDecoderResult.Disconnect
 import de.telekom.usp.messages.RecordDecoderResult.Message
 import de.telekom.usp.messages.RecordDecoderResult.MqttConnect
+import de.telekom.usp.messages.RecordDecoderResult.SessionEstablished
 import de.telekom.usp.messages.RecordDecoderResult.StompConnect
 import de.telekom.usp.messages.RecordDecoderResult.UspError
 import de.telekom.usp.messages.RecordDecoderResult.WebSocketConnect
@@ -38,24 +39,18 @@ class RecordDecoderImpl(
     override suspend fun next(data: ByteString) {
         try {
             if (data.size == 0) {
-                // Record.ADAPTER.decode([]) returns a default object, which is not what we want!
+                // Record.ADAPTER.decode([]) would return a default object, which is not what we want!
                 _results.emit(DecoderError(IllegalArgumentException("Missing USP record data")))
                 return
             }
 
             val record = Record.ADAPTER.decode(data)
 
-            if (!Versions.isSupported(record.version)) {
-                Logger.w { "Rejecting USP record with unsupported version: '${record.version}' ($record)" }
-                _results.emit(UspError(MessageNotSupported))
+            if (!accept(record)) {
                 return
             }
 
-            if (self.toShortString() != record.to_id) {
-                Logger.w { "[R-E2E.1] Ignoring USP record with wrong to-endpoint ID: expecting=$self, received=${record.to_id}" }
-                return
-            }
-
+            // TODO: implement Payload Security TLS12
             if (record.payload_security == Record.PayloadSecurity.TLS12) {
                 throw UnsupportedOperationException("Payload security TLS12 is not yet supported")
             }
@@ -79,6 +74,19 @@ class RecordDecoderImpl(
         }
     }
 
+    private suspend fun accept(record: Record): Boolean {
+        return if (!Versions.isSupported(record.version)) {
+            Logger.w { "Rejecting USP record with unsupported version: '${record.version}' ($record)" }
+            _results.emit(UspError(MessageNotSupported))
+            false
+        } else if (self.toShortString() != record.to_id) {
+            Logger.w { "[R-E2E.1] Ignoring USP record with wrong to-endpoint ID: expecting=$self, received=${record.to_id}" }
+            false
+        } else {
+            true
+        }
+    }
+
     private suspend fun handleSessionContext(fromId: String, record: SessionContextRecord) {
         if (!allowSessionContext) {
             Logger.w("[R-E2E.6a] This controller is not allowed to establish a session context, rejecting request")
@@ -86,23 +94,39 @@ class RecordDecoderImpl(
             return
         }
 
-        val session = validSessionFor(fromId, record)
+        val context = validContextFor(fromId, record)
         if (record.hasPayload) {
 
         }
     }
 
-    private fun validSessionFor(fromId: String, record: SessionContextRecord): SessionContext {
-        return currentContext?.let { context ->
-            if (!context.isSessionMatching(record.session_id)) {
-                currentContext = context.restartWith(record.session_id)
-                Logger.d { "[R-E2E.3] Received new session ID, restarted $currentContext" }
+    /**
+     * Returns the session context for the fromId and the specified session context record. Either
+     * returns the existing session context when it has a matching session ID or a restarted
+     * context when the session ID did not match or a new context if non existed previously.
+     */
+    private suspend fun validContextFor(
+        fromId: String,
+        record: SessionContextRecord
+    ): SessionContext {
+
+        currentContext?.let { context ->
+            return if (context.hasMatchingSession(record.session_id)) {
+                context
+            } else {
+                context.restartWith(record.session_id).also { restartedContext ->
+                    currentContext = restartedContext
+                    _results.emit(SessionEstablished(restartedContext, context))
+                    Logger.d { "[R-E2E.3] Restarted $restartedContext" }
+                }
             }
-            currentContext
-        } ?: run {
-            currentContext = SessionContext(EndpointIdentifier(fromId), record.session_id)
-            Logger.d { "New $currentContext established"}
-            currentContext!!
+        }
+
+        SessionContext(EndpointIdentifier(fromId), record.session_id).also { newContext ->
+            currentContext = newContext
+            _results.emit(SessionEstablished(newContext))
+            Logger.d { "[R-E2E.4] Created new $newContext" }
+            return newContext
         }
     }
 

@@ -11,11 +11,21 @@ sealed class RecordDecoderResult {
 
     data class Message(val msg: Msg) : RecordDecoderResult()
 
+    data class SessionEstablished(
+        val sessionContext: SessionContext,
+        val previousSessionContext: SessionContext? = null
+    ) : RecordDecoderResult() {
+
+        val isRestarted: Boolean
+            get() = previousSessionContext != null
+    }
+
     data object WebSocketConnect : RecordDecoderResult()
 
     data class MqttConnect(val version: String, val subscribedTopic: String) : RecordDecoderResult()
 
-    data class StompConnect(val version: String, val subscribedDestination: String) : RecordDecoderResult()
+    data class StompConnect(val version: String, val subscribedDestination: String) :
+        RecordDecoderResult()
 
     data class Disconnect(val error: Error) : RecordDecoderResult()
 }
