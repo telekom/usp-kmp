@@ -11,6 +11,9 @@ data class Path(val elements: List<PathElement>) {
 
     val size = elements.size
 
+    val isRelative: Boolean
+        get() = first() != Device.first()
+
     operator fun plus(path: String): Path {
         val child = Path(path)
 

@@ -1,6 +1,6 @@
 package de.telekom.usp
 
-import org.junit.Test
+import kotlin.test.Test
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 

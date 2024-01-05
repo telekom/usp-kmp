@@ -63,7 +63,7 @@ class RecordDecoderImplTest {
     fun `reject record with invalid version`() = runTest {
         withResultOf(Record(version = "1.0")) {
             assertIs<RecordDecoderResult.UspError>(it)
-            assertEquals(it.error, MessageNotSupported)
+            assertEquals(MessageNotSupported, it.error)
         }
     }
 
@@ -85,7 +85,7 @@ class RecordDecoderImplTest {
         withResultOf(noSession) {
             assertIs<RecordDecoderResult.Message>(it)
             assertNotNull(it.msg.header_)
-            assertEquals(it.msg.header_!!.msg_id, "test-hdr")
+            assertEquals("test-hdr", it.msg.header_!!.msg_id)
         }
     }
 
@@ -99,8 +99,8 @@ class RecordDecoderImplTest {
 
         withResultOf(disconnect) {
             assertIs<RecordDecoderResult.Disconnect>(it)
-            assertEquals(it.error.name, CommandCanceled.name)
-            assertEquals(it.error.code, CommandCanceled.code)
+            assertEquals(CommandCanceled.name, it.error.name)
+            assertEquals(CommandCanceled.code, it.error.code)
         }
     }
 
@@ -127,8 +127,8 @@ class RecordDecoderImplTest {
 
         withResultOf(mqtt) {
             assertIs<RecordDecoderResult.MqttConnect>(it)
-            assertEquals(it.version, "V3_1_1")
-            assertEquals(it.subscribedTopic, "mqtt-topic")
+            assertEquals("V3_1_1", it.version)
+            assertEquals("mqtt-topic", it.subscribedTopic)
         }
     }
 
@@ -142,12 +142,12 @@ class RecordDecoderImplTest {
 
         withResultOf(stomp) {
             assertIs<RecordDecoderResult.StompConnect>(it)
-            assertEquals(it.version, "V1_2")
-            assertEquals(it.subscribedDestination, "stomp-dest")
+            assertEquals("V1_2", it.version)
+            assertEquals("stomp-dest", it.subscribedDestination)
         }
     }
 
-    // Session Context Tests -----------------------------------------------------------------------
+    // -- Session Context Tests --------------------------------------------------------------------
 
     @Test
     fun `reject session creation when not allowed to`() = runTest {
