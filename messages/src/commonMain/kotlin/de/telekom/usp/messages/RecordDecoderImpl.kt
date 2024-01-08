@@ -10,6 +10,7 @@ import de.telekom.usp.messages.RecordDecoderResult.DecoderError
 import de.telekom.usp.messages.RecordDecoderResult.Disconnect
 import de.telekom.usp.messages.RecordDecoderResult.Message
 import de.telekom.usp.messages.RecordDecoderResult.MqttConnect
+import de.telekom.usp.messages.RecordDecoderResult.Retransmit
 import de.telekom.usp.messages.RecordDecoderResult.SessionEstablished
 import de.telekom.usp.messages.RecordDecoderResult.StompConnect
 import de.telekom.usp.messages.RecordDecoderResult.UspError
@@ -21,6 +22,7 @@ import de.telekom.usp.proto.record.NoSessionContextRecord
 import de.telekom.usp.proto.record.Record
 import de.telekom.usp.proto.record.STOMPConnectRecord
 import de.telekom.usp.proto.record.SessionContextRecord
+import de.telekom.usp.proto.record.containsRetransmitRequest
 import de.telekom.usp.proto.record.hasPayload
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
@@ -40,7 +42,7 @@ class RecordDecoderImpl(
         try {
             if (data.size == 0) {
                 // Record.ADAPTER.decode([]) would return a default object, which is not what we want!
-                _results.emit(DecoderError(IllegalArgumentException("Missing USP record data")))
+                post(DecoderError(IllegalArgumentException("Missing USP record data")))
                 return
             }
 
@@ -70,14 +72,14 @@ class RecordDecoderImpl(
             }
         } catch (ex: Exception) {
             Logger.w(throwable = ex) { "Error parsing $data" }
-            _results.emit(DecoderError(ex))
+            post(DecoderError(ex))
         }
     }
 
     private suspend fun accept(record: Record): Boolean {
         return if (!Versions.isSupported(record.version)) {
             Logger.w { "Rejecting USP record with unsupported version: '${record.version}' ($record)" }
-            _results.emit(UspError(MessageNotSupported))
+            post(UspError(MessageNotSupported))
             false
         } else if (self.toShortString() != record.to_id) {
             Logger.w { "[R-E2E.1] Ignoring USP record with wrong to-endpoint ID: expecting=$self, received=${record.to_id}" }
@@ -90,13 +92,24 @@ class RecordDecoderImpl(
     private suspend fun handleSessionContext(fromId: String, record: SessionContextRecord) {
         if (!allowSessionContext) {
             Logger.w("[R-E2E.6a] This controller is not allowed to establish a session context, rejecting request")
-            _results.emit(UspError(SessionContextNotAllowed))
+            post(UspError(SessionContextNotAllowed))
             return
         }
 
         val context = validContextFor(fromId, record)
-        if (record.hasPayload) {
 
+        if (context.hasMatchingSequenceId(record.sequence_id)) {
+            if (record.containsRetransmitRequest) {
+                post(Retransmit(context.sessionId, record.retransmit_id))
+            }
+            if (record.hasPayload) {
+
+            }
+
+        } else if (!context.canIgnoreSequenceId(record.sequence_id)) {
+
+        } else {
+            Logger.d { "Ignoring record with sequence ID ${record.sequence_id} for $context" }
         }
     }
 
@@ -116,7 +129,7 @@ class RecordDecoderImpl(
             } else {
                 context.restartWith(record.session_id).also { restartedContext ->
                     currentContext = restartedContext
-                    _results.emit(SessionEstablished(restartedContext, context))
+                    post(SessionEstablished(restartedContext, context))
                     Logger.d { "[R-E2E.3] Restarted $restartedContext" }
                 }
             }
@@ -124,7 +137,7 @@ class RecordDecoderImpl(
 
         SessionContext(EndpointIdentifier(fromId), record.session_id).also { newContext ->
             currentContext = newContext
-            _results.emit(SessionEstablished(newContext))
+            post(SessionEstablished(newContext))
             Logger.d { "[R-E2E.4] Created new $newContext" }
             return newContext
         }
@@ -132,36 +145,31 @@ class RecordDecoderImpl(
 
     private suspend fun handleNoSessionContext(record: NoSessionContextRecord) {
         Logger.d { "Received no session connect record with payload size=${record.payload.size}" }
-        _results.emit(Message(Msg.ADAPTER.decode(record.payload)))
+        post(Message(Msg.ADAPTER.decode(record.payload)))
     }
 
     private suspend fun handleWebSocketConnect() {
         Logger.d("Received web socket connect record")
-        _results.emit(WebSocketConnect)
+        post(WebSocketConnect)
     }
 
     private suspend fun handleMqttConnect(mqttConnect: MQTTConnectRecord) {
         Logger.d { "Received MQTT record: version=${mqttConnect.version}, topic='${mqttConnect.subscribed_topic}'" }
-        _results.emit(
-            MqttConnect(
-                mqttConnect.version.toString(),
-                mqttConnect.subscribed_topic
-            )
-        )
+        post(MqttConnect(mqttConnect.version.toString(), mqttConnect.subscribed_topic))
     }
 
     private suspend fun handleStompConnect(stompConnect: STOMPConnectRecord) {
         Logger.d { "Received Stomp record: version=${stompConnect.version}, destination='${stompConnect.subscribed_destination}'" }
-        _results.emit(
-            StompConnect(
-                stompConnect.version.toString(),
-                stompConnect.subscribed_destination
-            )
-        )
+        post(StompConnect(stompConnect.version.toString(), stompConnect.subscribed_destination))
     }
 
     private suspend fun handleDisconnect(disconnect: DisconnectRecord) {
         Logger.d { "[R-E2E.6b] Received disconnect record: reason='${disconnect.reason}' (${disconnect.reason_code})" }
-        _results.emit(Disconnect(Error.from(disconnect.reason_code)))
+        post(Disconnect(Error.from(disconnect.reason_code)))
+    }
+
+    private suspend fun post(result: RecordDecoderResult) {
+        Logger.d { "New record decode result: $result" }
+        _results.emit(result)
     }
 }

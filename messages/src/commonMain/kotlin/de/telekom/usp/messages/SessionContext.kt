@@ -10,7 +10,9 @@ class SessionContext(
 ) {
     val creationTime = clock.now()
 
-    var sequenceId = 1L
+    private var _sequenceId = 1L
+    val sequenceId: Long
+        get() = _sequenceId
 
     fun hasMatchingSession(sessionId: Long) = this.sessionId == sessionId
 
@@ -19,7 +21,13 @@ class SessionContext(
         return SessionContext(from, sessionId)
     }
 
+    fun nextSequenceId() = _sequenceId++
+
+    fun hasMatchingSequenceId(sequenceId: Long) = _sequenceId == sequenceId
+
+    fun canIgnoreSequenceId(sequenceId: Long) = _sequenceId < sequenceId
+
     override fun toString(): String {
-        return "SessionContext(from=$from, sessionId=$sessionId, sequenceId=$sequenceId)"
+        return "SessionContext(from=$from, sessionId=$sessionId, sequenceId=$_sequenceId)"
     }
 }

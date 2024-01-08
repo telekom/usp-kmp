@@ -15,20 +15,19 @@ import de.telekom.usp.proto.record.STOMPConnectRecord
 import de.telekom.usp.proto.record.SessionContextRecord
 import de.telekom.usp.proto.record.WebSocketConnectRecord
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import okio.ByteString
 import okio.ByteString.Companion.encodeUtf8
+import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertIs
 import kotlin.test.assertNotNull
-import kotlin.test.assertNull
 import kotlin.test.assertSame
 import kotlin.test.assertTrue
 
@@ -40,9 +39,21 @@ class RecordDecoderImplTest {
 
     private lateinit var decoder: RecordDecoderImpl
 
+    private var resultCount: Int = 0
+
+    private var expectedResultCount: Int = -1
+
     @BeforeTest
     fun setup() {
         decoder = RecordDecoderImpl(EndpointIdentifier(to))
+
+        resultCount = 0
+        expectedResultCount = -1
+    }
+
+    @AfterTest
+    fun assertResultCount() {
+        assertEquals(expectedResultCount, resultCount)
     }
 
     @Test
@@ -52,7 +63,7 @@ class RecordDecoderImplTest {
             "some-invalid-proto-data".encodeUtf8()
         ).forEach { data ->
             runTest {
-                withResultOf(data) {
+                withResultOf(data, 2) {
                     assertIs<RecordDecoderResult.DecoderError>(it)
                 }
             }
@@ -69,9 +80,8 @@ class RecordDecoderImplTest {
 
     @Test
     fun `ignore record with unknown endpoint`() = runTest {
-        withResultOf(Record(version = Versions.mostRecent, to_id = "self::unknown")) {
-            assertNull(it)
-        }
+        val invalid = Record(version = Versions.mostRecent, to_id = "self::unknown")
+        withResultOf(invalid, expectResultCount = 0) { }
     }
 
     @Test
@@ -82,6 +92,7 @@ class RecordDecoderImplTest {
             to_id = to,
             no_session_context = NoSessionContextRecord(payload)
         )
+
         withResultOf(noSession) {
             assertIs<RecordDecoderResult.Message>(it)
             assertNotNull(it.msg.header_)
@@ -152,11 +163,8 @@ class RecordDecoderImplTest {
     @Test
     fun `reject session creation when not allowed to`() = runTest {
         decoder = RecordDecoderImpl(EndpointIdentifier(to), allowSessionContext = false)
-        val start = Record(
-            version = Versions.mostRecent,
-            to_id = to,
-            session_context = SessionContextRecord(43L)
-        )
+        val start = recordWith(SessionContextRecord(session_id = 43L))
+
         withResultOf(start) {
             assertIs<RecordDecoderResult.UspError>(it)
             assertSame(SessionContextNotAllowed, it.error)
@@ -165,12 +173,8 @@ class RecordDecoderImplTest {
 
     @Test
     fun `start a new session when receiving an initial session context record`() = runTest {
-        val start = Record(
-            version = Versions.mostRecent,
-            to_id = to,
-            from_id = from,
-            session_context = SessionContextRecord(43L)
-        )
+        val start = recordWith(SessionContextRecord(session_id = 43L))
+
         withResultOf(start) {
             assertIs<RecordDecoderResult.SessionEstablished>(it)
             assertEquals(43L, it.sessionContext.sessionId)
@@ -181,20 +185,11 @@ class RecordDecoderImplTest {
 
     @Test
     fun `restart the session when receiving a session context with a new session ID`() = runTest {
-        val start = Record(
-            version = Versions.mostRecent,
-            to_id = to,
-            from_id = from,
-            session_context = SessionContextRecord(43L)
-        )
+        val start = recordWith(SessionContextRecord(session_id = 42L))
         decoder.next(Record.ADAPTER.encodeByteString(start))
 
-        val restart = Record(
-            version = Versions.mostRecent,
-            to_id = to,
-            from_id = from,
-            session_context = SessionContextRecord(4711L)
-        )
+        val restart = recordWith(SessionContextRecord(4711L))
+
         withResultOf(restart) {
             assertIs<RecordDecoderResult.SessionEstablished>(it)
             assertEquals(4711, it.sessionContext.sessionId)
@@ -204,24 +199,66 @@ class RecordDecoderImplTest {
         }
     }
 
+    @Test
+    fun `emit retransmit request when present in record`() = runTest {
+        val retransmit = recordWith(
+            SessionContextRecord(
+                session_id = 43L,
+                sequence_id = 1L,
+                retransmit_id = 8000L
+            )
+        )
 
-    private fun TestScope.withResultOf(record: Record, asserter: (RecordDecoderResult?) -> Unit) {
-        withResultOf(Record.ADAPTER.encodeByteString(record), asserter)
+        withResultOf(retransmit, expectResultCount = 2) {
+            when (resultCount) {
+                1 -> {
+                    assertIs<RecordDecoderResult.SessionEstablished>(it)
+                }
+
+                2 -> {
+                    assertIs<RecordDecoderResult.Retransmit>(it)
+                    assertEquals(8000L, it.sequenceId)
+                }
+            }
+        }
+    }
+
+    private fun recordWith(sessionContext: SessionContextRecord): Record {
+        return Record(
+            version = Versions.mostRecent,
+            to_id = to,
+            from_id = from,
+            session_context = sessionContext
+        )
+    }
+
+    private fun TestScope.withResultOf(
+        record: Record,
+        expectResultCount: Int = 1,
+        asserter: (RecordDecoderResult) -> Unit
+    ) {
+        withResultOf(Record.ADAPTER.encodeByteString(record), expectResultCount, asserter)
     }
 
     @OptIn(ExperimentalCoroutinesApi::class)
-    private fun TestScope.withResultOf(data: ByteString, asserter: (RecordDecoderResult?) -> Unit) {
-        val resultCollectorJob = launch {
-            asserter(decoder.results.firstOrNull())
+    private fun TestScope.withResultOf(
+        data: ByteString,
+        expectResultCount: Int = 1,
+        asserter: (RecordDecoderResult) -> Unit
+    ) {
+        expectedResultCount = expectResultCount
+
+        val job = launch {
+            decoder.results.collect {
+                resultCount++
+                asserter(it)
+            }
         }
         launch {
             decoder.next(data)
         }
 
-        // Normally we could return here, but in case nothing is emitted from the flow, we want to
-        // pass `null` to the 'asserter'. Hence first make sure the job is actually run, then cancel
-        // it to get a result:
         runCurrent()
-        resultCollectorJob.cancel()
+        job.cancel()
     }
 }

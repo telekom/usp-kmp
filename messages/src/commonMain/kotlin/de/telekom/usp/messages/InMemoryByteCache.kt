@@ -2,7 +2,7 @@ package de.telekom.usp.messages
 
 import okio.ByteString
 
-class InMemoryRecordCache : RecordCache {
+class InMemoryByteCache : ByteCache {
 
     private val cache = mutableMapOf<Long, MutableMap<Long, ByteString>>()
 

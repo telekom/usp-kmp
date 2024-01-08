@@ -20,6 +20,8 @@ sealed class RecordDecoderResult {
             get() = previousSessionContext != null
     }
 
+    data class Retransmit(val sessionId: Long, val sequenceId: Long) : RecordDecoderResult()
+
     data object WebSocketConnect : RecordDecoderResult()
 
     data class MqttConnect(val version: String, val subscribedTopic: String) : RecordDecoderResult()

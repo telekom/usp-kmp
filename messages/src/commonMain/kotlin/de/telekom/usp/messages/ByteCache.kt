@@ -2,7 +2,8 @@ package de.telekom.usp.messages
 
 import okio.ByteString
 
-interface RecordCache {
+
+interface ByteCache {
 
     operator fun set(sessionId: Long, sequenceId: Long, record: ByteString)
 

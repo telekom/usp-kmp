@@ -6,15 +6,15 @@ import kotlin.test.Test
 import kotlin.test.assertNull
 import kotlin.test.assertSame
 
-class InMemoryRecordCacheTest {
+class InMemoryByteCacheTest {
 
     private val sample = ByteString.of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10)
 
-    private lateinit var cache: InMemoryRecordCache
+    private lateinit var cache: InMemoryByteCache
 
     @BeforeTest
     fun setup() {
-        cache = InMemoryRecordCache()
+        cache = InMemoryByteCache()
     }
 
     @Test
