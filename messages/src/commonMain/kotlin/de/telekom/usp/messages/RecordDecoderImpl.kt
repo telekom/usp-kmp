@@ -52,13 +52,8 @@ class RecordDecoderImpl(
                 return
             }
 
-            // TODO: implement Payload Security TLS12
-            if (record.payload_security == Record.PayloadSecurity.TLS12) {
-                throw UnsupportedOperationException("Payload security TLS12 is not yet supported")
-            }
-
             if (record.session_context != null) {
-                handleSessionContext(record.from_id, record.session_context)
+                handleSessionContext(record.from_id, record, record.session_context)
             } else if (record.no_session_context != null) {
                 handleNoSessionContext(record.no_session_context)
             } else if (record.websocket_connect != null) {
@@ -89,15 +84,25 @@ class RecordDecoderImpl(
         }
     }
 
-    private suspend fun handleSessionContext(fromId: String, record: SessionContextRecord) {
+    private suspend fun handleSessionContext(
+        fromId: String,
+        uspRecord: Record,
+        record: SessionContextRecord
+    ) {
         if (!allowSessionContext) {
             Logger.w("[R-E2E.6a] This controller is not allowed to establish a session context, rejecting request")
             post(UspError(SessionContextNotAllowed))
             return
         }
 
-        val context = validContextFor(fromId, record)
+        // TODO: implement Payload Security TLS12
+        if (uspRecord.payload_security == Record.PayloadSecurity.TLS12) {
+            throw UnsupportedOperationException("Payload security TLS12 is not yet supported")
+        }
 
+        val context = validContextFor(fromId, record, uspRecord.payload_security)
+
+        // R-E2E.20:
         if (context.hasMatchingSequenceId(record.sequence_id)) {
             if (record.containsRetransmitRequest) {
                 post(Retransmit(context.sessionId, record.retransmit_id))
@@ -120,7 +125,8 @@ class RecordDecoderImpl(
      */
     private suspend fun validContextFor(
         fromId: String,
-        record: SessionContextRecord
+        record: SessionContextRecord,
+        payloadSecurity: Record.PayloadSecurity
     ): SessionContext {
 
         currentContext?.let { context ->
@@ -135,7 +141,11 @@ class RecordDecoderImpl(
             }
         }
 
-        SessionContext(EndpointIdentifier(fromId), record.session_id).also { newContext ->
+        SessionContext(
+            EndpointIdentifier(fromId),
+            payloadSecurity,
+            record.session_id
+        ).also { newContext ->
             currentContext = newContext
             post(SessionEstablished(newContext))
             Logger.d { "[R-E2E.4] Created new $newContext" }
