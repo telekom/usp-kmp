@@ -22,10 +22,13 @@ import de.telekom.usp.proto.record.NoSessionContextRecord
 import de.telekom.usp.proto.record.Record
 import de.telekom.usp.proto.record.STOMPConnectRecord
 import de.telekom.usp.proto.record.SessionContextRecord
+import de.telekom.usp.proto.record.collectPayload
 import de.telekom.usp.proto.record.containsRetransmitRequest
 import de.telekom.usp.proto.record.hasPayload
+import de.telekom.usp.proto.record.isSingleRecord
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
+import okio.Buffer
 import okio.ByteString
 
 class RecordDecoderImpl(
@@ -108,7 +111,10 @@ class RecordDecoderImpl(
                 post(Retransmit(context.sessionId, record.retransmit_id))
             }
             if (record.hasPayload) {
-
+                if (record.isSingleRecord) {
+                    val msg = Msg.ADAPTER.decode(record.collectPayload(Buffer()))
+                    post(Message(msg))
+                }
             }
 
         } else if (!context.canIgnoreSequenceId(record.sequence_id)) {

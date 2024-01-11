@@ -29,6 +29,8 @@ sealed class RecordDecoderResult {
     /**
      * Signals that the remote party has established a new session.
      *
+     * TODO: do we really need this signal or should we keep the information internal to RecordDecoderImpl?
+     *
      * @property sessionContext the newly created session context
      * @property previousSessionContext in case a re-establishing a session context containt the
      *           old session, otherwise `null`
@@ -49,6 +51,15 @@ sealed class RecordDecoderResult {
      * @property sequenceId the sequence ID of the record to retransmit to the remote party
      */
     data class Retransmit(val sessionId: Long, val sequenceId: Long) : RecordDecoderResult()
+
+    /**
+     * Signals that the record decoder has identified a missing record and that this controller
+     * should send a request to the remote party to retransmit the specified record.
+     *
+     * @property sessionId the session ID of the record to request retransmit for
+     * @property sequenceId the sequence ID of the record to request retransmit for
+     */
+    data class RequestRetransmit(val sessionId: Long, val sequenceId: Long) : RecordDecoderResult()
 
     /**
      * Signals the reception of a web socket connect record.

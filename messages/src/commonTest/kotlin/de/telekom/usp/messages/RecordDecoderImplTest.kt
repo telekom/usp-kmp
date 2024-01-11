@@ -223,6 +223,36 @@ class RecordDecoderImplTest {
         }
     }
 
+    @Test
+    fun `parse single message in plain text session context`() = runTest {
+        val payload = Msg.ADAPTER.encodeByteString(Msg(header_ = Header(msg_id = "test-hdr")))
+        val msg = recordWith(
+            SessionContextRecord(
+                session_id = 43L,
+                sequence_id = 1L,
+                payload = listOf(payload)
+            )
+        )
+
+        withResultOf(msg, expectResultCount = 2) {
+            when (resultCount) {
+                1 -> {
+                    assertIs<RecordDecoderResult.SessionEstablished>(it)
+                }
+
+                2 -> {
+                    assertIs<RecordDecoderResult.Message>(it)
+                    val header = it.msg.header_
+                    assertNotNull(header)
+                    assertEquals("test-hdr", header.msg_id)
+                }
+            }
+        }
+
+    }
+
+    // -- Helper functions -------------------------------------------------------------------------
+
     private fun recordWith(sessionContext: SessionContextRecord): Record {
         return Record(
             version = Versions.mostRecent,
