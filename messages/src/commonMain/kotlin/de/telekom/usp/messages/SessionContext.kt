@@ -16,6 +16,8 @@ class SessionContext(
     val sequenceId: Long
         get() = _sequenceId
 
+    var segmentationBeginId = -1L
+
     fun hasMatchingSession(sessionId: Long) = this.sessionId == sessionId
 
     fun restartWith(sessionId: Long): SessionContext {
@@ -23,11 +25,13 @@ class SessionContext(
         return SessionContext(from, payloadSecurity, sessionId)
     }
 
-    fun nextSequenceId() = _sequenceId++
+    fun incrementSequenceId() {
+        _sequenceId++
+    }
 
-    fun hasMatchingSequenceId(sequenceId: Long) = _sequenceId == sequenceId
+    fun isExpected(sequenceId: Long) = _sequenceId == sequenceId
 
-    fun canIgnoreSequenceId(sequenceId: Long) = _sequenceId < sequenceId
+    fun isAhead(sequenceId: Long) = _sequenceId > sequenceId
 
     override fun toString(): String {
         return "SessionContext(from=$from, sessionId=$sessionId, sequenceId=$_sequenceId)"

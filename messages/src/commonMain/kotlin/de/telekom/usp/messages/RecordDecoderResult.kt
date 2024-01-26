@@ -53,13 +53,14 @@ sealed class RecordDecoderResult {
     data class Retransmit(val sessionId: Long, val sequenceId: Long) : RecordDecoderResult()
 
     /**
-     * Signals that the record decoder has identified a missing record and that this controller
-     * should send a request to the remote party to retransmit the specified record.
+     * Signals that the record decoder has identified one or more missing records and that this
+     * controller should send a request to the remote party to retransmit the specified record.
      *
      * @property sessionId the session ID of the record to request retransmit for
-     * @property sequenceId the sequence ID of the record to request retransmit for
+     * @property sequenceIds the sequence IDs of the records to request retransmit for
      */
-    data class RequestRetransmit(val sessionId: Long, val sequenceId: Long) : RecordDecoderResult()
+    data class RequestRetransmit(val sessionId: Long, val sequenceIds: List<Long>) :
+        RecordDecoderResult()
 
     /**
      * Signals the reception of a web socket connect record.

@@ -2,6 +2,7 @@ package de.telekom.usp.proto.record
 
 import de.telekom.usp.proto.record.SessionContextRecord.PayloadSARState
 import okio.Buffer
+import okio.BufferedSource
 
 
 val SessionContextRecord.containsRetransmitRequest: Boolean
@@ -13,10 +14,16 @@ val SessionContextRecord.hasPayload: Boolean
 val SessionContextRecord.isSingleRecord: Boolean
     get() = payload_sar_state == PayloadSARState.NONE && payloadrec_sar_state == PayloadSARState.NONE
 
-fun SessionContextRecord.collectPayload(buffer: Buffer): Buffer {
+val SessionContextRecord.isComplete: Boolean
+    get() = payload_sar_state == PayloadSARState.COMPLETE
+
+val SessionContextRecord.isBegin: Boolean
+    get() = payload_sar_state == PayloadSARState.BEGIN
+
+fun SessionContextRecord.payloadToBufferedSource(): BufferedSource {
     require(payload.isNotEmpty()) { "Trying to read bytes from empty payload" }
 
-    return buffer.apply {
+    return Buffer().apply {
         payload.forEach { write(it) }
     }
 }
