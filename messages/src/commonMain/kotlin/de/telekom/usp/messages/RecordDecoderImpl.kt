@@ -10,7 +10,7 @@ import de.telekom.usp.messages.RecordDecoderResult.DecoderError
 import de.telekom.usp.messages.RecordDecoderResult.Disconnect
 import de.telekom.usp.messages.RecordDecoderResult.Message
 import de.telekom.usp.messages.RecordDecoderResult.MqttConnect
-import de.telekom.usp.messages.RecordDecoderResult.RequestRetransmit
+import de.telekom.usp.messages.RecordDecoderResult.RecordsMissing
 import de.telekom.usp.messages.RecordDecoderResult.Retransmit
 import de.telekom.usp.messages.RecordDecoderResult.SessionEstablished
 import de.telekom.usp.messages.RecordDecoderResult.StompConnect
@@ -115,6 +115,8 @@ class RecordDecoderImpl(
         } else if (context.isAhead(sequenceId)) {
             Logger.d { "Received record with future sequence ID $sequenceId for $context" }
             cache.put(record)
+            val missing = (context.sequenceId..<sequenceId).toList()
+            post(RecordsMissing(context.sessionId, missing))
         } else {
             Logger.d { "Ignoring record with sequence ID $sequenceId for $context" }
         }
@@ -164,8 +166,7 @@ class RecordDecoderImpl(
         if (record.isBegin) {
             Logger.d { "Received beginning of segmented record with sequence ID $sequenceId" }
             context.segmentationBeginId = sequenceId
-        }
-        if (record.isComplete) {
+        } else if (record.isComplete) {
             Logger.d { "Received end of segmented record with sequence ID $sequenceId" }
 
             val beginId = context.segmentationBeginId
@@ -173,14 +174,8 @@ class RecordDecoderImpl(
                 throw IllegalStateException("Received final segmented record with wrong ID, begin= $beginId, current=$sequenceId")
             }
             val allSequenceIds = beginId..sequenceId
-            val missing = cache.missingSequenceIds(sessionId, allSequenceIds)
-
-            if (missing.isEmpty()) {
-                val source = cache.payloadToBufferedSource(sessionId, allSequenceIds)
-                post(Message(Msg.ADAPTER.decode(source)))
-            } else {
-                post(RequestRetransmit(sessionId, missing))
-            }
+            val source = cache.payloadToBufferedSource(sessionId, allSequenceIds)
+            post(Message(Msg.ADAPTER.decode(source)))
         } else {
             Logger.d { "Received intermediate segmented record with sequence ID $sequenceId" }
         }
@@ -201,6 +196,7 @@ class RecordDecoderImpl(
             return if (context.hasMatchingSession(record.session_id)) {
                 context
             } else {
+                cache.clearSession(context.sessionId)
                 context.restartWith(record.session_id).also { restartedContext ->
                     currentContext = restartedContext
                     post(SessionEstablished(restartedContext, context))
@@ -208,6 +204,8 @@ class RecordDecoderImpl(
                 }
             }
         }
+
+        cache.clearAll()
 
         SessionContext(
             EndpointIdentifier(fromId),

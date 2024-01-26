@@ -13,6 +13,9 @@ import de.telekom.usp.proto.record.NoSessionContextRecord
 import de.telekom.usp.proto.record.Record
 import de.telekom.usp.proto.record.STOMPConnectRecord
 import de.telekom.usp.proto.record.SessionContextRecord
+import de.telekom.usp.proto.record.SessionContextRecord.PayloadSARState.BEGIN
+import de.telekom.usp.proto.record.SessionContextRecord.PayloadSARState.COMPLETE
+import de.telekom.usp.proto.record.SessionContextRecord.PayloadSARState.INPROCESS
 import de.telekom.usp.proto.record.WebSocketConnectRecord
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.launch
@@ -202,11 +205,7 @@ class RecordDecoderImplTest {
     @Test
     fun `emit retransmit request when present in record`() = runTest {
         val retransmit = recordWith(
-            SessionContextRecord(
-                session_id = 43L,
-                sequence_id = 1L,
-                retransmit_id = 8000L
-            )
+            SessionContextRecord(session_id = 43L, sequence_id = 1L, retransmit_id = 8000L)
         )
 
         withResultOf(retransmit, expectResultCount = 2) {
@@ -224,15 +223,11 @@ class RecordDecoderImplTest {
     }
 
     @Test
-    fun `parse single message in plain text session context`() = runTest {
-        val payload = Msg.ADAPTER.encodeByteString(Msg(header_ = Header(msg_id = "test-hdr")))
-        val msg = recordWith(
-            SessionContextRecord(
-                session_id = 43L,
-                sequence_id = 1L,
-                payload = listOf(payload)
-            )
-        )
+    fun `parse single record in plain text session context`() = runTest {
+        val payload = Msg.ADAPTER.encodeByteString(Msg(header_ = Header(msg_id = "test-header")))
+        val parts = payload.chunked(payload.size / 2)
+        val msg =
+            recordWith(SessionContextRecord(session_id = 43L, sequence_id = 1L, payload = parts))
 
         withResultOf(msg, expectResultCount = 2) {
             when (resultCount) {
@@ -244,11 +239,40 @@ class RecordDecoderImplTest {
                     assertIs<RecordDecoderResult.Message>(it)
                     val header = it.msg.header_
                     assertNotNull(header)
-                    assertEquals("test-hdr", header.msg_id)
+                    assertEquals("test-header", header.msg_id)
                 }
             }
         }
+    }
 
+    @Test
+    fun `parse multiple records in order in plain text session context`() = runTest {
+        val payload = Msg.ADAPTER.encodeByteString(Msg(header_ = Header(msg_id = "test-header")))
+        val parts = payload.chunked(payload.size / 3)
+
+        parts.forEachIndexed { index, part ->
+            val isFirst = index == 0
+            val isLast = index == parts.size - 1
+            val msg = recordWith(
+                SessionContextRecord(
+                    session_id = 43L,
+                    sequence_id = (index + 1).toLong(),
+                    payload = listOf(part),
+                    payload_sar_state = if (isFirst) BEGIN else if (isLast) COMPLETE else INPROCESS
+                )
+            )
+
+            if (!isLast) {
+                decoder.next(Record.ADAPTER.encodeByteString(msg))
+            } else {
+                withResultOf(msg) {
+                    assertIs<RecordDecoderResult.Message>(it)
+                    val header = it.msg.header_
+                    assertNotNull(header)
+                    assertEquals("test-header", header.msg_id)
+                }
+            }
+        }
     }
 
     // -- Helper functions -------------------------------------------------------------------------
@@ -290,5 +314,15 @@ class RecordDecoderImplTest {
 
         runCurrent()
         job.cancel()
+    }
+
+    /**
+     * Convert the byte string into a list of byte strings, where each byte string is of length
+     * `size`, plus the remaining byte string. When concatenating the resulting byte string it will
+     * be equal to the input.
+     */
+    private fun ByteString.chunked(size: Int): List<ByteString> {
+        return toByteArray().asList().windowed(size, size, partialWindows = true)
+            .map { ByteString.of(*it.toByteArray()) }
     }
 }

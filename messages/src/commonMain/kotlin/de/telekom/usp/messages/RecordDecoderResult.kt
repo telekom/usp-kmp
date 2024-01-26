@@ -54,12 +54,13 @@ sealed class RecordDecoderResult {
 
     /**
      * Signals that the record decoder has identified one or more missing records and that this
-     * controller should send a request to the remote party to retransmit the specified record.
+     * controller should probably send a request to the remote party to retransmit the specified
+     * records.
      *
      * @property sessionId the session ID of the record to request retransmit for
      * @property sequenceIds the sequence IDs of the records to request retransmit for
      */
-    data class RequestRetransmit(val sessionId: Long, val sequenceIds: List<Long>) :
+    data class RecordsMissing(val sessionId: Long, val sequenceIds: List<Long>) :
         RecordDecoderResult()
 
     /**

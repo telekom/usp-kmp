@@ -31,12 +31,12 @@ class InMemoryRecordCache : RecordCache {
         cache[sessionId]?.remove(sequenceId)
     }
 
-    override fun clearAll(sessionId: Long) {
-        if (sessionId == -1L) {
-            cache.clear()
-        } else {
-            cache.remove(sessionId)
-        }
+    override fun clearSession(sessionId: Long) {
+        cache.remove(sessionId)
+    }
+
+    override fun clearAll() {
+        cache.clear()
     }
 
     override fun clearUpTo(sessionId: Long, sequenceIdLimit: Long) {

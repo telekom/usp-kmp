@@ -76,7 +76,7 @@ class InMemoryRecordCacheTest {
         cache.put(sampleOf(1, 1))
         cache.put(sampleOf(1, 2))
         cache.put(sample)
-        cache.clearAll(1)
+        cache.clearSession(1)
 
         assertNull(cache.fetch(1, 1))
         assertNull(cache.fetch(1, 2))

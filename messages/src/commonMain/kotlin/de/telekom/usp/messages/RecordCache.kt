@@ -15,7 +15,9 @@ interface RecordCache {
 
     fun clear(sessionId: Long, sequenceId: Long)
 
-    fun clearAll(sessionId: Long = -1L)
+    fun clearSession(sessionId: Long)
+
+    fun clearAll()
 
     fun clearUpTo(sessionId: Long, sequenceIdLimit: Long)
 }
