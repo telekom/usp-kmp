@@ -14,6 +14,7 @@ import de.telekom.usp.messages.RecordDecoderResult.RecordsMissing
 import de.telekom.usp.messages.RecordDecoderResult.Retransmit
 import de.telekom.usp.messages.RecordDecoderResult.SessionEstablished
 import de.telekom.usp.messages.RecordDecoderResult.StompConnect
+import de.telekom.usp.messages.RecordDecoderResult.UdsConnect
 import de.telekom.usp.messages.RecordDecoderResult.UspError
 import de.telekom.usp.messages.RecordDecoderResult.WebSocketConnect
 import de.telekom.usp.proto.msg.Msg
@@ -23,6 +24,7 @@ import de.telekom.usp.proto.record.NoSessionContextRecord
 import de.telekom.usp.proto.record.Record
 import de.telekom.usp.proto.record.STOMPConnectRecord
 import de.telekom.usp.proto.record.SessionContextRecord
+import de.telekom.usp.proto.record.UDSConnectRecord
 import de.telekom.usp.proto.record.containsRetransmitRequest
 import de.telekom.usp.proto.record.hasPayload
 import de.telekom.usp.proto.record.isComplete
@@ -67,6 +69,8 @@ class RecordDecoderImpl(
                 handleMqttConnect(record.mqtt_connect)
             } else if (record.stomp_connect != null) {
                 handleStompConnect(record.stomp_connect)
+            } else if (record.uds_connect != null) {
+                handleUdsConnect(record.uds_connect)
             } else if (record.disconnect != null) {
                 handleDisconnect(record.disconnect)
             }
@@ -223,6 +227,11 @@ class RecordDecoderImpl(
     private suspend fun handleMqttConnect(mqttConnect: MQTTConnectRecord) {
         Logger.d { "Received MQTT record: version=${mqttConnect.version}, topic='${mqttConnect.subscribed_topic}'" }
         post(MqttConnect(mqttConnect.version.toString(), mqttConnect.subscribed_topic))
+    }
+
+    private suspend fun handleUdsConnect(udsConnect: UDSConnectRecord) {
+        Logger.d("Received unix domain socket connect record")
+        post(UdsConnect)
     }
 
     private suspend fun handleStompConnect(stompConnect: STOMPConnectRecord) {

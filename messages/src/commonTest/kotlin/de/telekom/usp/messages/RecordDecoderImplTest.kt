@@ -16,6 +16,7 @@ import de.telekom.usp.proto.record.SessionContextRecord
 import de.telekom.usp.proto.record.SessionContextRecord.PayloadSARState.BEGIN
 import de.telekom.usp.proto.record.SessionContextRecord.PayloadSARState.COMPLETE
 import de.telekom.usp.proto.record.SessionContextRecord.PayloadSARState.INPROCESS
+import de.telekom.usp.proto.record.UDSConnectRecord
 import de.telekom.usp.proto.record.WebSocketConnectRecord
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.launch
@@ -158,6 +159,19 @@ class RecordDecoderImplTest {
             assertIs<RecordDecoderResult.StompConnect>(it)
             assertEquals("V1_2", it.version)
             assertEquals("stomp-dest", it.subscribedDestination)
+        }
+    }
+
+    @Test
+    fun `decode unix domain socket record`() = runTest {
+        val udsSocket = Record(
+            version = Versions.mostRecent,
+            to_id = to,
+            uds_connect = UDSConnectRecord()
+        )
+
+        withResultOf(udsSocket) {
+            assertIs<RecordDecoderResult.UdsConnect>(it)
         }
     }
 

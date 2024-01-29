@@ -86,6 +86,11 @@ sealed class RecordDecoderResult {
         RecordDecoderResult()
 
     /**
+     * Signals the reception of a unix domain socket connect record.
+     */
+    data object UdsConnect : RecordDecoderResult()
+
+    /**
      * Signals the reception of a disconnect record.
      *
      * @property error the error the remote party sent in the disconnect record
