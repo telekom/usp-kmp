@@ -246,11 +246,47 @@ class RecordDecoderImplTest {
     }
 
     @Test
+    fun `parse several single plain text session context records out of order`() = runTest {
+        listOf(1L, 4L, 2L, 3L).map { sequenceId ->
+            val payload =
+                Msg.ADAPTER.encodeByteString(Msg(header_ = Header(msg_id = "test-$sequenceId")))
+            asRecord(
+                SessionContextRecord(
+                    session_id = 43L,
+                    sequence_id = sequenceId,
+                    payload = listOf(payload)
+                )
+            )
+        }.forEach { record ->
+            withResultOf(record, expectResultCount = 6) {
+                when (resultCount) {
+                    1 -> {
+                        assertIs<RecordDecoderResult.SessionEstablished>(it)
+                    }
+
+                    2 -> {
+                        assertIs<RecordDecoderResult.Message>(it)
+                        assertEquals("test-1", it.msg.header_!!.msg_id)
+                    }
+
+                    3 -> {
+                        assertIs<RecordDecoderResult.RecordsMissing>(it)
+                    }
+
+                    4, 5, 6 -> {
+                        assertIs<RecordDecoderResult.Message>(it)
+                        assertEquals("test-${resultCount - 2}", it.msg.header_!!.msg_id)
+                    }
+                }
+            }
+        }
+    }
+
+    @Test
     fun `parse multiple ordered plain text session context records`() = runTest {
         val payload = Msg.ADAPTER.encodeByteString(Msg(header_ = Header(msg_id = "test-header")))
-        val parts = payload.chunked(payload.size / 3).asRecords()
 
-        parts.forEach { msg ->
+        payload.chunked(payload.size / 3).asRecords().forEach { msg ->
             withResultOf(msg, expectResultCount = 2) {
                 when (resultCount) {
                     1 -> {
@@ -271,9 +307,8 @@ class RecordDecoderImplTest {
     @Test
     fun `parse multiple unordered plain text session context records`() = runTest {
         val payload = Msg.ADAPTER.encodeByteString(Msg(header_ = Header(msg_id = "test-header")))
-        val parts = payload.chunked(payload.size / 3).asRecords().reversed()
 
-        parts.forEach { msg ->
+        payload.chunked(payload.size / 3).asRecords().reversed().forEach { msg ->
             withResultOf(msg, expectResultCount = 4) {
                 when (resultCount) {
                     1 -> {
