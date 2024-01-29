@@ -43,7 +43,7 @@ class InMemoryRecordCacheTest {
         cache.put(sampleOf(1, 42, listOf(data1)))
         cache.put(sampleOf(1, 43, listOf(data2, data3)))
 
-        val source = cache.payloadToBufferedSource(1, 42L..43L)
+        val source = cache.payloadToBufferedSource(1, 43L)
         assertEquals(0L, source.indexOf(ByteString.of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12)))
     }
 

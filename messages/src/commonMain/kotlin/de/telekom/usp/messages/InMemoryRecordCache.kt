@@ -1,6 +1,7 @@
 package de.telekom.usp.messages
 
 import de.telekom.usp.proto.record.SessionContextRecord
+import de.telekom.usp.proto.record.isBegin
 import okio.Buffer
 import okio.BufferedSource
 
@@ -17,12 +18,20 @@ class InMemoryRecordCache : RecordCache {
         return cache[sessionId]?.get(sequenceId)
     }
 
-    override fun payloadToBufferedSource(sessionId: Long, sequenceIds: LongRange): BufferedSource {
-        return Buffer().apply {
-            sequenceIds.forEach { sequenceId ->
-                fetch(sessionId, sequenceId)?.let { record ->
-                    record.payload.forEach { write(it) }
+    override fun payloadToBufferedSource(sessionId: Long, lastSequenceId: Long): BufferedSource {
+        val records = buildList {
+            for (sequenceId in lastSequenceId downTo 1) {
+                val current = fetch(sessionId, sequenceId) ?: break
+                add(current)
+                if (current.isBegin) {
+                    break
                 }
+            }
+        }.reversed()
+
+        return Buffer().apply {
+            records.forEach { record ->
+                record.payload.forEach { write(it) }
             }
         }
     }

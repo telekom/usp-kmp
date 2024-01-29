@@ -166,7 +166,7 @@ class RecordDecoderImplTest {
     @Test
     fun `reject session creation when not allowed to`() = runTest {
         decoder = RecordDecoderImpl(EndpointIdentifier(to), allowSessionContext = false)
-        val start = recordWith(SessionContextRecord(session_id = 43L))
+        val start = asRecord(SessionContextRecord(session_id = 43L))
 
         withResultOf(start) {
             assertIs<RecordDecoderResult.UspError>(it)
@@ -176,7 +176,7 @@ class RecordDecoderImplTest {
 
     @Test
     fun `start a new session when receiving an initial session context record`() = runTest {
-        val start = recordWith(SessionContextRecord(session_id = 43L))
+        val start = asRecord(SessionContextRecord(session_id = 43L))
 
         withResultOf(start) {
             assertIs<RecordDecoderResult.SessionEstablished>(it)
@@ -188,10 +188,10 @@ class RecordDecoderImplTest {
 
     @Test
     fun `restart the session when receiving a session context with a new session ID`() = runTest {
-        val start = recordWith(SessionContextRecord(session_id = 42L))
+        val start = asRecord(SessionContextRecord(session_id = 42L))
         decoder.next(Record.ADAPTER.encodeByteString(start))
 
-        val restart = recordWith(SessionContextRecord(4711L))
+        val restart = asRecord(SessionContextRecord(4711L))
 
         withResultOf(restart) {
             assertIs<RecordDecoderResult.SessionEstablished>(it)
@@ -204,7 +204,7 @@ class RecordDecoderImplTest {
 
     @Test
     fun `emit retransmit request when present in record`() = runTest {
-        val retransmit = recordWith(
+        val retransmit = asRecord(
             SessionContextRecord(session_id = 43L, sequence_id = 1L, retransmit_id = 8000L)
         )
 
@@ -223,11 +223,11 @@ class RecordDecoderImplTest {
     }
 
     @Test
-    fun `parse single record in plain text session context`() = runTest {
+    fun `parse single plain text session context record`() = runTest {
         val payload = Msg.ADAPTER.encodeByteString(Msg(header_ = Header(msg_id = "test-header")))
         val parts = payload.chunked(payload.size / 2)
         val msg =
-            recordWith(SessionContextRecord(session_id = 43L, sequence_id = 1L, payload = parts))
+            asRecord(SessionContextRecord(session_id = 43L, sequence_id = 1L, payload = parts))
 
         withResultOf(msg, expectResultCount = 2) {
             when (resultCount) {
@@ -246,30 +246,50 @@ class RecordDecoderImplTest {
     }
 
     @Test
-    fun `parse multiple records in order in plain text session context`() = runTest {
+    fun `parse multiple ordered plain text session context records`() = runTest {
         val payload = Msg.ADAPTER.encodeByteString(Msg(header_ = Header(msg_id = "test-header")))
-        val parts = payload.chunked(payload.size / 3)
+        val parts = payload.chunked(payload.size / 3).asRecords()
 
-        parts.forEachIndexed { index, part ->
-            val isFirst = index == 0
-            val isLast = index == parts.size - 1
-            val msg = recordWith(
-                SessionContextRecord(
-                    session_id = 43L,
-                    sequence_id = (index + 1).toLong(),
-                    payload = listOf(part),
-                    payload_sar_state = if (isFirst) BEGIN else if (isLast) COMPLETE else INPROCESS
-                )
-            )
+        parts.forEach { msg ->
+            withResultOf(msg, expectResultCount = 2) {
+                when (resultCount) {
+                    1 -> {
+                        assertIs<RecordDecoderResult.SessionEstablished>(it)
+                    }
 
-            if (!isLast) {
-                decoder.next(Record.ADAPTER.encodeByteString(msg))
-            } else {
-                withResultOf(msg) {
-                    assertIs<RecordDecoderResult.Message>(it)
-                    val header = it.msg.header_
-                    assertNotNull(header)
-                    assertEquals("test-header", header.msg_id)
+                    2 -> {
+                        assertIs<RecordDecoderResult.Message>(it)
+                        val header = it.msg.header_
+                        assertNotNull(header)
+                        assertEquals("test-header", header.msg_id)
+                    }
+                }
+            }
+        }
+    }
+
+    @Test
+    fun `parse multiple unordered plain text session context records`() = runTest {
+        val payload = Msg.ADAPTER.encodeByteString(Msg(header_ = Header(msg_id = "test-header")))
+        val parts = payload.chunked(payload.size / 3).asRecords().reversed()
+
+        parts.forEach { msg ->
+            withResultOf(msg, expectResultCount = 4) {
+                when (resultCount) {
+                    1 -> {
+                        assertIs<RecordDecoderResult.SessionEstablished>(it)
+                    }
+
+                    2, 3 -> {
+                        assertIs<RecordDecoderResult.RecordsMissing>(it)
+                    }
+
+                    4 -> {
+                        assertIs<RecordDecoderResult.Message>(it)
+                        val header = it.msg.header_
+                        assertNotNull(header)
+                        assertEquals("test-header", header.msg_id)
+                    }
                 }
             }
         }
@@ -277,13 +297,28 @@ class RecordDecoderImplTest {
 
     // -- Helper functions -------------------------------------------------------------------------
 
-    private fun recordWith(sessionContext: SessionContextRecord): Record {
+    private fun asRecord(sessionContext: SessionContextRecord): Record {
         return Record(
             version = Versions.mostRecent,
             to_id = to,
             from_id = from,
             session_context = sessionContext
         )
+    }
+
+    private fun List<ByteString>.asRecords(): List<Record> {
+        return mapIndexed { index, part ->
+            val isFirst = index == 0
+            val isLast = index == size - 1
+            asRecord(
+                SessionContextRecord(
+                    session_id = 43L,
+                    sequence_id = (index + 1).toLong(),
+                    payload = listOf(part),
+                    payload_sar_state = if (isFirst) BEGIN else if (isLast) COMPLETE else INPROCESS
+                )
+            )
+        }
     }
 
     private fun TestScope.withResultOf(

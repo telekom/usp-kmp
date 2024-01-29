@@ -11,7 +11,7 @@ interface RecordCache {
 
     fun fetch(sessionId: Long, sequenceId: Long): SessionContextRecord?
 
-    fun payloadToBufferedSource(sessionId: Long, sequenceIds: LongRange): BufferedSource
+    fun payloadToBufferedSource(sessionId: Long, lastSequenceId: Long): BufferedSource
 
     fun clear(sessionId: Long, sequenceId: Long)
 

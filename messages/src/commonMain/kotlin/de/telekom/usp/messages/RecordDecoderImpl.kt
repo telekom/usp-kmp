@@ -25,7 +25,6 @@ import de.telekom.usp.proto.record.STOMPConnectRecord
 import de.telekom.usp.proto.record.SessionContextRecord
 import de.telekom.usp.proto.record.containsRetransmitRequest
 import de.telekom.usp.proto.record.hasPayload
-import de.telekom.usp.proto.record.isBegin
 import de.telekom.usp.proto.record.isComplete
 import de.telekom.usp.proto.record.isSingleRecord
 import de.telekom.usp.proto.record.payloadToBufferedSource
@@ -121,14 +120,12 @@ class RecordDecoderImpl(
             Logger.d { "Ignoring record with sequence ID $sequenceId for $context" }
         }
 
-        context.incrementSequenceId()
 
         // If there is a pending record with the new sequence ID in the cache, process it now:
         while (true) {
             val next = cache.fetch(context.sessionId, context.sequenceId)
             if (next != null) {
                 handleExpectedSessionContext(context, next)
-                context.incrementSequenceId()
             } else {
                 break
             }
@@ -152,6 +149,8 @@ class RecordDecoderImpl(
                 handleSegmentedSessionContext(context, record)
             }
         }
+
+        context.incrementSequenceId()
     }
 
     private suspend fun handleSegmentedSessionContext(
@@ -163,21 +162,13 @@ class RecordDecoderImpl(
 
         cache.put(record)
 
-        if (record.isBegin) {
-            Logger.d { "Received beginning of segmented record with sequence ID $sequenceId" }
-            context.segmentationBeginId = sequenceId
-        } else if (record.isComplete) {
+        if (record.isComplete) {
             Logger.d { "Received end of segmented record with sequence ID $sequenceId" }
 
-            val beginId = context.segmentationBeginId
-            if (beginId == -1L || beginId >= sequenceId) {
-                throw IllegalStateException("Received final segmented record with wrong ID, begin= $beginId, current=$sequenceId")
-            }
-            val allSequenceIds = beginId..sequenceId
-            val source = cache.payloadToBufferedSource(sessionId, allSequenceIds)
+            val source = cache.payloadToBufferedSource(sessionId, sequenceId)
             post(Message(Msg.ADAPTER.decode(source)))
         } else {
-            Logger.d { "Received intermediate segmented record with sequence ID $sequenceId" }
+            Logger.d { "Received non-terminal segmented record with sequence ID $sequenceId" }
         }
     }
 
