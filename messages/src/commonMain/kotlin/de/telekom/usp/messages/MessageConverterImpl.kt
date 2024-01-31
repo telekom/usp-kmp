@@ -22,6 +22,7 @@ import de.telekom.usp.proto.record.DisconnectRecord
 import de.telekom.usp.proto.record.MQTTConnectRecord
 import de.telekom.usp.proto.record.NoSessionContextRecord
 import de.telekom.usp.proto.record.Record
+import de.telekom.usp.proto.record.Record.PayloadSecurity
 import de.telekom.usp.proto.record.STOMPConnectRecord
 import de.telekom.usp.proto.record.SessionContextRecord
 import de.telekom.usp.proto.record.UDSConnectRecord
@@ -40,7 +41,8 @@ class MessageConverterImpl(
     private val remote: EndpointIdentifier,
     private val version: String = Versions.mostRecent,
     private val cache: RecordCache = InMemoryRecordCache(),
-    private val allowSessionContext: Boolean = true
+    private val allowSessionContext: Boolean = true,
+    private val localPayloadSecurity: PayloadSecurity = PayloadSecurity.PLAINTEXT
 ) : MessageConverter {
 
     private val _results = MutableSharedFlow<RecordDecoderResult>()
@@ -48,8 +50,8 @@ class MessageConverterImpl(
 
     private var currentContext: SessionContext? = null
 
-    private val payloadSecurity: Record.PayloadSecurity
-        get() = currentContext?.payloadSecurity ?: Record.PayloadSecurity.PLAINTEXT
+    private val payloadSecurity: PayloadSecurity
+        get() = currentContext?.payloadSecurity ?: localPayloadSecurity
 
     override suspend fun next(data: ByteString) {
         try {
@@ -205,7 +207,7 @@ class MessageConverterImpl(
         }
 
         // TODO: implement Payload Security TLS12
-        if (uspRecord.payload_security == Record.PayloadSecurity.TLS12) {
+        if (uspRecord.payload_security == PayloadSecurity.TLS12) {
             throw UnsupportedOperationException("Payload security TLS12 is not yet supported")
         }
 
@@ -284,7 +286,7 @@ class MessageConverterImpl(
     private suspend fun validContextFor(
         fromId: String,
         record: SessionContextRecord,
-        payloadSecurity: Record.PayloadSecurity
+        payloadSecurity: PayloadSecurity
     ): SessionContext {
 
         currentContext?.let { context ->

@@ -25,7 +25,6 @@ import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import okio.ByteString
 import okio.ByteString.Companion.encodeUtf8
-import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -41,7 +40,7 @@ class MessageConverterImplTest {
     private val local = "self::usp-controller"
     private val remote = "self::usp-agent"
 
-    private lateinit var decoder: MessageConverterImpl
+    private lateinit var converter: MessageConverterImpl
 
     private var resultCount: Int = 0
 
@@ -49,19 +48,14 @@ class MessageConverterImplTest {
 
     @BeforeTest
     fun setup() {
-        decoder = MessageConverterImpl(EndpointIdentifier(local), EndpointIdentifier(remote))
+        converter = MessageConverterImpl(EndpointIdentifier(local), EndpointIdentifier(remote))
 
         resultCount = 0
         expectedResultCount = -1
     }
 
-    @AfterTest
-    fun assertResultCount() {
-        assertEquals(expectedResultCount, resultCount)
-    }
-
     @Test
-    fun `handle invalid record data gracefully`() {
+    fun `decode invalid record data gracefully`() {
         listOf(
             ByteString.EMPTY,
             "some-invalid-proto-data".encodeUtf8()
@@ -75,7 +69,7 @@ class MessageConverterImplTest {
     }
 
     @Test
-    fun `reject record with invalid version`() = runTest {
+    fun `reject record with invalid version`() = runDecoderTest {
         withResultOf(Record(version = "1.0")) {
             assertIs<RecordDecoderResult.UspError>(it)
             assertEquals(MessageNotSupported, it.error)
@@ -83,13 +77,13 @@ class MessageConverterImplTest {
     }
 
     @Test
-    fun `ignore record with unknown endpoint`() = runTest {
+    fun `ignore record with unknown endpoint`() = runDecoderTest {
         val invalid = Record(version = Versions.mostRecent, to_id = "self::unknown")
         withResultOf(invalid, expectResultCount = 0) { }
     }
 
     @Test
-    fun `decode no session context record`() = runTest {
+    fun `decode no session context record`() = runDecoderTest {
         val payload = Msg.ADAPTER.encodeByteString(Msg(header_ = Header(msg_id = "test-hdr")))
         val noSession = Record(
             version = Versions.mostRecent,
@@ -105,7 +99,7 @@ class MessageConverterImplTest {
     }
 
     @Test
-    fun `decode disconnect record`() = runTest {
+    fun `decode disconnect record`() = runDecoderTest {
         val disconnect = Record(
             version = Versions.mostRecent,
             to_id = remote,
@@ -120,7 +114,7 @@ class MessageConverterImplTest {
     }
 
     @Test
-    fun `decode web socket record`() = runTest {
+    fun `decode web socket record`() = runDecoderTest {
         val webSocket = Record(
             version = Versions.mostRecent,
             to_id = remote,
@@ -133,7 +127,7 @@ class MessageConverterImplTest {
     }
 
     @Test
-    fun `decode MQTT record`() = runTest {
+    fun `decode MQTT record`() = runDecoderTest {
         val mqtt = Record(
             version = Versions.mostRecent,
             to_id = remote,
@@ -148,7 +142,7 @@ class MessageConverterImplTest {
     }
 
     @Test
-    fun `decode Stomp record`() = runTest {
+    fun `decode Stomp record`() = runDecoderTest {
         val stomp = Record(
             version = Versions.mostRecent,
             to_id = remote,
@@ -163,7 +157,7 @@ class MessageConverterImplTest {
     }
 
     @Test
-    fun `decode unix domain socket record`() = runTest {
+    fun `decode unix domain socket record`() = runDecoderTest {
         val udsSocket = Record(
             version = Versions.mostRecent,
             to_id = remote,
@@ -175,11 +169,56 @@ class MessageConverterImplTest {
         }
     }
 
+    @Test
+    fun `encode no session message`() {
+        val bytes = converter.noSessionContextMessage(Msg(header_ = Header(msg_id = "test-header")))
+        val record = Record.ADAPTER.decode(bytes)
+        assertNotNull(record.no_session_context)
+    }
+
+    @Test
+    fun `encode disconnect message`() {
+        val bytes = converter.disconnect(MessageNotSupported)
+        val record = Record.ADAPTER.decode(bytes)
+        assertNotNull(record.disconnect)
+        assertEquals(MessageNotSupported.code, record.disconnect!!.reason_code)
+    }
+
+    @Test
+    fun `encode websocket connect`() {
+        val bytes = converter.webSocketConnect()
+        val record = Record.ADAPTER.decode(bytes)
+        assertNotNull(record.websocket_connect)
+    }
+
+    @Test
+    fun `encode UDS connect`() {
+        val bytes = converter.udsConnect()
+        val record = Record.ADAPTER.decode(bytes)
+        assertNotNull(record.uds_connect)
+    }
+
+    @Test
+    fun `encode MQTT connect`() {
+        val bytes = converter.mqttConnect("5.0", "test-topic")
+        val record = Record.ADAPTER.decode(bytes)
+        assertNotNull(record.mqtt_connect)
+        assertEquals("test-topic", record.mqtt_connect!!.subscribed_topic)
+    }
+
+    @Test
+    fun `encode STOMP connect`() {
+        val bytes = converter.stompConnect("1.2", "test-destination")
+        val record = Record.ADAPTER.decode(bytes)
+        assertNotNull(record.stomp_connect)
+        assertEquals("test-destination", record.stomp_connect!!.subscribed_destination)
+    }
+
     // -- Session Context Tests --------------------------------------------------------------------
 
     @Test
-    fun `reject session creation when not allowed to`() = runTest {
-        decoder = MessageConverterImpl(
+    fun `reject session creation when not allowed to`() = runDecoderTest {
+        converter = MessageConverterImpl(
             EndpointIdentifier(local),
             EndpointIdentifier(remote),
             allowSessionContext = false
@@ -193,7 +232,7 @@ class MessageConverterImplTest {
     }
 
     @Test
-    fun `start a new session when receiving an initial session context record`() = runTest {
+    fun `start a new session when receiving an initial session context record`() = runDecoderTest {
         val start = asRecord(SessionContextRecord(session_id = 43L))
 
         withResultOf(start) {
@@ -205,23 +244,24 @@ class MessageConverterImplTest {
     }
 
     @Test
-    fun `restart the session when receiving a session context with a new session ID`() = runTest {
-        val start = asRecord(SessionContextRecord(session_id = 42L))
-        decoder.next(Record.ADAPTER.encodeByteString(start))
+    fun `restart the session when receiving a session context with a new session ID`() =
+        runDecoderTest {
+            val start = asRecord(SessionContextRecord(session_id = 42L))
+            converter.next(Record.ADAPTER.encodeByteString(start))
 
-        val restart = asRecord(SessionContextRecord(4711L))
+            val restart = asRecord(SessionContextRecord(4711L))
 
-        withResultOf(restart) {
-            assertIs<RecordDecoderResult.SessionEstablished>(it)
-            assertEquals(4711, it.sessionContext.sessionId)
-            assertEquals(1L, it.sessionContext.sequenceId) // See R-E2E.6
-            assertNotNull(it.previousSessionContext)
+            withResultOf(restart) {
+                assertIs<RecordDecoderResult.SessionEstablished>(it)
+                assertEquals(4711, it.sessionContext.sessionId)
+                assertEquals(1L, it.sessionContext.sequenceId) // See R-E2E.6
+                assertNotNull(it.previousSessionContext)
             assertTrue(it.isRestarted)
         }
     }
 
     @Test
-    fun `emit retransmit request when present in record`() = runTest {
+    fun `emit retransmit request when present in record`() = runDecoderTest {
         val retransmit = asRecord(
             SessionContextRecord(session_id = 43L, sequence_id = 1L, retransmit_id = 8000L)
         )
@@ -241,7 +281,7 @@ class MessageConverterImplTest {
     }
 
     @Test
-    fun `parse single plain text session context record`() = runTest {
+    fun `parse single plain text session context record`() = runDecoderTest {
         val payload = Msg.ADAPTER.encodeByteString(Msg(header_ = Header(msg_id = "test-header")))
         val parts = payload.chunked(payload.size / 2)
         val msg =
@@ -264,7 +304,7 @@ class MessageConverterImplTest {
     }
 
     @Test
-    fun `parse several single plain text session context records out of order`() = runTest {
+    fun `parse several single plain text session context records out of order`() = runDecoderTest {
         listOf(1L, 4L, 2L, 3L).map { sequenceId ->
             val payload =
                 Msg.ADAPTER.encodeByteString(Msg(header_ = Header(msg_id = "test-$sequenceId")))
@@ -301,7 +341,7 @@ class MessageConverterImplTest {
     }
 
     @Test
-    fun `parse multiple ordered plain text session context records`() = runTest {
+    fun `parse multiple ordered plain text session context records`() = runDecoderTest {
         val payload = Msg.ADAPTER.encodeByteString(Msg(header_ = Header(msg_id = "test-header")))
 
         payload.chunked(payload.size / 3).asRecords().forEach { msg ->
@@ -323,7 +363,7 @@ class MessageConverterImplTest {
     }
 
     @Test
-    fun `parse multiple unordered plain text session context records`() = runTest {
+    fun `parse multiple unordered plain text session context records`() = runDecoderTest {
         val payload = Msg.ADAPTER.encodeByteString(Msg(header_ = Header(msg_id = "test-header")))
 
         payload.chunked(payload.size / 3).asRecords().reversed().forEach { msg ->
@@ -374,6 +414,11 @@ class MessageConverterImplTest {
         }
     }
 
+    private fun runDecoderTest(testBody: suspend TestScope.() -> Unit) = runTest {
+        testBody()
+        assertEquals(expectedResultCount, resultCount)
+    }
+
     private fun TestScope.withResultOf(
         record: Record,
         expectResultCount: Int = 1,
@@ -391,13 +436,13 @@ class MessageConverterImplTest {
         expectedResultCount = expectResultCount
 
         val job = launch {
-            decoder.results.collect {
+            converter.results.collect {
                 resultCount++
                 asserter(it)
             }
         }
         launch {
-            decoder.next(data)
+            converter.next(data)
         }
 
         runCurrent()
