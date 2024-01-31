@@ -25,6 +25,7 @@ import de.telekom.usp.proto.record.Record
 import de.telekom.usp.proto.record.STOMPConnectRecord
 import de.telekom.usp.proto.record.SessionContextRecord
 import de.telekom.usp.proto.record.UDSConnectRecord
+import de.telekom.usp.proto.record.WebSocketConnectRecord
 import de.telekom.usp.proto.record.containsRetransmitRequest
 import de.telekom.usp.proto.record.hasPayload
 import de.telekom.usp.proto.record.isComplete
@@ -34,16 +35,21 @@ import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import okio.ByteString
 
-class RecordDecoderImpl(
-    private val self: EndpointIdentifier,
+class MessageConverterImpl(
+    private val local: EndpointIdentifier,
+    private val remote: EndpointIdentifier,
+    private val version: String = Versions.mostRecent,
     private val cache: RecordCache = InMemoryRecordCache(),
     private val allowSessionContext: Boolean = true
-) : RecordDecoder {
+) : MessageConverter {
 
     private val _results = MutableSharedFlow<RecordDecoderResult>()
     override val results = _results.asSharedFlow()
 
     private var currentContext: SessionContext? = null
+
+    private val payloadSecurity: Record.PayloadSecurity
+        get() = currentContext?.payloadSecurity ?: Record.PayloadSecurity.PLAINTEXT
 
     override suspend fun next(data: ByteString) {
         try {
@@ -80,13 +86,107 @@ class RecordDecoderImpl(
         }
     }
 
+    override fun noSessionContextMessage(msg: Msg): ByteString {
+        return toByteString(
+            Record(
+                version = version,
+                to_id = remote.toShortString(),
+                from_id = local.toShortString(),
+                payload_security = payloadSecurity,
+                no_session_context = NoSessionContextRecord(toByteString(msg))
+            )
+        )
+    }
+
+    override fun sessionContextMessage(
+        sessionId: Long,
+        msg: Msg?,
+        retransmitId: Long?
+    ): ByteString {
+        currentContext = validContextFor(sessionId)
+        TODO()
+    }
+
+    override fun disconnect(error: Error): ByteString {
+        return toByteString(
+            Record(
+                version = version,
+                to_id = remote.toShortString(),
+                from_id = local.toShortString(),
+                payload_security = payloadSecurity,
+                disconnect = DisconnectRecord(error.name, error.code)
+            )
+        )
+    }
+
+    override fun webSocketConnect(): ByteString {
+        return toByteString(
+            Record(
+                version = version,
+                to_id = remote.toShortString(),
+                from_id = local.toShortString(),
+                payload_security = payloadSecurity,
+                websocket_connect = WebSocketConnectRecord()
+            )
+        )
+    }
+
+    override fun mqttConnect(mqttVersion: String, topic: String): ByteString {
+        val ver = when (mqttVersion) {
+            "3.1.1" -> MQTTConnectRecord.MQTTVersion.V3_1_1
+            "5.0" -> MQTTConnectRecord.MQTTVersion.V5
+            else -> throw IllegalArgumentException("Unknown MQTT version: $mqttVersion")
+        }
+
+        return toByteString(
+            Record(
+                version = version,
+                to_id = remote.toShortString(),
+                from_id = local.toShortString(),
+                payload_security = payloadSecurity,
+                mqtt_connect = MQTTConnectRecord(ver, topic)
+            )
+        )
+    }
+
+    override fun stompConnect(stompVersion: String, destination: String): ByteString {
+        val ver = when (stompVersion) {
+            "1.2" -> STOMPConnectRecord.STOMPVersion.V1_2
+            else -> throw IllegalArgumentException("Unknown STOMP version: $stompVersion")
+        }
+
+        return toByteString(
+            Record(
+                version = version,
+                to_id = remote.toShortString(),
+                from_id = local.toShortString(),
+                payload_security = payloadSecurity,
+                stomp_connect = STOMPConnectRecord(ver, destination)
+            )
+        )
+    }
+
+    override fun udsConnect(): ByteString {
+        return toByteString(
+            Record(
+                version = version,
+                to_id = remote.toShortString(),
+                from_id = local.toShortString(),
+                payload_security = payloadSecurity,
+                uds_connect = UDSConnectRecord()
+            )
+        )
+    }
+
+    // -- Helper methods ---------------------------------------------------------------------------
+
     private suspend fun accept(record: Record): Boolean {
         return if (!Versions.isSupported(record.version)) {
             Logger.w { "Rejecting USP record with unsupported version: '${record.version}' ($record)" }
             post(UspError(MessageNotSupported))
             false
-        } else if (self.toShortString() != record.to_id) {
-            Logger.w { "[R-E2E.1] Ignoring USP record with wrong to-endpoint ID: expecting=$self, received=${record.to_id}" }
+        } else if (remote.toShortString() != record.to_id) {
+            Logger.w { "[R-E2E.1] Ignoring USP record with wrong to-endpoint ID: expecting=$remote, received=${record.to_id}" }
             false
         } else {
             true
@@ -214,6 +314,18 @@ class RecordDecoderImpl(
         }
     }
 
+    private fun validContextFor(sessionId: Long): SessionContext {
+        currentContext?.let { context ->
+            return if (context.hasMatchingSession(sessionId)) {
+                context
+            } else {
+                context.restartWith(sessionId)
+            }
+        }
+
+        return SessionContext(local, payloadSecurity, sessionId)
+    }
+
     private suspend fun handleNoSessionContext(record: NoSessionContextRecord) {
         Logger.d { "Received no session connect record with payload size=${record.payload.size}" }
         post(Message(Msg.ADAPTER.decode(record.payload)))
@@ -248,4 +360,8 @@ class RecordDecoderImpl(
         Logger.d { "New record decode result: $result" }
         _results.emit(result)
     }
+
+    private fun toByteString(record: Record) = Record.ADAPTER.encodeByteString(record)
+
+    private fun toByteString(msg: Msg) = Msg.ADAPTER.encodeByteString(msg)
 }

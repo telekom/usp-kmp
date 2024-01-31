@@ -36,12 +36,12 @@ import kotlin.test.assertSame
 import kotlin.test.assertTrue
 
 
-class RecordDecoderImplTest {
+class MessageConverterImplTest {
 
-    private val from = "self::usp-controller"
-    private val to = "self::usp-agent"
+    private val local = "self::usp-controller"
+    private val remote = "self::usp-agent"
 
-    private lateinit var decoder: RecordDecoderImpl
+    private lateinit var decoder: MessageConverterImpl
 
     private var resultCount: Int = 0
 
@@ -49,7 +49,7 @@ class RecordDecoderImplTest {
 
     @BeforeTest
     fun setup() {
-        decoder = RecordDecoderImpl(EndpointIdentifier(to))
+        decoder = MessageConverterImpl(EndpointIdentifier(local), EndpointIdentifier(remote))
 
         resultCount = 0
         expectedResultCount = -1
@@ -93,7 +93,7 @@ class RecordDecoderImplTest {
         val payload = Msg.ADAPTER.encodeByteString(Msg(header_ = Header(msg_id = "test-hdr")))
         val noSession = Record(
             version = Versions.mostRecent,
-            to_id = to,
+            to_id = remote,
             no_session_context = NoSessionContextRecord(payload)
         )
 
@@ -108,7 +108,7 @@ class RecordDecoderImplTest {
     fun `decode disconnect record`() = runTest {
         val disconnect = Record(
             version = Versions.mostRecent,
-            to_id = to,
+            to_id = remote,
             disconnect = DisconnectRecord(CommandCanceled.name, CommandCanceled.code)
         )
 
@@ -123,7 +123,7 @@ class RecordDecoderImplTest {
     fun `decode web socket record`() = runTest {
         val webSocket = Record(
             version = Versions.mostRecent,
-            to_id = to,
+            to_id = remote,
             websocket_connect = WebSocketConnectRecord()
         )
 
@@ -136,7 +136,7 @@ class RecordDecoderImplTest {
     fun `decode MQTT record`() = runTest {
         val mqtt = Record(
             version = Versions.mostRecent,
-            to_id = to,
+            to_id = remote,
             mqtt_connect = MQTTConnectRecord(MQTTConnectRecord.MQTTVersion.V3_1_1, "mqtt-topic")
         )
 
@@ -151,7 +151,7 @@ class RecordDecoderImplTest {
     fun `decode Stomp record`() = runTest {
         val stomp = Record(
             version = Versions.mostRecent,
-            to_id = to,
+            to_id = remote,
             stomp_connect = STOMPConnectRecord(STOMPConnectRecord.STOMPVersion.V1_2, "stomp-dest")
         )
 
@@ -166,7 +166,7 @@ class RecordDecoderImplTest {
     fun `decode unix domain socket record`() = runTest {
         val udsSocket = Record(
             version = Versions.mostRecent,
-            to_id = to,
+            to_id = remote,
             uds_connect = UDSConnectRecord()
         )
 
@@ -179,7 +179,11 @@ class RecordDecoderImplTest {
 
     @Test
     fun `reject session creation when not allowed to`() = runTest {
-        decoder = RecordDecoderImpl(EndpointIdentifier(to), allowSessionContext = false)
+        decoder = MessageConverterImpl(
+            EndpointIdentifier(local),
+            EndpointIdentifier(remote),
+            allowSessionContext = false
+        )
         val start = asRecord(SessionContextRecord(session_id = 43L))
 
         withResultOf(start) {
@@ -349,8 +353,8 @@ class RecordDecoderImplTest {
     private fun asRecord(sessionContext: SessionContextRecord): Record {
         return Record(
             version = Versions.mostRecent,
-            to_id = to,
-            from_id = from,
+            to_id = remote,
+            from_id = local,
             session_context = sessionContext
         )
     }

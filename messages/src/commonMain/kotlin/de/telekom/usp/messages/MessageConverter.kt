@@ -2,9 +2,23 @@ package de.telekom.usp.messages
 
 import de.telekom.usp.Error
 import de.telekom.usp.proto.msg.Msg
+import kotlinx.coroutines.flow.SharedFlow
 import okio.ByteString
 
-interface RecordEncoder {
+/**
+ * Handles encoding and decoding of USP messages to and from bytes, hiding the complexities of
+ * handling USP records and end-to-end sessions.
+ */
+interface MessageConverter {
+
+    val results: SharedFlow<RecordDecoderResult>
+
+    /**
+     * Convert the specified bytes into a RecordDecoderResult.
+     *
+     * @see results
+     */
+    suspend fun next(data: ByteString)
 
     /**
      * Encode a USP message in a no session context record
