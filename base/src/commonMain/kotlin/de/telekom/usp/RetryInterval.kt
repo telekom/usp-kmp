@@ -20,7 +20,7 @@ class RetryInterval(
 
     private val m = minimumWaitInterval
 
-    private val k = intervalMultiplier
+    private val k = (intervalMultiplier / 1000F)
 
     private var count = 1
 
@@ -28,11 +28,12 @@ class RetryInterval(
         val retry = count++
 
         return if (retry < 10) {
-            val min = if (retry == 1) m else (m * (k / 1000F).pow(retry - 1)).toInt()
-            val max = (m * (k / 1000F).pow(retry)).toInt()
+            val min = if (retry == 1) m else (m * k.pow(retry - 1)).toInt()
+            val max = (m * k.pow(retry)).toInt()
+            // println("min=$min, max=$max")
             Random.nextInt(min, max).seconds
         } else {
-            (m * (k / 1000F).pow(10)).toInt().seconds
+            (m * k.pow(10)).toInt().seconds
         }
     }
 
