@@ -341,7 +341,9 @@ class MessageConverterImpl(
     }
 
     private suspend fun createSession(newSessionId: Long? = null): SessionContext {
-        return SessionContext(local, remote, payloadSecurity, SessionIdFactory.next()).also {
+        val sessionId = newSessionId ?: SessionIdFactory.next()
+
+        return SessionContext(local, remote, payloadSecurity, sessionId).also {
             currentContext = it
         }
     }
