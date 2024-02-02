@@ -34,6 +34,7 @@ import de.telekom.usp.proto.record.isSingleRecord
 import de.telekom.usp.proto.record.payloadToBufferedSource
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
+import kotlinx.coroutines.runBlocking
 import okio.ByteString
 
 class MessageConverterImpl(
@@ -42,7 +43,6 @@ class MessageConverterImpl(
     private val version: String = Versions.mostRecent,
     private val cache: RecordCache = InMemoryRecordCache(),
     private val allowSessionContext: Boolean = true,
-    private val localPayloadSecurity: PayloadSecurity = PayloadSecurity.PLAINTEXT
 ) : MessageConverter {
 
     private val _results = MutableSharedFlow<RecordDecoderResult>()
@@ -51,7 +51,7 @@ class MessageConverterImpl(
     private var currentContext: SessionContext? = null
 
     private val payloadSecurity: PayloadSecurity
-        get() = currentContext?.payloadSecurity ?: localPayloadSecurity
+        get() = currentContext?.payloadSecurity ?: PayloadSecurity.PLAINTEXT
 
     override suspend fun next(data: ByteString) {
         try {
@@ -68,7 +68,7 @@ class MessageConverterImpl(
             }
 
             if (record.session_context != null) {
-                handleSessionContext(record.from_id, record, record.session_context)
+                handleSessionContext(record, record.session_context)
             } else if (record.no_session_context != null) {
                 handleNoSessionContext(record.no_session_context)
             } else if (record.websocket_connect != null) {
@@ -101,12 +101,30 @@ class MessageConverterImpl(
     }
 
     override fun sessionContextMessage(
-        sessionId: Long,
         msg: Msg?,
-        retransmitId: Long?
+        retransmitId: ULong?,
+        useExistingSession: Boolean
     ): ByteString {
-        currentContext = validContextFor(sessionId)
-        TODO()
+        // TODO: implement segmented sending of messages
+        contextFromLocal(useExistingSession).let { context ->
+            val session = SessionContextRecord(
+                session_id = context.sessionId,
+                sequence_id = context.incrementLocalSequenceId(),
+                expected_id = context.expectedId,
+                retransmit_id = retransmitId?.toLong() ?: 0,
+                payload = if (msg != null) listOf(Msg.ADAPTER.encodeByteString(msg)) else emptyList()
+            )
+
+            return toByteString(
+                Record(
+                    version = version,
+                    to_id = remote.toShortString(),
+                    from_id = local.toShortString(),
+                    payload_security = payloadSecurity,
+                    session_context = session
+                )
+            )
+        }
     }
 
     override fun disconnect(error: Error): ByteString {
@@ -195,23 +213,18 @@ class MessageConverterImpl(
         }
     }
 
-    private suspend fun handleSessionContext(
-        fromId: String,
-        uspRecord: Record,
-        record: SessionContextRecord
-    ) {
+    private suspend fun handleSessionContext(uspRecord: Record, record: SessionContextRecord) {
         if (!allowSessionContext) {
             Logger.w("[R-E2E.6a] This controller is not allowed to establish a session context, rejecting request")
             post(UspError(SessionContextNotAllowed))
             return
         }
 
-        // TODO: implement Payload Security TLS12
         if (uspRecord.payload_security == PayloadSecurity.TLS12) {
             throw UnsupportedOperationException("Payload security TLS12 is not yet supported")
         }
 
-        val context = validContextFor(fromId, record, uspRecord.payload_security)
+        val context = contextFromRemote(record)
         val sequenceId = record.sequence_id // Do not use the one from the context here!
 
         // R-E2E.20:
@@ -220,7 +233,7 @@ class MessageConverterImpl(
         } else if (context.isAhead(sequenceId)) {
             Logger.d { "Received record with future sequence ID $sequenceId for $context" }
             cache.put(record)
-            val missing = (context.sequenceId..<sequenceId).toList()
+            val missing = (context.expectedId..<sequenceId).toList()
             post(RecordsMissing(context.sessionId, missing))
         } else {
             Logger.d { "Ignoring record with sequence ID $sequenceId for $context" }
@@ -229,7 +242,7 @@ class MessageConverterImpl(
 
         // If there is a pending record with the new sequence ID in the cache, process it now:
         while (true) {
-            val next = cache.fetch(context.sessionId, context.sequenceId)
+            val next = cache.fetch(context.sessionId, context.expectedId)
             if (next != null) {
                 handleExpectedSessionContext(context, next)
             } else {
@@ -256,7 +269,7 @@ class MessageConverterImpl(
             }
         }
 
-        context.incrementSequenceId()
+        context.incrementRemoteSequenceId()
     }
 
     private suspend fun handleSegmentedSessionContext(
@@ -283,49 +296,45 @@ class MessageConverterImpl(
      * returns the existing session context when it has a matching session ID or a restarted
      * context when the session ID did not match or a new context if non existed previously.
      */
-    private suspend fun validContextFor(
-        fromId: String,
-        record: SessionContextRecord,
-        payloadSecurity: PayloadSecurity
-    ): SessionContext {
-
+    private suspend fun contextFromRemote(record: SessionContextRecord): SessionContext {
         currentContext?.let { context ->
             return if (context.hasMatchingSession(record.session_id)) {
                 context
             } else {
                 cache.clearSession(context.sessionId)
-                context.restartWith(record.session_id).also { restartedContext ->
-                    currentContext = restartedContext
-                    post(SessionEstablished(restartedContext, context))
+                createSession(record.session_id).also { restartedContext ->
                     Logger.d { "[R-E2E.3] Restarted $restartedContext" }
+                    post(SessionEstablished(restartedContext, context))
                 }
             }
         }
 
         cache.clearAll()
 
-        SessionContext(
-            EndpointIdentifier(fromId),
-            payloadSecurity,
-            record.session_id
-        ).also { newContext ->
-            currentContext = newContext
-            post(SessionEstablished(newContext))
+        return createSession(record.session_id).also { newContext ->
             Logger.d { "[R-E2E.4] Created new $newContext" }
-            return newContext
+            post(SessionEstablished(newContext))
         }
     }
 
-    private fun validContextFor(sessionId: Long): SessionContext {
-        currentContext?.let { context ->
-            return if (context.hasMatchingSession(sessionId)) {
-                context
-            } else {
-                context.restartWith(sessionId)
+    private fun contextFromLocal(useExistingSession: Boolean): SessionContext {
+        return if (useExistingSession) {
+            currentContext ?: createSession()
+        } else {
+            createSession()
+        }
+    }
+
+    private fun createSession(newSessionId: Long? = null): SessionContext {
+        val sessionId = newSessionId ?: run {
+            runBlocking {
+                SessionIdFactory.next()
             }
         }
 
-        return SessionContext(local, payloadSecurity, sessionId)
+        return SessionContext(local, remote, payloadSecurity, sessionId).also {
+            currentContext = it
+        }
     }
 
     private suspend fun handleNoSessionContext(record: NoSessionContextRecord) {

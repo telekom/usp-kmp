@@ -26,13 +26,13 @@ interface MessageConverter {
     fun noSessionContextMessage(msg: Msg): ByteString
 
     /**
-     * Encode a session context message with the specified session ID and an optional message and
-     * an optional retransmit (sequence) ID.
+     * Encode a session context message with the specified message and/or an optional sequence ID
+     * to retransmit.
      */
     fun sessionContextMessage(
-        sessionId: Long,
         msg: Msg? = null,
-        retransmitId: Long? = null
+        retransmitId: ULong? = null,
+        useExistingSession: Boolean = true
     ): ByteString
 
     /**
