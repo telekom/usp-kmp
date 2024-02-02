@@ -48,9 +48,8 @@ fun GetSupportedDm(init: GetSupportedDmBuilder.() -> Unit) =
     initBuilder(GetSupportedDmBuilder(), init)
 
 fun GetSupportedProtocol(
-    controllerSupportedProtocolVersions: String,
-    init: GetSupportedProtocolBuilder.() -> Unit
-) = initBuilder(GetSupportedProtocolBuilder(controllerSupportedProtocolVersions), init)
+    controllerSupportedProtocolVersions: String
+) = initBuilder(GetSupportedProtocolBuilder(controllerSupportedProtocolVersions)) { }
 
 fun GetInstances(init: GetInstancesBuilder.() -> Unit) = initBuilder(GetInstancesBuilder(), init)
 
