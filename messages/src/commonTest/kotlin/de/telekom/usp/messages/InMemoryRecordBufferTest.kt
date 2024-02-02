@@ -8,17 +8,17 @@ import kotlin.test.assertEquals
 import kotlin.test.assertNull
 import kotlin.test.assertSame
 
-class InMemoryRecordCacheTest {
+class InMemoryRecordBufferTest {
 
     private val data = ByteString.of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10)
 
     private val payload = listOf(data)
 
-    private lateinit var cache: InMemoryRecordCache
+    private lateinit var cache: InMemoryRecordBuffer
 
     @BeforeTest
     fun setup() {
-        cache = InMemoryRecordCache()
+        cache = InMemoryRecordBuffer()
     }
 
     @Test

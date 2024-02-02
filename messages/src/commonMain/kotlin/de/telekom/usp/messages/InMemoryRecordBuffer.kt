@@ -5,7 +5,7 @@ import de.telekom.usp.proto.record.isBegin
 import okio.Buffer
 import okio.BufferedSource
 
-class InMemoryRecordCache : RecordCache {
+class InMemoryRecordBuffer : RecordBuffer {
 
     private val cache = mutableMapOf<Long, MutableMap<Long, SessionContextRecord>>()
 

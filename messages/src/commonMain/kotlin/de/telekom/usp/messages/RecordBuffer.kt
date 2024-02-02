@@ -5,7 +5,7 @@ import de.telekom.usp.proto.record.isComplete
 import okio.BufferedSource
 
 
-interface RecordCache {
+interface RecordBuffer {
 
     fun put(record: SessionContextRecord)
 
@@ -22,11 +22,11 @@ interface RecordCache {
     fun clearUpTo(sessionId: Long, sequenceIdLimit: Long)
 }
 
-fun RecordCache.missingSequenceIds(sessionId: Long, sequenceIds: LongRange): List<Long> {
+fun RecordBuffer.missingSequenceIds(sessionId: Long, sequenceIds: LongRange): List<Long> {
     return sequenceIds.filter { fetch(sessionId, it) == null }
 }
 
-fun RecordCache.hasAllSegmentedRecords(sessionId: Long, segmentationBeginId: Long): Boolean {
+fun RecordBuffer.hasAllSegmentedRecords(sessionId: Long, segmentationBeginId: Long): Boolean {
     if (segmentationBeginId < 0) {
         return false
     }

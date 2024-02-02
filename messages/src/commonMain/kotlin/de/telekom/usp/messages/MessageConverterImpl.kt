@@ -41,7 +41,7 @@ class MessageConverterImpl(
     private val local: EndpointIdentifier,
     private val remote: EndpointIdentifier,
     private val version: String = Versions.mostRecent,
-    private val cache: RecordCache = InMemoryRecordCache(),
+    private val cache: RecordBuffer = InMemoryRecordBuffer(),
     private val allowSessionContext: Boolean = true,
 ) : MessageConverter {
 
