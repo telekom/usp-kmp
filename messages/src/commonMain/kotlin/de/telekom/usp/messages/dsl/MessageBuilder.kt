@@ -14,3 +14,8 @@ abstract class MessageBuilder internal constructor(val type: Header.MsgType) {
 
     abstract fun build(): Msg
 }
+
+internal fun <T : MessageBuilder> initBuilder(builder: T, init: T.() -> Unit): Msg {
+    builder.init()
+    return builder.build()
+}

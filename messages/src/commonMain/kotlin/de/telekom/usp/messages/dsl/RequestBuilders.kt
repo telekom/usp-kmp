@@ -7,54 +7,52 @@ import de.telekom.usp.messages.MessageIdFactory
 import de.telekom.usp.proto.msg.Add
 import de.telekom.usp.proto.msg.Body
 import de.telekom.usp.proto.msg.Delete
+import de.telekom.usp.proto.msg.Deregister
 import de.telekom.usp.proto.msg.Get
 import de.telekom.usp.proto.msg.GetInstances
 import de.telekom.usp.proto.msg.GetSupportedDM
+import de.telekom.usp.proto.msg.GetSupportedProtocol
 import de.telekom.usp.proto.msg.Header
 import de.telekom.usp.proto.msg.Msg
+import de.telekom.usp.proto.msg.Notify
+import de.telekom.usp.proto.msg.Notify.OperationComplete.CommandFailure
+import de.telekom.usp.proto.msg.Notify.OperationComplete.OutputArgs
 import de.telekom.usp.proto.msg.Operate
+import de.telekom.usp.proto.msg.Register
 import de.telekom.usp.proto.msg.Request
 import de.telekom.usp.proto.msg.Set
 
-fun Get(init: GetRequestBuilder.() -> Unit) = GetRequestBuilder().run {
-    init()
-    build()
-}
+fun Get(init: GetRequestBuilder.() -> Unit) = initBuilder(GetRequestBuilder(), init)
 
-fun Set(init: SetRequestBuilder.() -> Unit) = SetRequestBuilder().run {
-    init()
-    build()
-}
+fun Set(init: SetRequestBuilder.() -> Unit) = initBuilder(SetRequestBuilder(), init)
 
-fun Add(init: AddRequestBuilder.() -> Unit) = AddRequestBuilder().run {
-    init()
-    build()
-}
+fun Add(init: AddRequestBuilder.() -> Unit) = initBuilder(AddRequestBuilder(), init)
 
-fun Delete(init: DeleteRequestBuilder.() -> Unit) = DeleteRequestBuilder().run {
-    init()
-    build()
-}
+fun Delete(init: DeleteRequestBuilder.() -> Unit) = initBuilder(DeleteRequestBuilder(), init)
+
+fun Register(init: RegisterBuilder.() -> Unit) = initBuilder(RegisterBuilder(), init)
+
+fun Deregister(init: DeregisterBuilder.() -> Unit) = initBuilder(DeregisterBuilder(), init)
 
 fun Operate(
     path: String,
     commandKey: String,
     sendResponse: Boolean = true,
     init: OperateRequestBuilder.() -> Unit
-) = OperateRequestBuilder(Path(path), commandKey, sendResponse).run {
-    init()
-    build()
-}
+) = initBuilder(OperateRequestBuilder(Path(path), commandKey, sendResponse), init)
 
-fun GetSupportedDm(init: GetSupportedDmBuilder.() -> Unit) = GetSupportedDmBuilder().run {
-    init()
-    build()
-}
+fun Notify(subscriptionId: String, init: NotifyRequestBuilder.() -> Unit) =
+    initBuilder(NotifyRequestBuilder(subscriptionId), init)
 
-fun GetInstances(init: GetInstancesBuilder.() -> Unit) = GetInstancesBuilder().run {
-    init()
-    build()
-}
+fun GetSupportedDm(init: GetSupportedDmBuilder.() -> Unit) =
+    initBuilder(GetSupportedDmBuilder(), init)
+
+fun GetSupportedProtocol(
+    controllerSupportedProtocolVersions: String,
+    init: GetSupportedProtocolBuilder.() -> Unit
+) = initBuilder(GetSupportedProtocolBuilder(controllerSupportedProtocolVersions), init)
+
+fun GetInstances(init: GetInstancesBuilder.() -> Unit) = initBuilder(GetInstancesBuilder(), init)
 
 // --- Builder classes -----------------------------------------------------------------------------
 
@@ -84,12 +82,12 @@ abstract class PathRequestBuilder internal constructor(type: Header.MsgType) :
     /**
      * Adds the specified path o this request
      */
-    fun path(path: String) = _paths.add(Path(path))
+    fun path(vararg paths: String) = paths.forEach { _paths.add(Path(it)) }
 
     /**
      * Adds the specified path o this request
      */
-    fun path(path: Path) = _paths.add(path)
+    fun path(vararg paths: Path) = paths.forEach { _paths.add(it) }
 }
 
 class GetRequestBuilder internal constructor() : PathRequestBuilder(Header.MsgType.GET) {
@@ -210,6 +208,210 @@ class OperateRequestBuilder internal constructor(
     )
 }
 
+class NotifyRequestBuilder internal constructor(val subscriptionId: String) :
+    RequestMessageBuilder(Header.MsgType.NOTIFY) {
+
+    private var event: EventBuilder? = null
+
+    private var valueChange: Pair<Path, String>? = null
+
+    private var objectCreation: ObjectCreationBuilder? = null
+
+    private var objectDeletion: Path? = null
+
+    private var operationComplete: OperationCompleteBuilder? = null
+
+    private var onBoardRequest: OnBoardRequestBuilder? = null
+
+    var sendResponse = true
+
+    fun event(path: Path, name: String, init: EventBuilder.() -> Unit) {
+        event = EventBuilder(path, name).apply {
+            init()
+        }
+    }
+
+    fun event(path: String, name: String, init: EventBuilder.() -> Unit) {
+        event = EventBuilder(Path(path), name).apply {
+            init()
+        }
+    }
+
+    fun valueChange(path: Path, value: String) {
+        valueChange = path to value
+    }
+
+    fun valueChange(path: String, value: String) {
+        valueChange = Path(path) to value
+    }
+
+    fun objectCreation(path: String, init: ObjectCreationBuilder.() -> Unit) {
+        objectCreation = ObjectCreationBuilder(Path(path)).apply {
+            init()
+        }
+    }
+
+    fun objectCreation(path: Path, init: ObjectCreationBuilder.() -> Unit) {
+        objectCreation = ObjectCreationBuilder(path).apply {
+            init()
+        }
+    }
+
+    fun objectDeletion(path: Path) {
+        objectDeletion = path
+    }
+
+    fun objectDeletion(path: String) {
+        objectDeletion = Path(path)
+    }
+
+    fun operationComplete(
+        path: Path,
+        commandName: String,
+        commandKey: String,
+        init: OperationCompleteBuilder.() -> Unit
+    ) {
+        operationComplete = OperationCompleteBuilder(path, commandName, commandKey).apply {
+            init()
+        }
+    }
+
+    fun operationComplete(
+        path: String,
+        commandName: String,
+        commandKey: String,
+        init: OperationCompleteBuilder.() -> Unit
+    ) {
+        operationComplete = OperationCompleteBuilder(Path(path), commandName, commandKey).apply {
+            init()
+        }
+    }
+
+    fun onBoardRequest(
+        oui: String,
+        productClass: String,
+        serialNumber: String,
+        agentSupportedProtocolVersions: String
+    ) {
+        onBoardRequest =
+            OnBoardRequestBuilder(oui, productClass, serialNumber, agentSupportedProtocolVersions)
+    }
+
+    override fun buildRequest(): Request {
+        return Request(
+            notify = Notify(
+                subscription_id = subscriptionId,
+                send_resp = sendResponse,
+                event = event?.event(),
+                value_change = valueChange?.let {
+                    Notify.ValueChange(
+                        it.first.toString(),
+                        it.second
+                    )
+                },
+                obj_creation = objectCreation?.objectCreation(),
+                obj_deletion = objectDeletion?.let { Notify.ObjectDeletion(it.toString()) },
+                oper_complete = operationComplete?.operationComplete(),
+                on_board_req = onBoardRequest?.onBoardRequest()
+            )
+        )
+    }
+}
+
+class EventBuilder(val path: Path, val name: String) {
+
+    private val _params = mutableMapOf<Path, String>()
+    val params: Map<Path, String>
+        get() = _params
+
+    fun arg(path: String, value: String) {
+        _params[Path(path)] = value
+    }
+
+    fun arg(path: Path, value: String) {
+        _params[path] = value
+    }
+
+    fun event(): Notify.Event {
+        return Notify.Event(path.toString(), name, params.mapKeys { it.toString() })
+    }
+}
+
+class ObjectCreationBuilder(val path: Path) {
+
+    private val _uniqueKeys = mutableMapOf<String, String>()
+    val uniqueKeys: Map<String, String>
+        get() = _uniqueKeys
+
+    fun uniqueKey(key: String, value: String) {
+        _uniqueKeys[key] = value
+    }
+
+    fun objectCreation() = Notify.ObjectCreation(path.toString(), uniqueKeys)
+}
+
+class OperationCompleteBuilder(val path: Path, val commandName: String, val commandKey: String) {
+
+    private var _outputArgs: MutableMap<String, String>? = null
+
+    var commandFailure: Pair<Int, String>? = null
+
+    fun outputArg(key: String, value: String) {
+        if (_outputArgs == null) {
+            _outputArgs = mutableMapOf()
+        }
+        _outputArgs!![key] = value
+    }
+
+    fun operationComplete(): Notify.OperationComplete {
+        if (_outputArgs != null && commandFailure != null) {
+            throw IllegalArgumentException("Must choose one of: output_args or command_failure")
+        }
+        return Notify.OperationComplete(
+            obj_path = path.toString(),
+            command_name = commandName,
+            command_key = commandKey,
+            req_output_args = _outputArgs?.let { OutputArgs(it) },
+            cmd_failure = commandFailure?.let { CommandFailure(it.first, it.second) }
+        )
+    }
+}
+
+data class OnBoardRequestBuilder(
+    val oui: String,
+    val productClass: String,
+    val serialNumber: String,
+    val agentSupportedProtocolVersions: String
+
+) {
+    fun onBoardRequest() =
+        Notify.OnBoardRequest(oui, productClass, serialNumber, agentSupportedProtocolVersions)
+}
+
+class GetSupportedProtocolBuilder(val controllerSupportedProtocolVersions: String) :
+    RequestMessageBuilder(Header.MsgType.GET_SUPPORTED_PROTO) {
+
+    override fun buildRequest() =
+        Request(get_supported_protocol = GetSupportedProtocol(controllerSupportedProtocolVersions))
+}
+
+class RegisterBuilder : PathRequestBuilder(Header.MsgType.REGISTER) {
+
+    var allowPartial = true
+
+    override fun buildRequest() = Request(
+        register = Register(
+            allow_partial = allowPartial,
+            reg_paths = paths.map { Register.RegistrationPath(it) })
+    )
+}
+
+class DeregisterBuilder : PathRequestBuilder(Header.MsgType.DEREGISTER) {
+
+    override fun buildRequest() = Request(deregister = Deregister(paths))
+}
+
+
 class ParamSettingsBuilder internal constructor(val path: String) {
     private val _params = mutableListOf<ParamSettings>()
     val params: List<ParamSettings>
@@ -266,8 +468,15 @@ fun main() {
         arg("key2", "value3")
     }
 
+    val notify = Notify("subscription") {
+        operationComplete("Device.", "cmd-name", "my-key") {
+            outputArg("arg1", "key1")
+        }
+    }
+
     println(get)
     println(set)
     println(add)
     println(operate)
+    println(notify)
 }
