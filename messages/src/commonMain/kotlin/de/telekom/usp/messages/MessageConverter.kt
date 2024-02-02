@@ -21,19 +21,19 @@ interface MessageConverter {
     suspend fun next(data: ByteString)
 
     /**
-     * Encode a USP message in a no session context record
-     */
-    fun noSessionContextMessage(msg: Msg): ByteString
-
-    /**
      * Encode a session context message with the specified message and/or an optional sequence ID
      * to retransmit.
      */
-    fun sessionContextMessage(
+    suspend fun sessionContextMessage(
         msg: Msg? = null,
         retransmitId: ULong? = null,
         useExistingSession: Boolean = true
-    ): ByteString
+    ): List<ByteString>
+
+    /**
+     * Encode a USP message in a no session context record
+     */
+    fun noSessionContextMessage(msg: Msg): ByteString
 
     /**
      * Encode a disconnect message using the reason of the specified error.

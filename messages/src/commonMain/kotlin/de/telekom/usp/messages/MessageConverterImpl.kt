@@ -34,7 +34,8 @@ import de.telekom.usp.proto.record.isSingleRecord
 import de.telekom.usp.proto.record.payloadToBufferedSource
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import okio.ByteString
 
 class MessageConverterImpl(
@@ -50,41 +51,82 @@ class MessageConverterImpl(
 
     private var currentContext: SessionContext? = null
 
+    private val sessionMutex = Mutex()
+
     private val payloadSecurity: PayloadSecurity
         get() = currentContext?.payloadSecurity ?: PayloadSecurity.PLAINTEXT
 
     override suspend fun next(data: ByteString) {
-        try {
-            if (data.size == 0) {
-                // Record.ADAPTER.decode([]) would return a default object, which is not what we want!
-                post(DecoderError(IllegalArgumentException("Missing USP record data")))
-                return
+        sessionMutex.withLock {
+            try {
+                if (data.size == 0) {
+                    // Record.ADAPTER.decode([]) would return a default object, which is not what we want!
+                    post(DecoderError(IllegalArgumentException("Missing USP record data")))
+                    return
+                }
+
+                val record = Record.ADAPTER.decode(data)
+
+                if (!accept(record)) {
+                    return
+                }
+
+                if (record.session_context != null) {
+                    handleSessionContext(record, record.session_context)
+                } else if (record.no_session_context != null) {
+                    handleNoSessionContext(record.no_session_context)
+                } else if (record.websocket_connect != null) {
+                    handleWebSocketConnect()
+                } else if (record.mqtt_connect != null) {
+                    handleMqttConnect(record.mqtt_connect)
+                } else if (record.stomp_connect != null) {
+                    handleStompConnect(record.stomp_connect)
+                } else if (record.uds_connect != null) {
+                    handleUdsConnect(record.uds_connect)
+                } else if (record.disconnect != null) {
+                    handleDisconnect(record.disconnect)
+                }
+            } catch (ex: Exception) {
+                Logger.w(throwable = ex) { "Error parsing $data" }
+                post(DecoderError(ex))
+            }
+        }
+    }
+
+    override suspend fun sessionContextMessage(
+        msg: Msg?,
+        retransmitId: ULong?,
+        useExistingSession: Boolean
+    ): List<ByteString> {
+        sessionMutex.withLock {
+
+            if (msg == null && retransmitId == null && useExistingSession && currentContext != null) {
+                Logger.w(IllegalArgumentException()) { "Msg or retransmit ID missing for existing session: $currentContext" }
+                return emptyList()
             }
 
-            val record = Record.ADAPTER.decode(data)
+            // TODO: implement segmented sending of messages
+            contextFromLocal(useExistingSession).let { context ->
+                val session = SessionContextRecord(
+                    session_id = context.sessionId,
+                    sequence_id = context.incrementLocalSequenceId(),
+                    expected_id = context.expectedId,
+                    retransmit_id = retransmitId?.toLong() ?: 0,
+                    payload = if (msg != null) listOf(Msg.ADAPTER.encodeByteString(msg)) else emptyList()
+                )
 
-            if (!accept(record)) {
-                return
+                return listOf(
+                    toByteString(
+                        Record(
+                            version = version,
+                            to_id = remote.toShortString(),
+                            from_id = local.toShortString(),
+                            payload_security = payloadSecurity,
+                            session_context = session
+                        )
+                    )
+                )
             }
-
-            if (record.session_context != null) {
-                handleSessionContext(record, record.session_context)
-            } else if (record.no_session_context != null) {
-                handleNoSessionContext(record.no_session_context)
-            } else if (record.websocket_connect != null) {
-                handleWebSocketConnect()
-            } else if (record.mqtt_connect != null) {
-                handleMqttConnect(record.mqtt_connect)
-            } else if (record.stomp_connect != null) {
-                handleStompConnect(record.stomp_connect)
-            } else if (record.uds_connect != null) {
-                handleUdsConnect(record.uds_connect)
-            } else if (record.disconnect != null) {
-                handleDisconnect(record.disconnect)
-            }
-        } catch (ex: Exception) {
-            Logger.w(throwable = ex) { "Error parsing $data" }
-            post(DecoderError(ex))
         }
     }
 
@@ -98,33 +140,6 @@ class MessageConverterImpl(
                 no_session_context = NoSessionContextRecord(toByteString(msg))
             )
         )
-    }
-
-    override fun sessionContextMessage(
-        msg: Msg?,
-        retransmitId: ULong?,
-        useExistingSession: Boolean
-    ): ByteString {
-        // TODO: implement segmented sending of messages
-        contextFromLocal(useExistingSession).let { context ->
-            val session = SessionContextRecord(
-                session_id = context.sessionId,
-                sequence_id = context.incrementLocalSequenceId(),
-                expected_id = context.expectedId,
-                retransmit_id = retransmitId?.toLong() ?: 0,
-                payload = if (msg != null) listOf(Msg.ADAPTER.encodeByteString(msg)) else emptyList()
-            )
-
-            return toByteString(
-                Record(
-                    version = version,
-                    to_id = remote.toShortString(),
-                    from_id = local.toShortString(),
-                    payload_security = payloadSecurity,
-                    session_context = session
-                )
-            )
-        }
     }
 
     override fun disconnect(error: Error): ByteString {
@@ -317,7 +332,7 @@ class MessageConverterImpl(
         }
     }
 
-    private fun contextFromLocal(useExistingSession: Boolean): SessionContext {
+    private suspend fun contextFromLocal(useExistingSession: Boolean): SessionContext {
         return if (useExistingSession) {
             currentContext ?: createSession()
         } else {
@@ -325,14 +340,8 @@ class MessageConverterImpl(
         }
     }
 
-    private fun createSession(newSessionId: Long? = null): SessionContext {
-        val sessionId = newSessionId ?: run {
-            runBlocking {
-                SessionIdFactory.next()
-            }
-        }
-
-        return SessionContext(local, remote, payloadSecurity, sessionId).also {
+    private suspend fun createSession(newSessionId: Long? = null): SessionContext {
+        return SessionContext(local, remote, payloadSecurity, SessionIdFactory.next()).also {
             currentContext = it
         }
     }
