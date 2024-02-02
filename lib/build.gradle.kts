@@ -4,6 +4,7 @@ plugins {
 }
 
 kotlin {
+    jvm()
     androidTarget {
         compilations.all {
             kotlinOptions {
@@ -11,7 +12,7 @@ kotlin {
             }
         }
     }
-    
+
     listOf(
         iosX64(),
         iosArm64(),
@@ -28,6 +29,11 @@ kotlin {
             implementation(project(":base"))
             implementation(project(":messages"))
             api(libs.wire.runtime)
+            api(libs.kotlinx.coroutines.core)
+            api(libs.ktor.client.core)
+            api(libs.ktor.client.cio)
+            api(libs.ktor.client.websockets)
+            api(libs.ktor.client.logging)
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)
