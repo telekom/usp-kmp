@@ -67,7 +67,7 @@ fun main(args: Array<String>) {
             val bytes = messages.noSessionContextMessage(msg).toByteArray()
             println("Sending binary frame...")
             outgoing.send(Frame.Binary(fin = true, data = bytes))
-            delay(1.seconds.inWholeMilliseconds)
+            delay(1.seconds)
         } catch (e: Exception) {
             println("Error while sending: " + e.message)
             return

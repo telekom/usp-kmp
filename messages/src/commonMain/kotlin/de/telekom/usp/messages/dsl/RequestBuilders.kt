@@ -37,11 +37,11 @@ fun Delete(init: DeleteRequestBuilder.() -> Unit) = DeleteRequestBuilder().run {
 }
 
 fun Operate(
-    path: Path,
+    path: String,
     commandKey: String,
     sendResponse: Boolean = true,
     init: OperateRequestBuilder.() -> Unit
-) = OperateRequestBuilder(path, commandKey, sendResponse).run {
+) = OperateRequestBuilder(Path(path), commandKey, sendResponse).run {
     init()
     build()
 }
@@ -77,14 +77,19 @@ abstract class RequestMessageBuilder internal constructor(type: Header.MsgType) 
 abstract class PathRequestBuilder internal constructor(type: Header.MsgType) :
     RequestMessageBuilder(type) {
 
-    private val _paths = mutableListOf<String>()
+    private val _paths = mutableListOf<Path>()
     val paths: List<String>
-        get() = _paths
+        get() = _paths.map { it.toString() }
 
     /**
      * Adds the specified path o this request
      */
-    fun path(path: String) = _paths.add(path)
+    fun path(path: String) = _paths.add(Path(path))
+
+    /**
+     * Adds the specified path o this request
+     */
+    fun path(path: Path) = _paths.add(path)
 }
 
 class GetRequestBuilder internal constructor() : PathRequestBuilder(Header.MsgType.GET) {
@@ -239,7 +244,7 @@ data class ParamSettings internal constructor(
 
 fun main() {
     val get = Get {
-        path("asdas")
+        path("Device.DeviceInfo.")
         maxDepth = 1
     }
 
@@ -256,7 +261,7 @@ fun main() {
         }
     }
 
-    val operate = Operate(Path("Device.Command()"), "key") {
+    val operate = Operate("Device.Command()", "key") {
         arg("key1", "value2")
         arg("key2", "value3")
     }
