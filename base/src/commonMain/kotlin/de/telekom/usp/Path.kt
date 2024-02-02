@@ -39,6 +39,8 @@ data class Path(val elements: List<PathElement>) {
      */
     fun isTerminal(): Boolean = last().isTerminal
 
+    fun isCommand(): Boolean = last() is PathElement.Command
+
     /**
      * Determines whether the first elements of this path match exactly the specified path
      */

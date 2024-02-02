@@ -1,8 +1,8 @@
 package de.telekom.usp
 
-import de.telekom.usp.messages.Get
 import de.telekom.usp.messages.MessageConverter
 import de.telekom.usp.messages.MessageConverterImpl
+import de.telekom.usp.messages.dsl.Get
 import io.ktor.client.HttpClient
 import io.ktor.client.plugins.logging.LogLevel
 import io.ktor.client.plugins.logging.Logger
@@ -30,7 +30,10 @@ fun main(args: Array<String>) {
     val to = EndpointIdentifier("proto::AXACT")
     val from = EndpointIdentifier("proto::self")
     val messages: MessageConverter = MessageConverterImpl(from, to)
-    val msg = Get { path("Device.DeviceInfo.") }
+    val msg = Get {
+        messageId = "Test-Get-Message"
+        path("Device.DeviceInfo.")
+    }
     val client = HttpClient {
         install(Logging) {
             logger = Logger.SIMPLE

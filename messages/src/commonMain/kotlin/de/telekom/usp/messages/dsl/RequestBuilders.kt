@@ -1,7 +1,9 @@
 @file:Suppress("FunctionName", "unused", "MemberVisibilityCanBePrivate")
 
-package de.telekom.usp.messages
+package de.telekom.usp.messages.dsl
 
+import de.telekom.usp.Path
+import de.telekom.usp.messages.MessageIdFactory
 import de.telekom.usp.proto.msg.Add
 import de.telekom.usp.proto.msg.Body
 import de.telekom.usp.proto.msg.Delete
@@ -14,71 +16,66 @@ import de.telekom.usp.proto.msg.Operate
 import de.telekom.usp.proto.msg.Request
 import de.telekom.usp.proto.msg.Set
 
-fun Get(init: GetRequestBuilder.() -> Unit): Msg {
-    val builder = GetRequestBuilder()
-    builder.init()
-    return builder.message()
+fun Get(init: GetRequestBuilder.() -> Unit) = GetRequestBuilder().run {
+    init()
+    build()
 }
 
-fun Set(init: SetRequestBuilder.() -> Unit): Msg {
-    val builder = SetRequestBuilder()
-    builder.init()
-    return builder.message()
+fun Set(init: SetRequestBuilder.() -> Unit) = SetRequestBuilder().run {
+    init()
+    build()
 }
 
-fun Add(init: AddRequestBuilder.() -> Unit): Msg {
-    val builder = AddRequestBuilder()
-    builder.init()
-    return builder.message()
+fun Add(init: AddRequestBuilder.() -> Unit) = AddRequestBuilder().run {
+    init()
+    build()
 }
 
-fun Delete(init: DeleteRequestBuilder.() -> Unit): Msg {
-    val builder = DeleteRequestBuilder()
-    builder.init()
-    return builder.message()
+fun Delete(init: DeleteRequestBuilder.() -> Unit) = DeleteRequestBuilder().run {
+    init()
+    build()
 }
 
 fun Operate(
-    command: String,
+    path: Path,
     commandKey: String,
     sendResponse: Boolean = true,
     init: OperateRequestBuilder.() -> Unit
-): Msg {
-    val builder = OperateRequestBuilder(command, commandKey, sendResponse)
-    builder.init()
-    return builder.message()
+) = OperateRequestBuilder(path, commandKey, sendResponse).run {
+    init()
+    build()
 }
 
-fun GetSupportedDm(init: GetSupportedDmBuilder.() -> Unit): Msg {
-    val builder = GetSupportedDmBuilder()
-    builder.init()
-    return builder.message()
+fun GetSupportedDm(init: GetSupportedDmBuilder.() -> Unit) = GetSupportedDmBuilder().run {
+    init()
+    build()
 }
 
-fun GetInstances(init: GetInstancesBuilder.() -> Unit): Msg {
-    val builder = GetInstancesBuilder()
-    builder.init()
-    return builder.message()
+fun GetInstances(init: GetInstancesBuilder.() -> Unit) = GetInstancesBuilder().run {
+    init()
+    build()
 }
 
 // --- Builder classes -----------------------------------------------------------------------------
 
-abstract class RequestBodyBuilder(type: Header.MsgType) : BodyBuilder(type) {
+abstract class RequestMessageBuilder internal constructor(type: Header.MsgType) :
+    MessageBuilder(type) {
 
-    fun message(): Msg {
+    override fun build(): Msg {
         return Msg(
             header_ = Header(
                 msg_type = type,
                 msg_id = messageId ?: "$type-${MessageIdFactory.next()}"
             ),
-            body = Body(request = request())
+            body = Body(request = buildRequest())
         )
     }
 
-    abstract fun request(): Request
+    abstract fun buildRequest(): Request
 }
 
-abstract class AbstractRequestPathBuilder(type: Header.MsgType) : RequestBodyBuilder(type) {
+abstract class PathRequestBuilder internal constructor(type: Header.MsgType) :
+    RequestMessageBuilder(type) {
 
     private val _paths = mutableListOf<String>()
     val paths: List<String>
@@ -90,14 +87,15 @@ abstract class AbstractRequestPathBuilder(type: Header.MsgType) : RequestBodyBui
     fun path(path: String) = _paths.add(path)
 }
 
-class GetRequestBuilder : AbstractRequestPathBuilder(Header.MsgType.GET) {
+class GetRequestBuilder internal constructor() : PathRequestBuilder(Header.MsgType.GET) {
 
     var maxDepth = 1
 
-    override fun request() = Request(get_ = Get(param_paths = paths, max_depth = maxDepth))
+    override fun buildRequest() = Request(get_ = Get(param_paths = paths, max_depth = maxDepth))
 }
 
-class GetSupportedDmBuilder : AbstractRequestPathBuilder(Header.MsgType.GET_SUPPORTED_DM) {
+class GetSupportedDmBuilder internal constructor() :
+    PathRequestBuilder(Header.MsgType.GET_SUPPORTED_DM) {
 
     var firstLevelOnly = true
 
@@ -107,7 +105,7 @@ class GetSupportedDmBuilder : AbstractRequestPathBuilder(Header.MsgType.GET_SUPP
 
     var returnParams = true
 
-    override fun request() = Request(
+    override fun buildRequest() = Request(
         get_supported_dm = GetSupportedDM(
             obj_paths = paths,
             first_level_only = firstLevelOnly,
@@ -118,15 +116,16 @@ class GetSupportedDmBuilder : AbstractRequestPathBuilder(Header.MsgType.GET_SUPP
     )
 }
 
-class GetInstancesBuilder : AbstractRequestPathBuilder(Header.MsgType.GET_INSTANCES) {
+class GetInstancesBuilder internal constructor() :
+    PathRequestBuilder(Header.MsgType.GET_INSTANCES) {
 
     var firstLevelOnly = true
 
-    override fun request() =
+    override fun buildRequest() =
         Request(get_instances = GetInstances(obj_paths = paths, first_level_only = firstLevelOnly))
 }
 
-class SetRequestBuilder : RequestBodyBuilder(Header.MsgType.SET) {
+class SetRequestBuilder internal constructor() : RequestMessageBuilder(Header.MsgType.SET) {
 
     private var paramSettingsBuilder = mutableListOf<ParamSettingsBuilder>()
 
@@ -144,12 +143,12 @@ class SetRequestBuilder : RequestBodyBuilder(Header.MsgType.SET) {
         }
     }
 
-    override fun request() = Request(
+    override fun buildRequest() = Request(
         set_ = Set(update_objs = updateObjects, allow_partial = allowPartial)
     )
 }
 
-class AddRequestBuilder : RequestBodyBuilder(Header.MsgType.ADD) {
+class AddRequestBuilder internal constructor() : RequestMessageBuilder(Header.MsgType.ADD) {
 
     private var paramSettingsBuilder = mutableListOf<ParamSettingsBuilder>()
 
@@ -167,20 +166,28 @@ class AddRequestBuilder : RequestBodyBuilder(Header.MsgType.ADD) {
         }
     }
 
-    override fun request() =
+    override fun buildRequest() =
         Request(add = Add(create_objs = addObjects, allow_partial = allowPartial))
 }
 
-class DeleteRequestBuilder : AbstractRequestPathBuilder(Header.MsgType.DELETE) {
+class DeleteRequestBuilder internal constructor() : PathRequestBuilder(Header.MsgType.DELETE) {
 
     var allowPartial = true
 
-    override fun request() =
+    override fun buildRequest() =
         Request(delete = Delete(obj_paths = paths, allow_partial = allowPartial))
 }
 
-class OperateRequestBuilder(val cmd: String, val commandKey: String, val sendResponse: Boolean) :
-    RequestBodyBuilder(Header.MsgType.OPERATE) {
+class OperateRequestBuilder internal constructor(
+    val path: Path,
+    val commandKey: String,
+    val sendResponse: Boolean
+) :
+    RequestMessageBuilder(Header.MsgType.OPERATE) {
+
+    init {
+        require(path.isCommand()) { "Operate request doesn't contain a command: '$path'" }
+    }
 
     private val args = mutableMapOf<String, String>()
 
@@ -188,9 +195,9 @@ class OperateRequestBuilder(val cmd: String, val commandKey: String, val sendRes
         args[key] = value
     }
 
-    override fun request() = Request(
+    override fun buildRequest() = Request(
         operate = Operate(
-            command = cmd,
+            command = path.toString(),
             command_key = commandKey,
             send_resp = sendResponse,
             input_args = args
@@ -198,7 +205,7 @@ class OperateRequestBuilder(val cmd: String, val commandKey: String, val sendRes
     )
 }
 
-class ParamSettingsBuilder(val path: String) {
+class ParamSettingsBuilder internal constructor(val path: String) {
     private val _params = mutableListOf<ParamSettings>()
     val params: List<ParamSettings>
         get() = _params
@@ -224,7 +231,11 @@ private fun ParamSettingsBuilder.toCreateParamSettings() = params.map {
     )
 }
 
-data class ParamSettings(val param: String, val value: String, val isRequired: Boolean)
+data class ParamSettings internal constructor(
+    val param: String,
+    val value: String,
+    val isRequired: Boolean
+)
 
 fun main() {
     val get = Get {
@@ -245,7 +256,7 @@ fun main() {
         }
     }
 
-    val operate = Operate("command", "key") {
+    val operate = Operate(Path("Device.Command()"), "key") {
         arg("key1", "value2")
         arg("key2", "value3")
     }
