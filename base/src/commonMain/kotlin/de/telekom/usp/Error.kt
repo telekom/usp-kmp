@@ -2,6 +2,8 @@ package de.telekom.usp
 
 data class Error(val code: Int, val name: String) {
 
+    fun toPair() = code to name
+
     override fun toString(): String {
         return "USP error $code ($name)"
     }

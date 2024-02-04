@@ -188,14 +188,10 @@ class OperateRequestBuilder internal constructor(
     RequestMessageBuilder(Header.MsgType.OPERATE) {
 
     init {
-        require(path.isCommand()) { "Operate request doesn't contain a command: '$path'" }
+        require(path.isCommand()) { "Operate request must contain a command path: '$path'" }
     }
 
-    private val args = mutableMapOf<String, String>()
-
-    fun arg(key: String, value: String) {
-        args[key] = value
-    }
+    val args = mutableMapOf<String, String>()
 
     override fun buildRequest() = Request(
         operate = Operate(
@@ -319,58 +315,39 @@ class NotifyRequestBuilder internal constructor(val subscriptionId: String) :
 
 class EventBuilder(val path: Path, val name: String) {
 
-    private val _params = mutableMapOf<Path, String>()
-    val params: Map<Path, String>
-        get() = _params
-
-    fun arg(path: String, value: String) {
-        _params[Path(path)] = value
+    init {
+        require(path.isEvent()) { "Notify event request must contain an event path: '$path'" }
     }
 
-    fun arg(path: Path, value: String) {
-        _params[path] = value
-    }
+    val params = mutableMapOf<String, String>()
 
     fun event(): Notify.Event {
-        return Notify.Event(path.toString(), name, params.mapKeys { it.toString() })
+        return Notify.Event(path.toString(), name, params)
     }
 }
 
 class ObjectCreationBuilder(val path: Path) {
 
-    private val _uniqueKeys = mutableMapOf<String, String>()
-    val uniqueKeys: Map<String, String>
-        get() = _uniqueKeys
-
-    fun uniqueKey(key: String, value: String) {
-        _uniqueKeys[key] = value
-    }
+    val uniqueKeys = mutableMapOf<String, String>()
 
     fun objectCreation() = Notify.ObjectCreation(path.toString(), uniqueKeys)
 }
 
 class OperationCompleteBuilder(val path: Path, val commandName: String, val commandKey: String) {
 
-    private var _outputArgs: MutableMap<String, String>? = null
+    val outputArgs = mutableMapOf<String, String>()
 
     var commandFailure: Pair<Int, String>? = null
 
-    fun outputArg(key: String, value: String) {
-        if (_outputArgs == null) {
-            _outputArgs = mutableMapOf()
-        }
-        _outputArgs!![key] = value
-    }
-
     fun operationComplete(): Notify.OperationComplete {
-        if (_outputArgs != null && commandFailure != null) {
+        if (outputArgs.isNotEmpty() && commandFailure != null) {
             throw IllegalArgumentException("Must choose one of: output_args or command_failure")
         }
         return Notify.OperationComplete(
             obj_path = path.toString(),
             command_name = commandName,
             command_key = commandKey,
-            req_output_args = _outputArgs?.let { OutputArgs(it) },
+            req_output_args = if (outputArgs.isNotEmpty()) OutputArgs(outputArgs) else null,
             cmd_failure = commandFailure?.let { CommandFailure(it.first, it.second) }
         )
     }
@@ -381,8 +358,8 @@ data class OnBoardRequestBuilder(
     val productClass: String,
     val serialNumber: String,
     val agentSupportedProtocolVersions: String
-
 ) {
+
     fun onBoardRequest() =
         Notify.OnBoardRequest(oui, productClass, serialNumber, agentSupportedProtocolVersions)
 }
@@ -412,70 +389,22 @@ class DeregisterBuilder : PathRequestBuilder(Header.MsgType.DEREGISTER) {
 
 
 class ParamSettingsBuilder internal constructor(val path: String) {
-    private val _params = mutableListOf<ParamSettings>()
-    val params: List<ParamSettings>
-        get() = _params
 
-    fun param(param: String, value: String, isRequired: Boolean = true) {
-        _params.add(ParamSettings(param, value, isRequired))
-    }
+    val params = mutableMapOf<String, Pair<String, Boolean>>()
 }
 
 private fun ParamSettingsBuilder.toUpdateParamSettings() = params.map {
     Set.UpdateParamSetting(
-        param_ = it.param,
-        value_ = it.value,
-        required = it.isRequired
+        param_ = it.key,
+        value_ = it.value.first,
+        required = it.value.second
     )
 }
 
 private fun ParamSettingsBuilder.toCreateParamSettings() = params.map {
     Add.CreateParamSetting(
-        param_ = it.param,
-        value_ = it.value,
-        required = it.isRequired
+        param_ = it.key,
+        value_ = it.value.first,
+        required = it.value.second
     )
-}
-
-data class ParamSettings internal constructor(
-    val param: String,
-    val value: String,
-    val isRequired: Boolean
-)
-
-fun main() {
-    val get = Get {
-        path("Device.DeviceInfo.")
-        maxDepth = 1
-    }
-
-    val set = Set {
-        allowPartial = false
-        path("Device.") {
-            param("X", "Y", true)
-        }
-    }
-
-    val add = Add {
-        path("Device.") {
-            param("", "")
-        }
-    }
-
-    val operate = Operate("Device.Command()", "key") {
-        arg("key1", "value2")
-        arg("key2", "value3")
-    }
-
-    val notify = Notify("subscription") {
-        operationComplete("Device.", "cmd-name", "my-key") {
-            outputArg("arg1", "key1")
-        }
-    }
-
-    println(get)
-    println(set)
-    println(add)
-    println(operate)
-    println(notify)
 }

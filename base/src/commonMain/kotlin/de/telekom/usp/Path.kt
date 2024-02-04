@@ -41,6 +41,8 @@ data class Path(val elements: List<PathElement>) {
 
     fun isCommand(): Boolean = last() is PathElement.Command
 
+    fun isEvent(): Boolean = last() is PathElement.Event
+
     /**
      * Determines whether the first elements of this path match exactly the specified path
      */
