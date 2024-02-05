@@ -2,13 +2,11 @@ package de.telekom.usp.messages.dsl
 
 import de.telekom.usp.MessageNotSupported
 import de.telekom.usp.proto.msg.Header
-import de.telekom.usp.proto.msg.Msg
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
-import kotlin.test.assertSame
 import kotlin.test.assertTrue
 
 class RequestBuildersTest {
@@ -287,11 +285,4 @@ class RequestBuildersTest {
         assertNotNull(getInstances.body!!.request!!.get_instances)
         assertEquals(samplePaths.toList(), getInstances.body!!.request!!.get_instances!!.obj_paths)
     }
-}
-
-private fun assertMessageType(expected: Header.MsgType, actual: Msg) {
-    assertNotNull(actual)
-    assertNotNull(actual.header_)
-    assertNotNull(actual.header_!!.msg_id)
-    assertSame(expected, actual.header_!!.msg_type, "Wrong type in Msg")
 }
