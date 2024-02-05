@@ -1,4 +1,4 @@
-@file:Suppress("FunctionName", "unused", "MemberVisibilityCanBePrivate")
+@file:Suppress("FunctionName")
 
 package de.telekom.usp.messages.dsl
 
@@ -181,9 +181,9 @@ class DeleteRequestBuilder internal constructor() : PathRequestBuilder(Header.Ms
 }
 
 class OperateRequestBuilder internal constructor(
-    val path: Path,
-    val commandKey: String,
-    val sendResponse: Boolean
+    private val path: Path,
+    private val commandKey: String,
+    private val sendResponse: Boolean
 ) :
     RequestMessageBuilder(Header.MsgType.OPERATE) {
 
@@ -203,7 +203,7 @@ class OperateRequestBuilder internal constructor(
     )
 }
 
-class NotifyRequestBuilder internal constructor(val subscriptionId: String) :
+class NotifyRequestBuilder internal constructor(private val subscriptionId: String) :
     RequestMessageBuilder(Header.MsgType.NOTIFY) {
 
     private var event: EventBuilder? = null
@@ -313,7 +313,7 @@ class NotifyRequestBuilder internal constructor(val subscriptionId: String) :
     }
 }
 
-class EventBuilder(val path: Path, val name: String) {
+class EventBuilder(private val path: Path, private val name: String) {
 
     init {
         require(path.isEvent()) { "Notify event request must contain an event path: '$path'" }
@@ -326,14 +326,18 @@ class EventBuilder(val path: Path, val name: String) {
     }
 }
 
-class ObjectCreationBuilder(val path: Path) {
+class ObjectCreationBuilder(private val path: Path) {
 
     val uniqueKeys = mutableMapOf<String, String>()
 
     fun objectCreation() = Notify.ObjectCreation(path.toString(), uniqueKeys)
 }
 
-class OperationCompleteBuilder(val path: Path, val commandName: String, val commandKey: String) {
+class OperationCompleteBuilder(
+    private val path: Path,
+    private val commandName: String,
+    private val commandKey: String
+) {
 
     val outputArgs = mutableMapOf<String, String>()
 
@@ -364,7 +368,7 @@ data class OnBoardRequestBuilder(
         Notify.OnBoardRequest(oui, productClass, serialNumber, agentSupportedProtocolVersions)
 }
 
-class GetSupportedProtocolBuilder(val controllerSupportedProtocolVersions: String) :
+class GetSupportedProtocolBuilder(private val controllerSupportedProtocolVersions: String) :
     RequestMessageBuilder(Header.MsgType.GET_SUPPORTED_PROTO) {
 
     override fun buildRequest() =

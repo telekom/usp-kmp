@@ -117,11 +117,14 @@ class RequestBuildersTest {
 
     @Test
     fun `create Notify message`() {
-        val notify = Notify("subscription_1") { }
+        val notify = Notify("subscription_1") {
+            sendResponse = false
+        }
 
         assertMessageType(Header.MsgType.NOTIFY, notify)
         assertNotNull(notify.body!!.request!!.notify)
         assertEquals("subscription_1", notify.body!!.request!!.notify!!.subscription_id)
+        assertFalse(notify.body!!.request!!.notify!!.send_resp)
 
         assertFailsWith(IllegalArgumentException::class) {
             Notify("subscription_1") {
