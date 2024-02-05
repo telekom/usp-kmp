@@ -23,22 +23,22 @@ class ErrorBuilder internal constructor(
 ) :
     MessageBuilder(Header.MsgType.ERROR) {
 
-    private val params = mutableListOf<ErrorParameter>()
+    private val params = mutableListOf<Error.ParamError>()
 
     fun parameter(path: Path, error: de.telekom.usp.Error) {
-        params.add(ErrorParameter(path, error.code, error.name))
+        params.add(Error.ParamError(path.toString(), error.code, error.name))
     }
 
     fun parameter(path: Path, errorCode: Int, errorMessage: String) {
-        params.add(ErrorParameter(path, errorCode, errorMessage))
+        params.add(Error.ParamError(path.toString(), errorCode, errorMessage))
     }
 
     fun parameter(path: String, error: de.telekom.usp.Error) {
-        params.add(ErrorParameter(Path(path), error.code, error.name))
+        params.add(Error.ParamError(path, error.code, error.name))
     }
 
     fun parameter(path: String, errorCode: Int, errorMessage: String) {
-        params.add(ErrorParameter(Path(path), errorCode, errorMessage))
+        params.add(Error.ParamError(path, errorCode, errorMessage))
     }
 
     override fun build(): Msg {
@@ -51,17 +51,9 @@ class ErrorBuilder internal constructor(
                 error = Error(
                     err_msg = errorMessage,
                     err_code = errorCode,
-                    param_errs = params.map {
-                        Error.ParamError(
-                            it.path.toString(),
-                            it.errorCode,
-                            it.errorMessage
-                        )
-                    }
+                    param_errs = params
                 )
             )
         )
     }
 }
-
-private data class ErrorParameter(val path: Path, val errorCode: Int, val errorMessage: String)
