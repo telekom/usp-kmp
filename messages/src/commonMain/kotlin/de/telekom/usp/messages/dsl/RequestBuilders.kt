@@ -22,18 +22,90 @@ import de.telekom.usp.proto.msg.Register
 import de.telekom.usp.proto.msg.Request
 import de.telekom.usp.proto.msg.Set
 
+/**
+ * Create a new `Msg` of type GET. Sample usage:
+ *
+ * ```kotlin
+ * val msg = Get {
+ *     maxDepth = 2
+ *     path("Device.")
+ * }
+ * ```
+ */
 fun Get(init: GetRequestBuilder.() -> Unit) = initBuilder(GetRequestBuilder(), init)
 
+/**
+ * Create a new `Msg` of type SET. Sample usage:
+ *
+ * ```kotlin
+ * val msg = Set {
+ *     allowPartial = false
+ *     path("Device.") {
+ *         params["param1"] = "value1" required true
+ *     }
+ * }
+ * ```
+ */
 fun Set(init: SetRequestBuilder.() -> Unit) = initBuilder(SetRequestBuilder(), init)
 
+/**
+ * Create a new `Msg` of type ADD. Sample usage:
+ *
+ * ```kotlin
+ * val msg = Add {
+ *     allowPartial = false
+ *     path("Device.") {
+ *         params["param1"] = "value1" required true
+ *     }
+ * }
+ * ```
+ */
 fun Add(init: AddRequestBuilder.() -> Unit) = initBuilder(AddRequestBuilder(), init)
 
+/**
+ * Create a new `Msg` of type DELETE. Sample usage:
+ *
+ * ```kotlin
+ * val msg = Delete {
+ *     allowPartial = false
+ *     path("Device.")
+ * }
+ * ```
+ */
 fun Delete(init: DeleteRequestBuilder.() -> Unit) = initBuilder(DeleteRequestBuilder(), init)
 
+/**
+ * Create a new `Msg` of type REGISTER. Sample usage:
+ *
+ * ```kotlin
+ * val msg = Register {
+ *     allowPartial = false
+ *     path("Device.")
+ * }
+ * ```
+ */
 fun Register(init: RegisterBuilder.() -> Unit) = initBuilder(RegisterBuilder(), init)
 
+/**
+ * Create a new `Msg` of type DEREGISTER. Sample usage:
+ *
+ * ```kotlin
+ * val msg = Deregister {
+ *     path("Device.")
+ * }
+ * ```
+ */
 fun Deregister(init: DeregisterBuilder.() -> Unit) = initBuilder(DeregisterBuilder(), init)
 
+/**
+ * Create a new `Msg` of type OPERATE. Sample usage:
+ *
+ * ```kotlin
+ * val msg = Operate("Device.Reboot()", "cmd_key") {
+ *     args["arg1"] = "value1"
+ * }
+ * ```
+ */
 fun Operate(
     path: String,
     commandKey: String,
@@ -41,16 +113,56 @@ fun Operate(
     init: OperateRequestBuilder.() -> Unit
 ) = initBuilder(OperateRequestBuilder(Path(path), commandKey, sendResponse), init)
 
+/**
+ * Create a new `Msg` of type NOTIFY. Sample usage:
+ *
+ * ```kotlin
+ * val msg = Notify("subscription_1") {
+ *     event("Device.SampleEvent!", "event_name_1") {
+ *         params["param1"] = "value1"
+ *     }
+ * }
+ * ```
+ */
 fun Notify(subscriptionId: String, init: NotifyRequestBuilder.() -> Unit) =
     initBuilder(NotifyRequestBuilder(subscriptionId), init)
 
+/**
+ * Create a new `Msg` of type GET_SUPPORTED_DM. Sample usage:
+ *
+ * ```kotlin
+ * val msg = GetSupportedDm {
+ *     firstLevelOnly = false
+ *     returnCommands = true
+ *     returnEvents = false
+ *     returnParams = true
+ * }
+ * ```
+ */
 fun GetSupportedDm(init: GetSupportedDmBuilder.() -> Unit) =
     initBuilder(GetSupportedDmBuilder(), init)
 
+/**
+ * Create a new `Msg` of type GET_SUPPORTED_PROTO. Sample usage:
+ *
+ * ```kotlin
+ * val msg = GetSupportedProtocol("1.2,1.3")
+ * ```
+ */
 fun GetSupportedProtocol(
     controllerSupportedProtocolVersions: String
 ) = initBuilder(GetSupportedProtocolBuilder(controllerSupportedProtocolVersions)) { }
 
+/**
+ * Create a new `Msg` of type GET_INSTANCES. Sample usage:
+ *
+ * ```kotlin
+ * val msg = GetInstances {
+ *     firstLevelOnly = false
+ *     path("Device.")
+ * }
+ * ```
+ */
 fun GetInstances(init: GetInstancesBuilder.() -> Unit) = initBuilder(GetInstancesBuilder(), init)
 
 // --- Builder classes -----------------------------------------------------------------------------
@@ -313,7 +425,7 @@ class NotifyRequestBuilder internal constructor(private val subscriptionId: Stri
     }
 }
 
-class EventBuilder(private val path: Path, private val name: String) {
+class EventBuilder internal constructor(private val path: Path, private val name: String) {
 
     init {
         require(path.isEvent()) { "Notify event request must contain an event path: '$path'" }
@@ -326,14 +438,14 @@ class EventBuilder(private val path: Path, private val name: String) {
     }
 }
 
-class ObjectCreationBuilder(private val path: Path) {
+class ObjectCreationBuilder internal constructor(private val path: Path) {
 
     val uniqueKeys = mutableMapOf<String, String>()
 
     fun objectCreation() = Notify.ObjectCreation(path.toString(), uniqueKeys)
 }
 
-class OperationCompleteBuilder(
+class OperationCompleteBuilder internal constructor(
     private val path: Path,
     private val commandName: String,
     private val commandKey: String
@@ -357,7 +469,7 @@ class OperationCompleteBuilder(
     }
 }
 
-data class OnBoardRequestBuilder(
+data class OnBoardRequestBuilder internal constructor(
     val oui: String,
     val productClass: String,
     val serialNumber: String,
@@ -368,14 +480,14 @@ data class OnBoardRequestBuilder(
         Notify.OnBoardRequest(oui, productClass, serialNumber, agentSupportedProtocolVersions)
 }
 
-class GetSupportedProtocolBuilder(private val controllerSupportedProtocolVersions: String) :
+class GetSupportedProtocolBuilder internal constructor(private val controllerSupportedProtocolVersions: String) :
     RequestMessageBuilder(Header.MsgType.GET_SUPPORTED_PROTO) {
 
     override fun buildRequest() =
         Request(get_supported_protocol = GetSupportedProtocol(controllerSupportedProtocolVersions))
 }
 
-class RegisterBuilder : PathRequestBuilder(Header.MsgType.REGISTER) {
+class RegisterBuilder internal constructor() : PathRequestBuilder(Header.MsgType.REGISTER) {
 
     var allowPartial = true
 
@@ -386,7 +498,7 @@ class RegisterBuilder : PathRequestBuilder(Header.MsgType.REGISTER) {
     )
 }
 
-class DeregisterBuilder : PathRequestBuilder(Header.MsgType.DEREGISTER) {
+class DeregisterBuilder internal constructor() : PathRequestBuilder(Header.MsgType.DEREGISTER) {
 
     override fun buildRequest() = Request(deregister = Deregister(paths))
 }
@@ -394,21 +506,25 @@ class DeregisterBuilder : PathRequestBuilder(Header.MsgType.DEREGISTER) {
 
 class ParamSettingsBuilder internal constructor(val path: String) {
 
-    val params = mutableMapOf<String, Pair<String, Boolean>>()
+    val params = mutableMapOf<String, ParamValue>()
 }
+
+data class ParamValue internal constructor(val value: String, val isRequired: Boolean)
+
+infix fun String.required(isRequired: Boolean): ParamValue = ParamValue(this, isRequired)
 
 private fun ParamSettingsBuilder.toUpdateParamSettings() = params.map {
     Set.UpdateParamSetting(
         param_ = it.key,
-        value_ = it.value.first,
-        required = it.value.second
+        value_ = it.value.value,
+        required = it.value.isRequired
     )
 }
 
 private fun ParamSettingsBuilder.toCreateParamSettings() = params.map {
     Add.CreateParamSetting(
         param_ = it.key,
-        value_ = it.value.first,
-        required = it.value.second
+        value_ = it.value.value,
+        required = it.value.isRequired
     )
 }

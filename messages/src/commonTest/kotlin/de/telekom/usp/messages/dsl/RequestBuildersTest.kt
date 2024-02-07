@@ -14,6 +14,15 @@ class RequestBuildersTest {
     private val samplePaths = arrayOf("Device.DeviceInfo.", "Device.UserInterface.")
 
     @Test
+    fun `create message with custom message ID`() {
+        val get = Get {
+            messageId = "test-message-id"
+        }
+
+        assertEquals("test-message-id", get.header_!!.msg_id)
+    }
+
+    @Test
     fun `create Get message`() {
         val get = Get {
             maxDepth = 42
@@ -31,7 +40,7 @@ class RequestBuildersTest {
         val set = Set {
             allowPartial = false
             path(samplePaths[0]) {
-                params["param1"] = "value1" to true
+                params["param1"] = "value1" required true
             }
         }
 
@@ -48,7 +57,7 @@ class RequestBuildersTest {
         val add = Add {
             allowPartial = false
             path(samplePaths[0]) {
-                params["param1"] = "value1" to true
+                params["param1"] = "value1" required true
             }
         }
 
