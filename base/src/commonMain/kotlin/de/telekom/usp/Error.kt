@@ -58,6 +58,7 @@ data class Error(val code: Int, val name: String) {
     }
 }
 
+const val NO_ERROR = 0
 
 val MessageFailed = Error(7000, "Message failed")
 val MessageNotSupported = Error(7001, "Message not supported")

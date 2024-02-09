@@ -28,6 +28,7 @@ kotlin {
         commonMain.dependencies {
             implementation(project(":base"))
             implementation(project(":messages"))
+            implementation(libs.kermit)
             api(libs.wire.runtime)
             api(libs.kotlinx.coroutines.core)
             api(libs.ktor.client.core)

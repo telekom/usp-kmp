@@ -1,11 +1,15 @@
 package de.telekom.usp
 
+import co.touchlab.kermit.Logger
 import de.telekom.usp.messages.MessageConverter
 import de.telekom.usp.messages.MessageConverterImpl
+import de.telekom.usp.messages.RecordDecoderResult
 import de.telekom.usp.messages.dsl.Get
+import de.telekom.usp.proto.msg.GetResp
+import de.telekom.usp.proto.msg.Header
+import de.telekom.usp.proto.msg.bodyAs
 import io.ktor.client.HttpClient
 import io.ktor.client.plugins.logging.LogLevel
-import io.ktor.client.plugins.logging.Logger
 import io.ktor.client.plugins.logging.Logging
 import io.ktor.client.plugins.logging.SIMPLE
 import io.ktor.client.plugins.websocket.DefaultClientWebSocketSession
@@ -28,30 +32,47 @@ fun main(args: Array<String>) {
     val host = "127.0.0.1"
     val port = 5683
     val to = EndpointIdentifier("proto::AXACT")
-    val from = EndpointIdentifier("proto::self")
+    val from = EndpointIdentifier("proto::usp-demo")
     val messages: MessageConverter = MessageConverterImpl(from, to)
     val msg = Get {
-        messageId = "Test-Get-Message"
+        this.maxDepth = 1
         path("Device.DeviceInfo.")
     }
     val client = HttpClient {
+        developmentMode = true
         install(Logging) {
-            logger = Logger.SIMPLE
-            level = LogLevel.INFO
+            logger = io.ktor.client.plugins.logging.Logger.SIMPLE
+            level = LogLevel.ALL
         }
         install(WebSockets)
     }
 
     val parser = GlobalScope.launch {
         messages.results.collect {
-            println("---------- decoder result received: $it")
+            if (it is RecordDecoderResult.Message) {
+                val msg = it.msg
+                Logger.d { "Received message of type ${msg.header_?.msg_type}" }
+                val getResp = msg.bodyAs<GetResp>(Header.MsgType.GET_RESP)
+                getResp.req_path_results.forEach { requestedResult ->
+                    if (requestedResult.err_code != NO_ERROR) {
+                        println("------------- ${Error.from(requestedResult.err_code)} -------------")
+                    } else {
+                        requestedResult.resolved_path_results.forEach { pathResult ->
+                            println("------------- ${pathResult.resolved_path} -------------")
+                            pathResult.result_params.forEach { kv ->
+                                println("${kv.key}=${kv.value}")
+                            }
+                        }
+                    }
+                }
+            }
         }
     }
 
     suspend fun DefaultClientWebSocketSession.incomingMessages() {
         try {
             for (message in incoming) {
-                val binary = incoming.receive() as? Frame.Binary ?: continue
+                val binary = message as? Frame.Binary ?: continue
                 println("Received binary data of size: ${message.data.size}")
                 messages.next(binary.readBytes().toByteString())
             }
