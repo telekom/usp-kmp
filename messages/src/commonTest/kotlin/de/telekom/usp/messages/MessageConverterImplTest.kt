@@ -87,7 +87,7 @@ class MessageConverterImplTest {
         val payload = Msg.ADAPTER.encodeByteString(Msg(header_ = Header(msg_id = "test-hdr")))
         val noSession = Record(
             version = Versions.mostRecent,
-            to_id = remote,
+            to_id = local,
             no_session_context = NoSessionContextRecord(payload)
         )
 
@@ -102,7 +102,7 @@ class MessageConverterImplTest {
     fun `decode disconnect record`() = runDecoderTest {
         val disconnect = Record(
             version = Versions.mostRecent,
-            to_id = remote,
+            to_id = local,
             disconnect = DisconnectRecord(CommandCanceled.name, CommandCanceled.code)
         )
 
@@ -117,7 +117,7 @@ class MessageConverterImplTest {
     fun `decode web socket record`() = runDecoderTest {
         val webSocket = Record(
             version = Versions.mostRecent,
-            to_id = remote,
+            to_id = local,
             websocket_connect = WebSocketConnectRecord()
         )
 
@@ -130,7 +130,7 @@ class MessageConverterImplTest {
     fun `decode MQTT record`() = runDecoderTest {
         val mqtt = Record(
             version = Versions.mostRecent,
-            to_id = remote,
+            to_id = local,
             mqtt_connect = MQTTConnectRecord(MQTTConnectRecord.MQTTVersion.V3_1_1, "mqtt-topic")
         )
 
@@ -145,7 +145,7 @@ class MessageConverterImplTest {
     fun `decode Stomp record`() = runDecoderTest {
         val stomp = Record(
             version = Versions.mostRecent,
-            to_id = remote,
+            to_id = local,
             stomp_connect = STOMPConnectRecord(STOMPConnectRecord.STOMPVersion.V1_2, "stomp-dest")
         )
 
@@ -160,7 +160,7 @@ class MessageConverterImplTest {
     fun `decode unix domain socket record`() = runDecoderTest {
         val udsSocket = Record(
             version = Versions.mostRecent,
-            to_id = remote,
+            to_id = local,
             uds_connect = UDSConnectRecord()
         )
 
@@ -393,7 +393,7 @@ class MessageConverterImplTest {
     private fun asRecord(sessionContext: SessionContextRecord): Record {
         return Record(
             version = Versions.mostRecent,
-            to_id = remote,
+            to_id = local,
             from_id = local,
             session_context = sessionContext
         )

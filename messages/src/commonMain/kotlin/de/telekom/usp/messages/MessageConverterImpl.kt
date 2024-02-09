@@ -220,8 +220,8 @@ class MessageConverterImpl(
             Logger.w { "Rejecting USP record with unsupported version: '${record.version}' ($record)" }
             post(UspError(MessageNotSupported))
             false
-        } else if (remote.toShortString() != record.to_id) {
-            Logger.w { "[R-E2E.1] Ignoring USP record with wrong to-endpoint ID: expecting=$remote, received=${record.to_id}" }
+        } else if (local.toShortString() != record.to_id) {
+            Logger.w { "[R-E2E.1] Ignoring USP record with wrong to-endpoint ID: expecting=$local, received=${record.to_id}" }
             false
         } else {
             true
