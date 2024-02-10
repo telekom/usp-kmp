@@ -43,6 +43,8 @@ data class Path(val elements: List<PathElement>) {
 
     fun isEvent(): Boolean = last() is PathElement.Event
 
+    fun isParameter(): Boolean = last() is PathElement.Parameter
+
     /**
      * Determines whether the first elements of this path match exactly the specified path
      */

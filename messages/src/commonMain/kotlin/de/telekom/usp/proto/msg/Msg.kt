@@ -5,6 +5,26 @@ import kotlin.Error
 val Msg.id: String
     get() = header_?.msg_id ?: "UNDEFINED"
 
+val Msg.isRequest: Boolean
+    get() = body?.request != null
+
+val Msg.isResponse: Boolean
+    get() = body?.response != null
+
+val Msg.isError: Boolean
+    get() = body?.error != null
+
+/**
+ * Determines whether this message is a response of the specified message.
+ *
+ * @return `true` when this is an error or a response message and it contains the same ID as the
+ *         specified parameter, `false` otherwise
+ */
+fun Msg.isResponseOf(request: Msg): Boolean {
+    // R-MSG.9 responses must contain the same ID as the originating request
+    return (isResponse || isError) && header_?.msg_id == request.header_?.msg_id
+}
+
 /**
  * Returns the body of this Msg as the specified type `T`. The type `T` must be one of the request,
  * response or the Error type. Example:
