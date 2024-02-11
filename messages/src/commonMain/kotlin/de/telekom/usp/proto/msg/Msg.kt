@@ -1,8 +1,5 @@
 package de.telekom.usp.proto.msg
 
-val Msg.id: String
-    get() = header_?.msg_id ?: "UNDEFINED"
-
 val Msg.isRequest: Boolean
     get() = body?.request != null
 
@@ -11,6 +8,15 @@ val Msg.isResponse: Boolean
 
 val Msg.isError: Boolean
     get() = body?.error != null
+
+val Msg.id: String
+    get() = header_?.msg_id ?: "UNDEFINED"
+
+val Msg.error: Error
+    get() {
+        requireType(Header.MsgType.ERROR)
+        return body!!.error!!
+    }
 
 val Msg.getRequest: Get
     get() {
