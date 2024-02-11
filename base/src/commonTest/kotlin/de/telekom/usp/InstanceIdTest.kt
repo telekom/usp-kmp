@@ -31,6 +31,7 @@ class InstanceIdTest {
             "%A",
             "%zzzzzzz",
             "aaa-%Azzzzzzz",
+            "aaaaaaaaa-aaaaaaaaa-aaaaaaaaa-aaaaaaaaa-aaaaaaaaa-Z"
         )
         invalid.forEach { instanceId ->
             assertFalse(InstanceId.isValidId(instanceId))

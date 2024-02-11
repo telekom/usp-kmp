@@ -8,7 +8,7 @@ fun Char.isHexDigit(): Boolean {
 }
 
 /**
- * See [Documentation of instance-id](https://github.com/BroadbandForum/usp/blob/master/specification/architecture/index.md#use-of-instance-id)
+ * See [Documentation of instance-id](https://usp.technology/specification/index.htm#r-arc.5)
  */
 internal fun Char.isUnreserved(): Boolean {
     return when (this) {

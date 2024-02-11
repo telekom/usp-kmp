@@ -7,15 +7,25 @@ data class EndpointIdentifier(
     val authorityId: AuthorityId,
     val instanceId: InstanceId
 ) {
-
+    /**
+     * Returns this endpoint identifier prepended with the BBF namespace (`urn:bbf:usp:id:`).
+     */
     fun toLongString() =
-        "$BBF_NAMESPACE:${scheme.value}:${authorityId.authority}:${instanceId.instance}"
+        "$BBF_NAMESPACE:${scheme.value}:${authorityId}:${instanceId}"
 
-    fun toShortString() = "${scheme.value}:${authorityId.authority}:${instanceId.instance}"
+    /**
+     * Returns this endpoint identifier without a prepended BBF namespace (`urn:bbf:usp:id:`).
+     */
+    fun toShortString() = "${scheme.value}:${authorityId}:${instanceId}"
 
     override fun toString() = toShortString()
 }
 
+/**
+ * Factory method to convert a text into a `EndpointIdentifier`.
+ *
+ * @throws IllegalArgumentException when the text does not represent a valid endpoint identifier.
+ */
 fun EndpointIdentifier(text: String): EndpointIdentifier {
     val parts = (if (text.startsWith(BBF_NAMESPACE)) {
         text.substringAfter("$BBF_NAMESPACE:")
@@ -23,7 +33,7 @@ fun EndpointIdentifier(text: String): EndpointIdentifier {
         text
     }).split(":")
 
-    require(parts.size == 3) { "Invalid endpoint identifier: '$text' (parts are missing)" }
+    require(parts.size == 3) { "Invalid endpoint identifier: '$text' (3 parts expected)" }
 
     val (scheme, authority, instance) = parts
 

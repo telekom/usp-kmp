@@ -5,8 +5,7 @@ import de.telekom.usp.messages.MessageConverter
 import de.telekom.usp.messages.MessageConverterImpl
 import de.telekom.usp.messages.RecordDecoderResult
 import de.telekom.usp.messages.dsl.Get
-import de.telekom.usp.proto.msg.GetResp
-import de.telekom.usp.proto.msg.bodyAs
+import de.telekom.usp.proto.msg.getResponse
 import io.ktor.client.HttpClient
 import io.ktor.client.plugins.logging.LogLevel
 import io.ktor.client.plugins.logging.Logging
@@ -51,7 +50,7 @@ fun main(args: Array<String>) {
             if (it is RecordDecoderResult.Message) {
                 val msg = it.msg
                 Logger.d { "Received message of type ${msg.header_?.msg_type}" }
-                val getResp = msg.bodyAs<GetResp>()
+                val getResp = msg.getResponse
                 getResp.req_path_results.forEach { requestedResult ->
                     if (requestedResult.err_code != NO_ERROR) {
                         println("------------- ${Error.from(requestedResult.err_code)} -------------")

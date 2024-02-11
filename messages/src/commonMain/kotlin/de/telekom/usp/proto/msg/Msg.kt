@@ -1,7 +1,5 @@
 package de.telekom.usp.proto.msg
 
-import kotlin.Error
-
 val Msg.id: String
     get() = header_?.msg_id ?: "UNDEFINED"
 
@@ -14,6 +12,138 @@ val Msg.isResponse: Boolean
 val Msg.isError: Boolean
     get() = body?.error != null
 
+val Msg.getRequest: Get
+    get() {
+        requireType(Header.MsgType.GET)
+        return body!!.request!!.get_!!
+    }
+
+val Msg.getSupportedDmRequest: GetSupportedDM
+    get() {
+        requireType(Header.MsgType.GET_SUPPORTED_DM)
+        return body!!.request!!.get_supported_dm!!
+    }
+
+val Msg.getInstancesRequest: GetInstances
+    get() {
+        requireType(Header.MsgType.GET_INSTANCES)
+        return body!!.request!!.get_instances!!
+    }
+
+val Msg.getSupportedProtocolRequest: GetSupportedProtocol
+    get() {
+        requireType(Header.MsgType.GET_SUPPORTED_PROTO)
+        return body!!.request!!.get_supported_protocol!!
+    }
+
+val Msg.setRequest: Set
+    get() {
+        requireType(Header.MsgType.SET)
+        return body!!.request!!.set_!!
+    }
+
+val Msg.addRequest: Add
+    get() {
+        requireType(Header.MsgType.ADD)
+        return body!!.request!!.add!!
+    }
+
+val Msg.deleteRequest: Delete
+    get() {
+        requireType(Header.MsgType.DELETE)
+        return body!!.request!!.delete!!
+    }
+
+val Msg.operateRequest: Operate
+    get() {
+        requireType(Header.MsgType.OPERATE)
+        return body!!.request!!.operate!!
+    }
+
+val Msg.notifyRequest: Notify
+    get() {
+        requireType(Header.MsgType.NOTIFY)
+        return body!!.request!!.notify!!
+    }
+
+val Msg.registerRequest: Register
+    get() {
+        requireType(Header.MsgType.REGISTER)
+        return body!!.request!!.register!!
+    }
+
+val Msg.deregisterRequest: Deregister
+    get() {
+        requireType(Header.MsgType.DEREGISTER)
+        return body!!.request!!.deregister!!
+    }
+
+val Msg.getResponse: GetResp
+    get() {
+        requireType(Header.MsgType.GET_RESP)
+        return body!!.response!!.get_resp!!
+    }
+
+val Msg.getSupportedDmResponse: GetSupportedDMResp
+    get() {
+        requireType(Header.MsgType.GET_SUPPORTED_DM_RESP)
+        return body!!.response!!.get_supported_dm_resp!!
+    }
+
+val Msg.getInstancesResponse: GetInstancesResp
+    get() {
+        requireType(Header.MsgType.GET_INSTANCES_RESP)
+        return body!!.response!!.get_instances_resp!!
+    }
+
+val Msg.getSupportedProtocolResponse: GetSupportedProtocolResp
+    get() {
+        requireType(Header.MsgType.GET_SUPPORTED_PROTO_RESP)
+        return body!!.response!!.get_supported_protocol_resp!!
+    }
+
+val Msg.setResponse: SetResp
+    get() {
+        requireType(Header.MsgType.SET_RESP)
+        return body!!.response!!.set_resp!!
+    }
+
+val Msg.addResponse: AddResp
+    get() {
+        requireType(Header.MsgType.ADD_RESP)
+        return body!!.response!!.add_resp!!
+    }
+
+val Msg.deleteResponse: DeleteResp
+    get() {
+        requireType(Header.MsgType.DELETE_RESP)
+        return body!!.response!!.delete_resp!!
+    }
+
+val Msg.operateResponse: OperateResp
+    get() {
+        requireType(Header.MsgType.OPERATE_RESP)
+        return body!!.response!!.operate_resp!!
+    }
+
+val Msg.notifyResponse: NotifyResp
+    get() {
+        requireType(Header.MsgType.NOTIFY_RESP)
+        return body!!.response!!.notify_resp!!
+    }
+
+val Msg.registerResponse: RegisterResp
+    get() {
+        requireType(Header.MsgType.REGISTER_RESP)
+        return body!!.response!!.register_resp!!
+    }
+
+val Msg.deregisterResponse: DeregisterResp
+    get() {
+        requireType(Header.MsgType.DEREGISTER_RESP)
+        return body!!.response!!.deregister_resp!!
+    }
+
 /**
  * Determines whether this message is a response of the specified message.
  *
@@ -25,43 +155,8 @@ fun Msg.isResponseOf(request: Msg): Boolean {
     return (isResponse || isError) && header_?.msg_id == request.header_?.msg_id
 }
 
-/**
- * Returns the body of this Msg as the specified type `T`. The type `T` must be one of the request,
- * response or the Error type. Example:
- * ```kotlin
- * val getResp = msg.bodyAs<GetResp>()
- * ```
- */
-inline fun <reified T> Msg.bodyAs(): T {
-    return when (T::class) {
-        // Requests
-        Get::class -> body!!.request!!.get_ as T
-        GetSupportedDM::class -> body!!.request!!.get_supported_dm as T
-        GetInstances::class -> body!!.request!!.get_instances as T
-        Set::class -> body!!.request!!.set_ as T
-        Add::class -> body!!.request!!.add as T
-        Delete::class -> body!!.request!!.delete as T
-        Operate::class -> body!!.request!!.operate as T
-        Notify::class -> body!!.request!!.notify as T
-        GetSupportedProtocol::class -> body!!.request!!.get_supported_protocol as T
-        Register::class -> body!!.request!!.register as T
-        Deregister::class -> body!!.request!!.deregister as T
-        // Responses
-        GetResp::class -> body!!.response!!.get_resp as T
-        GetSupportedDMResp::class -> body!!.response!!.get_supported_dm_resp as T
-        GetInstancesResp::class -> body!!.response!!.get_instances_resp as T
-        SetResp::class -> body!!.response!!.set_resp as T
-        AddResp::class -> body!!.response!!.add_resp as T
-        DeleteResp::class -> body!!.response!!.delete_resp as T
-        OperateResp::class -> body!!.response!!.operate_resp as T
-        NotifyResp::class -> body!!.response!!.notify_resp as T
-        GetSupportedProtocolResp::class -> body!!.response!!.get_supported_protocol_resp as T
-        RegisterResp::class -> body!!.response!!.register_resp as T
-        DeregisterResp::class -> body!!.response!!.delete_resp as T
-        // Error
-        Error::class -> body!!.error as T
-        // Failed
-        else -> throw IllegalArgumentException("Unknown Msg type: ${T::class}")
+private fun Msg.requireType(type: Header.MsgType) {
+    if (header_?.msg_type != type) {
+        throw IllegalStateException("Wrong type, requested: $type, actual: ${header_?.msg_type} for $this")
     }
 }
-
