@@ -1,6 +1,9 @@
-package de.telekom.usp
+package de.telekom.usp.mtp
 
 import co.touchlab.kermit.Logger
+import de.telekom.usp.EndpointIdentifier
+import de.telekom.usp.Error
+import de.telekom.usp.NO_ERROR
 import de.telekom.usp.messages.MessageConverter
 import de.telekom.usp.messages.MessageConverterImpl
 import de.telekom.usp.messages.RecordDecoderResult
@@ -47,20 +50,20 @@ fun main(args: Array<String>) {
         }
     }
     val job2 = GlobalScope.launch {
-        connection.output.collect { bytes ->
-            println("Jaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")
-            messages.next(bytes)
+        connection.events.collect { event ->
+            if (event is ConnectionEvent.BytesReceived) {
+                messages.next(event.bytes)
+            }
         }
     }
 
     runBlocking {
         println("Connecting...")
-        connection.send(messages.noSessionContextMessage(get))
         connection.connect()
         println("Sending...")
-        delay(1.seconds)
+        connection.send(messages.noSessionContextMessage(get))
         println("Waiting...")
-        delay(5.seconds)
+        delay(2.seconds)
         println("Closing...")
         connection.disconnect()
         println("Closed.")
