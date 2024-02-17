@@ -3,10 +3,10 @@ package de.telekom.usp.mtp
 import co.touchlab.kermit.Logger
 import de.telekom.usp.EndpointIdentifier
 import de.telekom.usp.MessageTransferProtocol
+import de.telekom.usp.mtp.util.KtorKermitBridge
 import io.ktor.client.HttpClient
 import io.ktor.client.plugins.logging.LogLevel
 import io.ktor.client.plugins.logging.Logging
-import io.ktor.client.plugins.logging.SIMPLE
 import io.ktor.client.plugins.websocket.DefaultClientWebSocketSession
 import io.ktor.client.plugins.websocket.WebSockets
 import io.ktor.client.plugins.websocket.webSocket
@@ -53,8 +53,8 @@ class WebSocketConnection(
     private val client = HttpClient {
         developmentMode = this@WebSocketConnection.developmentMode
         install(Logging) {
-            logger = io.ktor.client.plugins.logging.Logger.SIMPLE
             level = if (this@WebSocketConnection.developmentMode) LogLevel.ALL else LogLevel.NONE
+            logger = KtorKermitBridge(level)
         }
         install(WebSockets) {
             pingInterval = 10.seconds.inWholeMilliseconds
