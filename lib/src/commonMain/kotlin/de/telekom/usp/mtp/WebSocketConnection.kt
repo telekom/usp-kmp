@@ -100,6 +100,7 @@ class WebSocketConnection(
 
     override suspend fun disconnect() {
         if (shouldDisconnect()) {
+            client.close()
             senderRoutine?.cancelAndJoin()
             receiverRoutine?.cancelAndJoin()
             senderRoutine = null
@@ -146,33 +147,15 @@ class WebSocketConnection(
         try {
             Logger.d { "${this@WebSocketConnection} waiting for incoming frames..." }
 
-            for (message in incoming) {
-                when (message) {
+            for (frame in incoming) {
+                when (frame) {
                     is Frame.Binary -> {
-                        Logger.d { "${this@WebSocketConnection} received data frame of size: ${message.data.size}" }
-                        emit(message.readBytes().toByteString())
-                    }
-
-                    is Frame.Close -> {
-                        Logger.d { "${this@WebSocketConnection} received close message, shutting down..." }
-                        disconnect()
-                    }
-
-                    is Frame.Ping -> {
-                        Logger.d { "${this@WebSocketConnection} received ping message, replying with pong..." }
-                        outgoing.send(Frame.Pong(ByteArray(0)))
-                    }
-
-                    is Frame.Pong -> {
-                        Logger.d { "${this@WebSocketConnection} received pong message" }
-                    }
-
-                    is Frame.Text -> {
-                        Logger.d { "${this@WebSocketConnection} received text message, which will be ignored" }
+                        Logger.d { "${this@WebSocketConnection} received data frame of size: ${frame.data.size}" }
+                        emit(frame.readBytes().toByteString())
                     }
 
                     else -> {
-                        Logger.e { "${this@WebSocketConnection} received unexpected message: $message" }
+                        Logger.e { "${this@WebSocketConnection} received unexpected frame: $frame" }
                     }
                 }
             }
