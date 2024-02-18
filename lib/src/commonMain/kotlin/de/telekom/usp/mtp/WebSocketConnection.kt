@@ -29,7 +29,8 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import okio.ByteString
 import okio.ByteString.Companion.toByteString
-import kotlin.time.Duration.Companion.seconds
+import kotlin.time.Duration
+import kotlin.time.Duration.Companion.minutes
 
 private const val USP_WEB_SOCKET_PROTOCOL = "v1.usp"
 private const val USP_WEB_SOCKET_EXTENSION = "bbf-usp-protocol"
@@ -39,6 +40,7 @@ class WebSocketConnection(
     private val port: Int,
     private val from: EndpointIdentifier,
     private val scope: CoroutineScope = CoroutineScope(Dispatchers.IO + SupervisorJob()),
+    private val pingInterval: Duration = 1.minutes,
     private val developmentMode: Boolean = false
 ) : EndpointConnection {
 
@@ -57,7 +59,7 @@ class WebSocketConnection(
             logger = KtorKermitBridge(level)
         }
         install(WebSockets) {
-            pingInterval = 10.seconds.inWholeMilliseconds
+            pingInterval = this@WebSocketConnection.pingInterval.inWholeMilliseconds
         }
     }
 

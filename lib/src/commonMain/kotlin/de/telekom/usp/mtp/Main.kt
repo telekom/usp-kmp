@@ -3,7 +3,7 @@ package de.telekom.usp.mtp
 import co.touchlab.kermit.Logger
 import de.telekom.usp.EndpointIdentifier
 import de.telekom.usp.Error
-import de.telekom.usp.NO_ERROR
+import de.telekom.usp.NoError
 import de.telekom.usp.messages.MessageConverter
 import de.telekom.usp.messages.MessageConverterImpl
 import de.telekom.usp.messages.RecordDecoderResult
@@ -35,7 +35,7 @@ fun main(args: Array<String>) {
                 Logger.d { "Received message of type ${msg.header_?.msg_type}" }
                 val getResp = msg.getResponse
                 getResp.req_path_results.forEach { requestedResult ->
-                    if (requestedResult.err_code != NO_ERROR) {
+                    if (requestedResult.err_code != NoError.code) {
                         println("------------- ${Error.from(requestedResult.err_code)} -------------")
                     } else {
                         requestedResult.resolved_path_results.forEach { pathResult ->
@@ -61,9 +61,9 @@ fun main(args: Array<String>) {
         println("Connecting...")
         connection.connect()
         println("Sending...")
-        connection.send(messages.noSessionContextMessage(get))
+        messages.sessionContextMessage(msg = get).forEach { connection.send(it) }
         println("Waiting...")
-        delay(2.seconds)
+        delay(60.seconds)
         println("Closing...")
         connection.disconnect()
         println("Closed.")

@@ -11,6 +11,7 @@ data class Error(val code: Int, val name: String) {
     companion object {
         fun from(code: Int): Error {
             return when (code) {
+                0 -> NoError
                 7000 -> MessageFailed
                 7001 -> MessageNotSupported
                 7002 -> RequestDenied
@@ -52,14 +53,13 @@ data class Error(val code: Int, val name: String) {
                 7106 -> SessionContextNotAllowed
                 7200 - 7299 -> Error(code, "Data model error")
                 7800 - 7999 -> Error(code, "Vendor defined error")
-                else -> Error(7003, "Internal error: unknown error code: $code")
+                else -> Error(7003, "Unknown error code: $code")
             }
         }
     }
 }
 
-const val NO_ERROR = 0
-
+val NoError = Error(0, "No Error")
 val MessageFailed = Error(7000, "Message failed")
 val MessageNotSupported = Error(7001, "Message not supported")
 val RequestDenied = Error(7002, "Request denied (no reason specified)")
