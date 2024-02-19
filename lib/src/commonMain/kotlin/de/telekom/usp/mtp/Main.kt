@@ -14,7 +14,7 @@ import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
-import kotlin.time.Duration.Companion.seconds
+import kotlin.time.Duration.Companion.minutes
 
 fun main(args: Array<String>) {
     val host = "127.0.0.1"
@@ -22,7 +22,8 @@ fun main(args: Array<String>) {
     val to = EndpointIdentifier("proto::AXACT")
     val from = EndpointIdentifier("proto::usp-demo")
     val messages: MessageConverter = MessageConverterImpl(from, to)
-    val connection = WebSocketConnection(host, port, from, developmentMode = true)
+    val connection =
+        WebSocketConnection(host, port, from, debugMode = true, pingDuration = 10.minutes)
     val get = Get {
         this.maxDepth = 1
         path("Device.DeviceInfo.")
@@ -63,7 +64,7 @@ fun main(args: Array<String>) {
         println("Sending...")
         messages.sessionContextMessage(msg = get).forEach { connection.send(it) }
         println("Waiting...")
-        delay(60.seconds)
+        delay(5.minutes)
         println("Closing...")
         connection.disconnect()
         println("Closed.")

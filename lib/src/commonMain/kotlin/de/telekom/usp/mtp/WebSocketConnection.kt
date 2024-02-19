@@ -2,9 +2,9 @@ package de.telekom.usp.mtp
 
 import co.touchlab.kermit.Logger
 import de.telekom.usp.EndpointIdentifier
-import de.telekom.usp.MessageTransferProtocol
 import de.telekom.usp.mtp.util.KtorKermitBridge
 import io.ktor.client.HttpClient
+import io.ktor.client.engine.cio.CIO
 import io.ktor.client.plugins.logging.LogLevel
 import io.ktor.client.plugins.logging.Logging
 import io.ktor.client.plugins.websocket.DefaultClientWebSocketSession
@@ -21,6 +21,7 @@ import kotlinx.coroutines.IO
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancelAndJoin
+import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
@@ -30,7 +31,7 @@ import kotlinx.coroutines.sync.withLock
 import okio.ByteString
 import okio.ByteString.Companion.toByteString
 import kotlin.time.Duration
-import kotlin.time.Duration.Companion.minutes
+import kotlin.time.Duration.Companion.seconds
 
 private const val USP_WEB_SOCKET_PROTOCOL = "v1.usp"
 private const val USP_WEB_SOCKET_EXTENSION = "bbf-usp-protocol"
@@ -40,27 +41,26 @@ class WebSocketConnection(
     private val port: Int,
     private val from: EndpointIdentifier,
     private val scope: CoroutineScope = CoroutineScope(Dispatchers.IO + SupervisorJob()),
-    private val pingInterval: Duration = 1.minutes,
-    private val developmentMode: Boolean = false
+    pingDuration: Duration = 20.seconds,
+    debugMode: Boolean = false
 ) : EndpointConnection {
-
-    override val mtp: MessageTransferProtocol = MessageTransferProtocol.WEB_SOCKET
-
-    private val input = MutableSharedFlow<ByteString>(replay = 10)
 
     private val _events = MutableSharedFlow<ConnectionEvent>()
     override val events: SharedFlow<ConnectionEvent>
         get() = _events.asSharedFlow()
 
-    private val client = HttpClient {
-        developmentMode = this@WebSocketConnection.developmentMode
+    private val input =
+        MutableSharedFlow<ByteString>(replay = 10, onBufferOverflow = BufferOverflow.DROP_OLDEST)
+
+    private val client = HttpClient(CIO) {
         install(Logging) {
-            level = if (this@WebSocketConnection.developmentMode) LogLevel.ALL else LogLevel.NONE
+            level = if (debugMode) LogLevel.ALL else LogLevel.NONE
             logger = KtorKermitBridge(level)
         }
         install(WebSockets) {
-            pingInterval = this@WebSocketConnection.pingInterval.inWholeMilliseconds
+            pingInterval = pingDuration.inWholeMilliseconds
         }
+        developmentMode = debugMode
     }
 
     private val mutex = Mutex()
@@ -77,22 +77,27 @@ class WebSocketConnection(
     override suspend fun connect() {
         if (!isConnected()) {
             scope.launch {
-                client.webSocket(
-                    method = HttpMethod.Get,
-                    host = host,
-                    port = port,
-                    path = "/endpointresource?eid=${from.toShortString()}",
-                    request = {
-                        headers[HttpHeaders.SecWebSocketProtocol] = USP_WEB_SOCKET_PROTOCOL
-                        headers[HttpHeaders.SecWebSocketExtensions] = USP_WEB_SOCKET_EXTENSION
-                    }
-                ) {
-                    connected()
-                    receiverRoutine = launch { incomingMessagesLoop() }
-                    senderRoutine = launch { outgoingMessagesLoop() }
+                try {
+                    client.webSocket(
+                        method = HttpMethod.Get,
+                        host = host,
+                        port = port,
+                        path = "/endpointresource?eid=${from.toShortString()}",
+                        request = {
+                            headers[HttpHeaders.SecWebSocketProtocol] = USP_WEB_SOCKET_PROTOCOL
+                            headers[HttpHeaders.SecWebSocketExtensions] = USP_WEB_SOCKET_EXTENSION
+                        }
+                    ) {
+                        connected()
+                        receiverRoutine = launch { incomingMessagesLoop() }
+                        senderRoutine = launch { outgoingMessagesLoop() }
 
-                    senderRoutine?.join()
-                    receiverRoutine?.join()
+                        senderRoutine?.join()
+                        receiverRoutine?.join()
+                    }
+                } catch (ex: Exception) {
+                    Logger.e(throwable = ex) { "Error establishing connectivity of ${this@WebSocketConnection}" }
+                    emit(ConnectionEvent.ConnectionFailed(this@WebSocketConnection, ex))
                 }
             }
         }
@@ -149,6 +154,7 @@ class WebSocketConnection(
 
             for (frame in incoming) {
                 when (frame) {
+                    // Note that in non-raw mode, we should never receive Close, Ping or Pong frames
                     is Frame.Binary -> {
                         Logger.d { "${this@WebSocketConnection} received data frame of size: ${frame.data.size}" }
                         emit(frame.readBytes().toByteString())
@@ -159,6 +165,9 @@ class WebSocketConnection(
                     }
                 }
             }
+            // When we come here, the connection has been terminated, hence do some cleanup
+            disconnect()
+
         } catch (ex: CancellationException) {
             Logger.d { "Incoming message queue of ${this@WebSocketConnection} has been cancelled" }
             disconnect()
