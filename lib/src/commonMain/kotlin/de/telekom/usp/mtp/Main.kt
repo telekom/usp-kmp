@@ -1,13 +1,13 @@
 package de.telekom.usp.mtp
 
 import co.touchlab.kermit.Logger
+import de.telekom.usp.Device
 import de.telekom.usp.EndpointIdentifier
-import de.telekom.usp.Error
-import de.telekom.usp.NoError
 import de.telekom.usp.messages.MessageConverter
 import de.telekom.usp.messages.MessageConverterImpl
 import de.telekom.usp.messages.RecordDecoderResult
 import de.telekom.usp.messages.dsl.Get
+import de.telekom.usp.proto.msg.debugMessage
 import de.telekom.usp.proto.msg.getResponse
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.cancelAndJoin
@@ -25,8 +25,8 @@ fun main(args: Array<String>) {
     val connection =
         WebSocketConnection(host, port, from, debugMode = true, pingDuration = 10.minutes)
     val get = Get {
-        this.maxDepth = 1
-        path("Device.DeviceInfo.")
+        this.maxDepth = 3
+        path(Device)
     }
 
     val job1 = GlobalScope.launch {
@@ -34,19 +34,7 @@ fun main(args: Array<String>) {
             if (it is RecordDecoderResult.Message) {
                 val msg = it.msg
                 Logger.d { "Received message of type ${msg.header_?.msg_type}" }
-                val getResp = msg.getResponse
-                getResp.req_path_results.forEach { requestedResult ->
-                    if (requestedResult.err_code != NoError.code) {
-                        println("------------- ${Error.from(requestedResult.err_code)} -------------")
-                    } else {
-                        requestedResult.resolved_path_results.forEach { pathResult ->
-                            println("------------- ${pathResult.resolved_path} -------------")
-                            pathResult.result_params.forEach { kv ->
-                                println("${kv.key}=${kv.value}")
-                            }
-                        }
-                    }
-                }
+                println(msg.getResponse.debugMessage())
             }
         }
     }
