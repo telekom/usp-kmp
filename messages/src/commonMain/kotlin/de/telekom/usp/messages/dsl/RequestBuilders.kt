@@ -114,6 +114,20 @@ fun Operate(
 ) = initBuilder(OperateRequestBuilder(Path(path), commandKey, sendResponse), init)
 
 /**
+ * Create a new `Msg` of type OPERATE. Sample usage:
+ *
+ * ```kotlin
+ * val msg = Operate(Reboot, "cmd_key") { }
+ * ```
+ */
+fun Operate(
+    path: Path,
+    commandKey: String,
+    sendResponse: Boolean = true,
+    init: OperateRequestBuilder.() -> Unit
+) = initBuilder(OperateRequestBuilder(path, commandKey, sendResponse), init)
+
+/**
  * Create a new `Msg` of type NOTIFY. Sample usage:
  *
  * ```kotlin
