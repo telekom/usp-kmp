@@ -4,6 +4,7 @@ import co.touchlab.kermit.Logger
 import de.telekom.usp.EndpointIdentifier
 import de.telekom.usp.mtp.util.KtorKermitBridge
 import io.ktor.client.HttpClient
+import io.ktor.client.engine.HttpClientEngine
 import io.ktor.client.engine.cio.CIO
 import io.ktor.client.plugins.logging.LogLevel
 import io.ktor.client.plugins.logging.Logging
@@ -41,6 +42,7 @@ class WebSocketConnection(
     private val port: Int,
     private val from: EndpointIdentifier,
     private val scope: CoroutineScope = CoroutineScope(Dispatchers.IO + SupervisorJob()),
+    engine: HttpClientEngine = CIO.create(),
     pingDuration: Duration = 20.seconds,
     debugMode: Boolean = false
 ) : EndpointConnection {
@@ -52,7 +54,7 @@ class WebSocketConnection(
     private val input =
         MutableSharedFlow<ByteString>(replay = 10, onBufferOverflow = BufferOverflow.DROP_OLDEST)
 
-    private val client = HttpClient(CIO) {
+    private val client = HttpClient(engine) {
         install(Logging) {
             level = if (debugMode) LogLevel.ALL else LogLevel.NONE
             logger = KtorKermitBridge(level)
