@@ -1,8 +1,10 @@
 package de.telekom.usp.messages
 
+import de.telekom.usp.util.AtomicCounter
+
 object MessageIdFactory {
 
-    private var id = 1L
+    private val id = AtomicCounter(0)
 
-    fun next() = id++.toString()
+    fun next() = id.next().toString()
 }
