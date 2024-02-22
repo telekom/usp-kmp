@@ -1,7 +1,7 @@
 package de.telekom.usp.messages.dsl
 
-import de.telekom.usp.proto.msg.Header
-import de.telekom.usp.proto.msg.Msg
+import de.telekom.usp.messages.proto.Header
+import de.telekom.usp.messages.proto.Msg
 
 // See: https://kotlinlang.org/docs/type-safe-builders.html#scope-control-dslmarker
 @DslMarker

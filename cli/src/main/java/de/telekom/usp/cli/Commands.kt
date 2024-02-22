@@ -11,12 +11,12 @@ import com.github.ajalt.clikt.parameters.options.option
 import com.github.ajalt.clikt.parameters.options.required
 import com.github.ajalt.clikt.parameters.types.int
 import de.telekom.usp.isValidPath
-import de.telekom.usp.proto.msg.Add
-import de.telekom.usp.proto.msg.Get
-import de.telekom.usp.proto.msg.GetInstances
-import de.telekom.usp.proto.msg.GetSupportedDM
-import de.telekom.usp.proto.msg.Request
-import de.telekom.usp.proto.msg.Set
+import de.telekom.usp.messages.proto.Add
+import de.telekom.usp.messages.proto.Get
+import de.telekom.usp.messages.proto.GetInstances
+import de.telekom.usp.messages.proto.GetSupportedDM
+import de.telekom.usp.messages.proto.Request
+import de.telekom.usp.messages.proto.Set
 
 val commands = listOf(
     GetCommand(), GetSupportedDmCommand(), GetInstancesCommand(), SetCommand(), AddCommand()

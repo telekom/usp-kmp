@@ -51,7 +51,7 @@ syntax = "proto3";
 //   https://www.broadband-forum.org/software-releases
 //**************************************************************************
 
-package de.telekom.usp.proto.msg;
+package de.telekom.usp.messages.proto;
 
 message Msg {
   Header header = 1;         // Make required in the protocol

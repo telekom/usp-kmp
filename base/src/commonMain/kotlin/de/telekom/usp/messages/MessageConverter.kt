@@ -1,7 +1,7 @@
 package de.telekom.usp.messages
 
 import de.telekom.usp.Error
-import de.telekom.usp.proto.msg.Msg
+import de.telekom.usp.messages.proto.Msg
 import kotlinx.coroutines.flow.SharedFlow
 import okio.ByteString
 
@@ -11,7 +11,7 @@ import okio.ByteString
  */
 interface MessageConverter {
 
-    val results: SharedFlow<RecordDecoderResult>
+    val results: SharedFlow<MessageConversionResult>
 
     /**
      * Convert the specified bytes into a RecordDecoderResult.

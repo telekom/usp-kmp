@@ -3,12 +3,12 @@ package de.telekom.usp.mtp
 import co.touchlab.kermit.Logger
 import de.telekom.usp.EndpointIdentifier
 import de.telekom.usp.Reboot
+import de.telekom.usp.messages.MessageConversionResult
 import de.telekom.usp.messages.MessageConverter
 import de.telekom.usp.messages.MessageConverterImpl
-import de.telekom.usp.messages.RecordDecoderResult
 import de.telekom.usp.messages.dsl.Operate
-import de.telekom.usp.proto.msg.debugMessage
-import de.telekom.usp.proto.msg.getResponse
+import de.telekom.usp.messages.proto.debugMessage
+import de.telekom.usp.messages.proto.getResponse
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.delay
@@ -33,7 +33,7 @@ fun main(args: Array<String>) {
 
     val job1 = GlobalScope.launch {
         messages.results.collect {
-            if (it is RecordDecoderResult.Message) {
+            if (it is MessageConversionResult.Message) {
                 val msg = it.msg
                 Logger.d { "Received message of type ${msg.header_?.msg_type}" }
                 println(msg.getResponse.debugMessage())

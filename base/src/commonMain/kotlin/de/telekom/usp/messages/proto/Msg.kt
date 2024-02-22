@@ -1,4 +1,4 @@
-package de.telekom.usp.proto.msg
+package de.telekom.usp.messages.proto
 
 val Msg.isRequest: Boolean
     get() = body?.request != null
@@ -149,17 +149,6 @@ val Msg.deregisterResponse: DeregisterResp
         requireType(Header.MsgType.DEREGISTER_RESP)
         return body!!.response!!.deregister_resp!!
     }
-
-/**
- * Determines whether this message is a response of the specified message.
- *
- * @return `true` when this is an error or a response message and it contains the same ID as the
- *         specified parameter, `false` otherwise
- */
-fun Msg.isResponseOf(request: Msg): Boolean {
-    // R-MSG.9 responses must contain the same ID as the originating request
-    return (isResponse || isError) && header_?.msg_id == request.header_?.msg_id
-}
 
 fun Msg.requireType(type: Header.MsgType) {
     if (header_?.msg_type != type) {

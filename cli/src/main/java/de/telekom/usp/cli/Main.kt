@@ -2,7 +2,7 @@ package de.telekom.usp.cli
 
 import com.github.ajalt.clikt.core.CliktCommand
 import com.github.ajalt.clikt.core.subcommands
-import de.telekom.usp.proto.msg.Request
+import de.telekom.usp.messages.proto.Request
 
 
 class Main : CliktCommand(invokeWithoutSubcommand = true) {

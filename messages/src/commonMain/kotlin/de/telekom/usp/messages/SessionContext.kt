@@ -1,7 +1,7 @@
 package de.telekom.usp.messages
 
 import de.telekom.usp.EndpointIdentifier
-import de.telekom.usp.proto.record.Record
+import de.telekom.usp.record.proto.Record
 import kotlinx.datetime.Clock
 
 class SessionContext(

@@ -51,7 +51,7 @@ syntax = "proto3";
 //   https://www.broadband-forum.org/software-releases
 //**************************************************************************
 
-package de.telekom.usp.proto.record;
+package de.telekom.usp.record.proto;
 
 message Record {
   string version = 1;

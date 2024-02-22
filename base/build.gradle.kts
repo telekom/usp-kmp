@@ -1,6 +1,7 @@
 plugins {
     alias(libs.plugins.kotlinMultiplatform)
     alias(libs.plugins.androidLibrary)
+    alias(libs.plugins.wire)
 }
 
 kotlin {
@@ -25,11 +26,16 @@ kotlin {
     }
 
     sourceSets {
-        commonMain.dependencies {
-            //put your multiplatform dependencies here
+        commonMain {
+            dependencies {
+                implementation(libs.kotlinx.datetime)
+                implementation(libs.kotlinx.coroutines.core)
+            }
         }
-        commonTest.dependencies {
-            implementation(libs.kotlin.test)
+        commonTest {
+            dependencies {
+                implementation(libs.kotlin.test)
+            }
         }
     }
 }
@@ -39,5 +45,13 @@ android {
     compileSdk = 34
     defaultConfig {
         minSdk = 24
+    }
+}
+
+wire {
+    kotlin {
+        // `suspending` to generate coroutines APIs that require a Kotlin coroutines context.
+        // `blocking` to generate blocking APIs callable by Java and Kotlin.
+        rpcCallStyle = "suspending"
     }
 }

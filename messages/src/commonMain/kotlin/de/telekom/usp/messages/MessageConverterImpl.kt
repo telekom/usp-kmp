@@ -6,32 +6,32 @@ import de.telekom.usp.Error
 import de.telekom.usp.MessageNotSupported
 import de.telekom.usp.SessionContextNotAllowed
 import de.telekom.usp.Versions
-import de.telekom.usp.messages.RecordDecoderResult.DecoderError
-import de.telekom.usp.messages.RecordDecoderResult.Disconnect
-import de.telekom.usp.messages.RecordDecoderResult.Message
-import de.telekom.usp.messages.RecordDecoderResult.MqttConnect
-import de.telekom.usp.messages.RecordDecoderResult.RecordsMissing
-import de.telekom.usp.messages.RecordDecoderResult.Retransmit
-import de.telekom.usp.messages.RecordDecoderResult.SessionEstablished
-import de.telekom.usp.messages.RecordDecoderResult.StompConnect
-import de.telekom.usp.messages.RecordDecoderResult.UdsConnect
-import de.telekom.usp.messages.RecordDecoderResult.UspError
-import de.telekom.usp.messages.RecordDecoderResult.WebSocketConnect
-import de.telekom.usp.proto.msg.Msg
-import de.telekom.usp.proto.record.DisconnectRecord
-import de.telekom.usp.proto.record.MQTTConnectRecord
-import de.telekom.usp.proto.record.NoSessionContextRecord
-import de.telekom.usp.proto.record.Record
-import de.telekom.usp.proto.record.Record.PayloadSecurity
-import de.telekom.usp.proto.record.STOMPConnectRecord
-import de.telekom.usp.proto.record.SessionContextRecord
-import de.telekom.usp.proto.record.UDSConnectRecord
-import de.telekom.usp.proto.record.WebSocketConnectRecord
-import de.telekom.usp.proto.record.containsRetransmitRequest
-import de.telekom.usp.proto.record.hasPayload
-import de.telekom.usp.proto.record.isComplete
-import de.telekom.usp.proto.record.isSingleRecord
-import de.telekom.usp.proto.record.payloadToBufferedSource
+import de.telekom.usp.messages.MessageConversionResult.DecoderError
+import de.telekom.usp.messages.MessageConversionResult.Disconnect
+import de.telekom.usp.messages.MessageConversionResult.Message
+import de.telekom.usp.messages.MessageConversionResult.MqttConnect
+import de.telekom.usp.messages.MessageConversionResult.RecordsMissing
+import de.telekom.usp.messages.MessageConversionResult.Retransmit
+import de.telekom.usp.messages.MessageConversionResult.SessionEstablished
+import de.telekom.usp.messages.MessageConversionResult.StompConnect
+import de.telekom.usp.messages.MessageConversionResult.UdsConnect
+import de.telekom.usp.messages.MessageConversionResult.UspError
+import de.telekom.usp.messages.MessageConversionResult.WebSocketConnect
+import de.telekom.usp.messages.proto.Msg
+import de.telekom.usp.record.proto.DisconnectRecord
+import de.telekom.usp.record.proto.MQTTConnectRecord
+import de.telekom.usp.record.proto.NoSessionContextRecord
+import de.telekom.usp.record.proto.Record
+import de.telekom.usp.record.proto.Record.PayloadSecurity
+import de.telekom.usp.record.proto.STOMPConnectRecord
+import de.telekom.usp.record.proto.SessionContextRecord
+import de.telekom.usp.record.proto.UDSConnectRecord
+import de.telekom.usp.record.proto.WebSocketConnectRecord
+import de.telekom.usp.record.proto.containsRetransmitRequest
+import de.telekom.usp.record.proto.hasPayload
+import de.telekom.usp.record.proto.isComplete
+import de.telekom.usp.record.proto.isSingleRecord
+import de.telekom.usp.record.proto.payloadToBufferedSource
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.sync.Mutex
@@ -46,7 +46,7 @@ class MessageConverterImpl(
     private val allowSessionContext: Boolean = true,
 ) : MessageConverter {
 
-    private val _results = MutableSharedFlow<RecordDecoderResult>()
+    private val _results = MutableSharedFlow<MessageConversionResult>()
     override val results = _results.asSharedFlow()
 
     private var currentContext: SessionContext? = null
@@ -319,7 +319,7 @@ class MessageConverterImpl(
                 cache.clearSession(context.sessionId)
                 createSession(record.session_id).also { restartedContext ->
                     Logger.d { "[R-E2E.3] Restarted $restartedContext" }
-                    post(SessionEstablished(restartedContext, context))
+                    post(SessionEstablished(true, restartedContext.creationTime))
                 }
             }
         }
@@ -328,7 +328,7 @@ class MessageConverterImpl(
 
         return createSession(record.session_id).also { newContext ->
             Logger.d { "[R-E2E.4] Created new $newContext" }
-            post(SessionEstablished(newContext))
+            post(SessionEstablished(false, newContext.creationTime))
         }
     }
 
@@ -378,7 +378,7 @@ class MessageConverterImpl(
         post(Disconnect(Error.from(disconnect.reason_code)))
     }
 
-    private suspend fun post(result: RecordDecoderResult) {
+    private suspend fun post(result: MessageConversionResult) {
         Logger.d { "New record decode result: $result" }
         _results.emit(result)
     }

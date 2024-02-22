@@ -1,6 +1,6 @@
-package de.telekom.usp.proto.record
+package de.telekom.usp.record.proto
 
-import de.telekom.usp.proto.record.SessionContextRecord.PayloadSARState
+import de.telekom.usp.record.proto.SessionContextRecord.PayloadSARState
 import okio.Buffer
 import okio.BufferedSource
 

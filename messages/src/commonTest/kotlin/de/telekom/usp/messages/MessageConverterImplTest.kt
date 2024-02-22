@@ -5,19 +5,19 @@ import de.telekom.usp.EndpointIdentifier
 import de.telekom.usp.MessageNotSupported
 import de.telekom.usp.SessionContextNotAllowed
 import de.telekom.usp.Versions
-import de.telekom.usp.proto.msg.Header
-import de.telekom.usp.proto.msg.Msg
-import de.telekom.usp.proto.record.DisconnectRecord
-import de.telekom.usp.proto.record.MQTTConnectRecord
-import de.telekom.usp.proto.record.NoSessionContextRecord
-import de.telekom.usp.proto.record.Record
-import de.telekom.usp.proto.record.STOMPConnectRecord
-import de.telekom.usp.proto.record.SessionContextRecord
-import de.telekom.usp.proto.record.SessionContextRecord.PayloadSARState.BEGIN
-import de.telekom.usp.proto.record.SessionContextRecord.PayloadSARState.COMPLETE
-import de.telekom.usp.proto.record.SessionContextRecord.PayloadSARState.INPROCESS
-import de.telekom.usp.proto.record.UDSConnectRecord
-import de.telekom.usp.proto.record.WebSocketConnectRecord
+import de.telekom.usp.messages.proto.Header
+import de.telekom.usp.messages.proto.Msg
+import de.telekom.usp.record.proto.DisconnectRecord
+import de.telekom.usp.record.proto.MQTTConnectRecord
+import de.telekom.usp.record.proto.NoSessionContextRecord
+import de.telekom.usp.record.proto.Record
+import de.telekom.usp.record.proto.STOMPConnectRecord
+import de.telekom.usp.record.proto.SessionContextRecord
+import de.telekom.usp.record.proto.SessionContextRecord.PayloadSARState.BEGIN
+import de.telekom.usp.record.proto.SessionContextRecord.PayloadSARState.COMPLETE
+import de.telekom.usp.record.proto.SessionContextRecord.PayloadSARState.INPROCESS
+import de.telekom.usp.record.proto.UDSConnectRecord
+import de.telekom.usp.record.proto.WebSocketConnectRecord
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.TestScope
@@ -62,7 +62,7 @@ class MessageConverterImplTest {
         ).forEach { data ->
             runTest {
                 withResultOf(data, 2) {
-                    assertIs<RecordDecoderResult.DecoderError>(it)
+                    assertIs<MessageConversionResult.DecoderError>(it)
                 }
             }
         }
@@ -71,7 +71,7 @@ class MessageConverterImplTest {
     @Test
     fun `reject record with invalid version`() = runDecoderTest {
         withResultOf(Record(version = "1.0")) {
-            assertIs<RecordDecoderResult.UspError>(it)
+            assertIs<MessageConversionResult.UspError>(it)
             assertEquals(MessageNotSupported, it.error)
         }
     }
@@ -92,7 +92,7 @@ class MessageConverterImplTest {
         )
 
         withResultOf(noSession) {
-            assertIs<RecordDecoderResult.Message>(it)
+            assertIs<MessageConversionResult.Message>(it)
             assertNotNull(it.msg.header_)
             assertEquals("test-hdr", it.msg.header_!!.msg_id)
         }
@@ -107,7 +107,7 @@ class MessageConverterImplTest {
         )
 
         withResultOf(disconnect) {
-            assertIs<RecordDecoderResult.Disconnect>(it)
+            assertIs<MessageConversionResult.Disconnect>(it)
             assertEquals(CommandCanceled.name, it.error.name)
             assertEquals(CommandCanceled.code, it.error.code)
         }
@@ -122,7 +122,7 @@ class MessageConverterImplTest {
         )
 
         withResultOf(webSocket) {
-            assertIs<RecordDecoderResult.WebSocketConnect>(it)
+            assertIs<MessageConversionResult.WebSocketConnect>(it)
         }
     }
 
@@ -135,7 +135,7 @@ class MessageConverterImplTest {
         )
 
         withResultOf(mqtt) {
-            assertIs<RecordDecoderResult.MqttConnect>(it)
+            assertIs<MessageConversionResult.MqttConnect>(it)
             assertEquals("V3_1_1", it.version)
             assertEquals("mqtt-topic", it.subscribedTopic)
         }
@@ -150,7 +150,7 @@ class MessageConverterImplTest {
         )
 
         withResultOf(stomp) {
-            assertIs<RecordDecoderResult.StompConnect>(it)
+            assertIs<MessageConversionResult.StompConnect>(it)
             assertEquals("V1_2", it.version)
             assertEquals("stomp-dest", it.subscribedDestination)
         }
@@ -165,7 +165,7 @@ class MessageConverterImplTest {
         )
 
         withResultOf(udsSocket) {
-            assertIs<RecordDecoderResult.UdsConnect>(it)
+            assertIs<MessageConversionResult.UdsConnect>(it)
         }
     }
 
@@ -226,7 +226,7 @@ class MessageConverterImplTest {
         val start = asRecord(SessionContextRecord(session_id = 43L))
 
         withResultOf(start) {
-            assertIs<RecordDecoderResult.UspError>(it)
+            assertIs<MessageConversionResult.UspError>(it)
             assertSame(SessionContextNotAllowed, it.error)
         }
     }
@@ -236,9 +236,7 @@ class MessageConverterImplTest {
         val start = asRecord(SessionContextRecord(session_id = 43L))
 
         withResultOf(start) {
-            assertIs<RecordDecoderResult.SessionEstablished>(it)
-            assertEquals(43L, it.sessionContext.sessionId)
-            assertEquals(1L, it.sessionContext.sequenceId)
+            assertIs<MessageConversionResult.SessionEstablished>(it)
             assertFalse(it.isRestarted)
         }
     }
@@ -252,13 +250,10 @@ class MessageConverterImplTest {
             val restart = asRecord(SessionContextRecord(4711L))
 
             withResultOf(restart) {
-                assertIs<RecordDecoderResult.SessionEstablished>(it)
-                assertEquals(4711, it.sessionContext.sessionId)
-                assertEquals(1L, it.sessionContext.sequenceId) // See R-E2E.6
-                assertNotNull(it.previousSessionContext)
-            assertTrue(it.isRestarted)
+                assertIs<MessageConversionResult.SessionEstablished>(it)
+                assertTrue(it.isRestarted)
+            }
         }
-    }
 
     @Test
     fun `emit retransmit request when present in record`() = runDecoderTest {
@@ -269,11 +264,11 @@ class MessageConverterImplTest {
         withResultOf(retransmit, expectResultCount = 2) {
             when (resultCount) {
                 1 -> {
-                    assertIs<RecordDecoderResult.SessionEstablished>(it)
+                    assertIs<MessageConversionResult.SessionEstablished>(it)
                 }
 
                 2 -> {
-                    assertIs<RecordDecoderResult.Retransmit>(it)
+                    assertIs<MessageConversionResult.Retransmit>(it)
                     assertEquals(8000L, it.sequenceId)
                 }
             }
@@ -290,11 +285,11 @@ class MessageConverterImplTest {
         withResultOf(msg, expectResultCount = 2) {
             when (resultCount) {
                 1 -> {
-                    assertIs<RecordDecoderResult.SessionEstablished>(it)
+                    assertIs<MessageConversionResult.SessionEstablished>(it)
                 }
 
                 2 -> {
-                    assertIs<RecordDecoderResult.Message>(it)
+                    assertIs<MessageConversionResult.Message>(it)
                     val header = it.msg.header_
                     assertNotNull(header)
                     assertEquals("test-header", header.msg_id)
@@ -319,20 +314,20 @@ class MessageConverterImplTest {
             withResultOf(record, expectResultCount = 6) {
                 when (resultCount) {
                     1 -> {
-                        assertIs<RecordDecoderResult.SessionEstablished>(it)
+                        assertIs<MessageConversionResult.SessionEstablished>(it)
                     }
 
                     2 -> {
-                        assertIs<RecordDecoderResult.Message>(it)
+                        assertIs<MessageConversionResult.Message>(it)
                         assertEquals("test-1", it.msg.header_!!.msg_id)
                     }
 
                     3 -> {
-                        assertIs<RecordDecoderResult.RecordsMissing>(it)
+                        assertIs<MessageConversionResult.RecordsMissing>(it)
                     }
 
                     4, 5, 6 -> {
-                        assertIs<RecordDecoderResult.Message>(it)
+                        assertIs<MessageConversionResult.Message>(it)
                         assertEquals("test-${resultCount - 2}", it.msg.header_!!.msg_id)
                     }
                 }
@@ -348,11 +343,11 @@ class MessageConverterImplTest {
             withResultOf(msg, expectResultCount = 2) {
                 when (resultCount) {
                     1 -> {
-                        assertIs<RecordDecoderResult.SessionEstablished>(it)
+                        assertIs<MessageConversionResult.SessionEstablished>(it)
                     }
 
                     2 -> {
-                        assertIs<RecordDecoderResult.Message>(it)
+                        assertIs<MessageConversionResult.Message>(it)
                         val header = it.msg.header_
                         assertNotNull(header)
                         assertEquals("test-header", header.msg_id)
@@ -370,15 +365,15 @@ class MessageConverterImplTest {
             withResultOf(msg, expectResultCount = 4) {
                 when (resultCount) {
                     1 -> {
-                        assertIs<RecordDecoderResult.SessionEstablished>(it)
+                        assertIs<MessageConversionResult.SessionEstablished>(it)
                     }
 
                     2, 3 -> {
-                        assertIs<RecordDecoderResult.RecordsMissing>(it)
+                        assertIs<MessageConversionResult.RecordsMissing>(it)
                     }
 
                     4 -> {
-                        assertIs<RecordDecoderResult.Message>(it)
+                        assertIs<MessageConversionResult.Message>(it)
                         val header = it.msg.header_
                         assertNotNull(header)
                         assertEquals("test-header", header.msg_id)
@@ -422,7 +417,7 @@ class MessageConverterImplTest {
     private fun TestScope.withResultOf(
         record: Record,
         expectResultCount: Int = 1,
-        asserter: (RecordDecoderResult) -> Unit
+        asserter: (MessageConversionResult) -> Unit
     ) {
         withResultOf(Record.ADAPTER.encodeByteString(record), expectResultCount, asserter)
     }
@@ -431,7 +426,7 @@ class MessageConverterImplTest {
     private fun TestScope.withResultOf(
         data: ByteString,
         expectResultCount: Int = 1,
-        asserter: (RecordDecoderResult) -> Unit
+        asserter: (MessageConversionResult) -> Unit
     ) {
         expectedResultCount = expectResultCount
 

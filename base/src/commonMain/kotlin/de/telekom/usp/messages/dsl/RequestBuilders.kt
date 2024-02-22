@@ -4,23 +4,23 @@ package de.telekom.usp.messages.dsl
 
 import de.telekom.usp.Path
 import de.telekom.usp.messages.MessageIdFactory
-import de.telekom.usp.proto.msg.Add
-import de.telekom.usp.proto.msg.Body
-import de.telekom.usp.proto.msg.Delete
-import de.telekom.usp.proto.msg.Deregister
-import de.telekom.usp.proto.msg.Get
-import de.telekom.usp.proto.msg.GetInstances
-import de.telekom.usp.proto.msg.GetSupportedDM
-import de.telekom.usp.proto.msg.GetSupportedProtocol
-import de.telekom.usp.proto.msg.Header
-import de.telekom.usp.proto.msg.Msg
-import de.telekom.usp.proto.msg.Notify
-import de.telekom.usp.proto.msg.Notify.OperationComplete.CommandFailure
-import de.telekom.usp.proto.msg.Notify.OperationComplete.OutputArgs
-import de.telekom.usp.proto.msg.Operate
-import de.telekom.usp.proto.msg.Register
-import de.telekom.usp.proto.msg.Request
-import de.telekom.usp.proto.msg.Set
+import de.telekom.usp.messages.proto.Add
+import de.telekom.usp.messages.proto.Body
+import de.telekom.usp.messages.proto.Delete
+import de.telekom.usp.messages.proto.Deregister
+import de.telekom.usp.messages.proto.Get
+import de.telekom.usp.messages.proto.GetInstances
+import de.telekom.usp.messages.proto.GetSupportedDM
+import de.telekom.usp.messages.proto.GetSupportedProtocol
+import de.telekom.usp.messages.proto.Header
+import de.telekom.usp.messages.proto.Msg
+import de.telekom.usp.messages.proto.Notify
+import de.telekom.usp.messages.proto.Notify.OperationComplete.CommandFailure
+import de.telekom.usp.messages.proto.Notify.OperationComplete.OutputArgs
+import de.telekom.usp.messages.proto.Operate
+import de.telekom.usp.messages.proto.Register
+import de.telekom.usp.messages.proto.Request
+import de.telekom.usp.messages.proto.Set
 
 /**
  * Create a new `Msg` of type GET. Sample usage:

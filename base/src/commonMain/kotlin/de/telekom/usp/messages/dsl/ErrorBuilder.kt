@@ -4,10 +4,10 @@ package de.telekom.usp.messages.dsl
 
 import de.telekom.usp.Path
 import de.telekom.usp.messages.MessageIdFactory
-import de.telekom.usp.proto.msg.Body
-import de.telekom.usp.proto.msg.Error
-import de.telekom.usp.proto.msg.Header
-import de.telekom.usp.proto.msg.Msg
+import de.telekom.usp.messages.proto.Body
+import de.telekom.usp.messages.proto.Error
+import de.telekom.usp.messages.proto.Header
+import de.telekom.usp.messages.proto.Msg
 
 fun Error(errorCode: Int, errorMessage: String, init: ErrorBuilder.() -> Unit) =
     initBuilder(ErrorBuilder(errorCode, errorMessage), init)

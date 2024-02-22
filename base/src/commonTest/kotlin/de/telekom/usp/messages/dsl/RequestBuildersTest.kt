@@ -1,7 +1,7 @@
 package de.telekom.usp.messages.dsl
 
 import de.telekom.usp.MessageNotSupported
-import de.telekom.usp.proto.msg.Header
+import de.telekom.usp.messages.proto.Header
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith

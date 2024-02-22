@@ -1,7 +1,7 @@
 package de.telekom.usp.messages
 
-import de.telekom.usp.proto.record.SessionContextRecord
-import de.telekom.usp.proto.record.isComplete
+import de.telekom.usp.record.proto.SessionContextRecord
+import de.telekom.usp.record.proto.isComplete
 import okio.BufferedSource
 
 
