@@ -161,7 +161,7 @@ fun Msg.isResponseOf(request: Msg): Boolean {
     return (isResponse || isError) && header_?.msg_id == request.header_?.msg_id
 }
 
-private fun Msg.requireType(type: Header.MsgType) {
+fun Msg.requireType(type: Header.MsgType) {
     if (header_?.msg_type != type) {
         throw IllegalStateException("Wrong type, requested: $type, actual: ${header_?.msg_type} for $this")
     }

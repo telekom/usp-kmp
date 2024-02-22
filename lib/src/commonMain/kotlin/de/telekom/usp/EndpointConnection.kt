@@ -1,5 +1,6 @@
-package de.telekom.usp.mtp
+package de.telekom.usp
 
+import de.telekom.usp.mtp.ConnectionEvent
 import kotlinx.coroutines.flow.SharedFlow
 import okio.ByteString
 

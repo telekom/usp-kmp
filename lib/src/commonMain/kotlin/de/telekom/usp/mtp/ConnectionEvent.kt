@@ -1,5 +1,6 @@
 package de.telekom.usp.mtp
 
+import de.telekom.usp.EndpointConnection
 import okio.ByteString
 
 sealed class ConnectionEvent {
