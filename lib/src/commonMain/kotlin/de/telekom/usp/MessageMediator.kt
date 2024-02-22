@@ -107,12 +107,20 @@ class MessageMediator(
         sendRequest(msg, onResponse, onError, Msg::deleteResponse)
     }
 
-    suspend fun sendRequest(msg: Msg, onResponse: (OperateResp) -> Unit, onError: (Error) -> Unit) {
+    suspend fun sendRequest(
+        msg: Msg,
+        onResponse: ((OperateResp) -> Unit)?,
+        onError: ((Error) -> Unit)?
+    ) {
         msg.requireType(Header.MsgType.OPERATE)
         sendRequest(msg, onResponse, onError, Msg::operateResponse)
     }
 
-    suspend fun sendRequest(msg: Msg, onResponse: (NotifyResp) -> Unit, onError: (Error) -> Unit) {
+    suspend fun sendRequest(
+        msg: Msg,
+        onResponse: ((NotifyResp) -> Unit)?,
+        onError: ((Error) -> Unit)?
+    ) {
         msg.requireType(Header.MsgType.NOTIFY)
         sendRequest(msg, onResponse, onError, Msg::notifyResponse)
     }
@@ -137,14 +145,17 @@ class MessageMediator(
 
     private suspend fun <T> sendRequest(
         msg: Msg,
-        onResponse: (T) -> Unit,
-        onError: (Error) -> Unit,
+        onResponse: ((T) -> Unit)?,
+        onError: ((Error) -> Unit)?,
         retrieveResponse: (Msg) -> T
     ) {
         connection.connect()
         connection.send(converter.noSessionContextMessage(msg))
-        val x = PendingRequest(msg.id, onResponse, onError, retrieveResponse)
-        pendingRequests.add(x)
+
+        if (onResponse != null && onError != null) {
+            val x = PendingRequest(msg.id, onResponse, onError, retrieveResponse)
+            pendingRequests.add(x)
+        }
     }
 
     private suspend fun handleConnectionEvent(event: ConnectionEvent) {
