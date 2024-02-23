@@ -19,3 +19,8 @@ internal fun <T : MessageBuilder> initBuilder(builder: T, init: T.() -> Unit): M
     builder.init()
     return builder.build()
 }
+
+internal fun <T> addBuilder(builder: T, list: MutableList<T>, init: T.() -> Unit) {
+    list.add(builder)
+    builder.init()
+}

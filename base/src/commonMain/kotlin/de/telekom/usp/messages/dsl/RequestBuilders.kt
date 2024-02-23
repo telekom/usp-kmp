@@ -265,10 +265,7 @@ class SetRequestBuilder internal constructor() : RequestMessageBuilder(Header.Ms
     var allowPartial = true
 
     fun path(path: String, init: ParamSettingsBuilder.() -> Unit) {
-        ParamSettingsBuilder(path).also {
-            paramSettingsBuilder.add(it)
-            it.init()
-        }
+        addBuilder(ParamSettingsBuilder(path), paramSettingsBuilder, init)
     }
 
     override fun buildRequest() = Request(
@@ -288,10 +285,7 @@ class AddRequestBuilder internal constructor() : RequestMessageBuilder(Header.Ms
     var allowPartial = true
 
     fun path(path: String, init: ParamSettingsBuilder.() -> Unit) {
-        ParamSettingsBuilder(path).also {
-            paramSettingsBuilder.add(it)
-            it.init()
-        }
+        addBuilder(ParamSettingsBuilder(path), paramSettingsBuilder, init)
     }
 
     override fun buildRequest() =

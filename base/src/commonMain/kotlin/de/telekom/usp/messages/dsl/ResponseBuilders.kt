@@ -5,19 +5,57 @@ package de.telekom.usp.messages.dsl
 import de.telekom.usp.Error
 import de.telekom.usp.NoError
 import de.telekom.usp.Path
+import de.telekom.usp.messages.proto.AddResp
+import de.telekom.usp.messages.proto.AddResp.CreatedObjectResult
 import de.telekom.usp.messages.proto.Body
+import de.telekom.usp.messages.proto.DeleteResp
+import de.telekom.usp.messages.proto.DeleteResp.DeletedObjectResult
+import de.telekom.usp.messages.proto.GetInstancesResp
 import de.telekom.usp.messages.proto.GetResp
+import de.telekom.usp.messages.proto.GetSupportedDMResp
 import de.telekom.usp.messages.proto.Header
 import de.telekom.usp.messages.proto.Msg
 import de.telekom.usp.messages.proto.Response
+import de.telekom.usp.messages.proto.SetResp
 import de.telekom.usp.messages.proto.id
 import de.telekom.usp.messages.proto.requireType
+import de.telekom.usp.toStrings
 
 fun GetResp(request: Msg, init: GetRespBuilder.() -> Unit) =
     initBuilder(GetRespBuilder(request), init)
 
 fun GetResp(messageId: String, init: GetRespBuilder.() -> Unit) =
     initBuilder(GetRespBuilder(messageId), init)
+
+fun GetSupportedDMResp(request: Msg, init: GetSupportedDMRespBuilder.() -> Unit) =
+    initBuilder(GetSupportedDMRespBuilder(request), init)
+
+fun GetSupportedDMResp(messageId: String, init: GetSupportedDMRespBuilder.() -> Unit) =
+    initBuilder(GetSupportedDMRespBuilder(messageId), init)
+
+fun GetInstancesResp(request: Msg, init: GetInstancesRespBuilder.() -> Unit) =
+    initBuilder(GetInstancesRespBuilder(request), init)
+
+fun GetInstancesResp(messageId: String, init: GetInstancesRespBuilder.() -> Unit) =
+    initBuilder(GetInstancesRespBuilder(messageId), init)
+
+fun SetResp(request: Msg, init: SetRespBuilder.() -> Unit) =
+    initBuilder(SetRespBuilder(request), init)
+
+fun SetResp(messageId: String, init: SetRespBuilder.() -> Unit) =
+    initBuilder(SetRespBuilder(messageId), init)
+
+fun AddResp(request: Msg, init: AddRespBuilder.() -> Unit) =
+    initBuilder(AddRespBuilder(request), init)
+
+fun AddResp(messageId: String, init: AddRespBuilder.() -> Unit) =
+    initBuilder(AddRespBuilder(messageId), init)
+
+fun DeleteResp(request: Msg, init: DeleteRespBuilder.() -> Unit) =
+    initBuilder(DeleteRespBuilder(request), init)
+
+fun DeleteResp(messageId: String, init: DeleteRespBuilder.() -> Unit) =
+    initBuilder(DeleteRespBuilder(messageId), init)
 
 // --- Builder classes -----------------------------------------------------------------------------
 
@@ -48,6 +86,8 @@ abstract class ResponseMessageBuilder internal constructor(
     abstract fun buildResponse(): Response
 }
 
+// --- GetRespBuilder ------------------------------------------------------------------------------
+
 class GetRespBuilder internal constructor(messageId: String) :
     ResponseMessageBuilder(Header.MsgType.GET_RESP, messageId) {
 
@@ -57,16 +97,20 @@ class GetRespBuilder internal constructor(messageId: String) :
 
     private val results = mutableListOf<RequestedPathResultBuilder>()
 
-    fun result(path: Path, error: Error = NoError, init: RequestedPathResultBuilder.() -> Unit) {
-        val builder = RequestedPathResultBuilder(path, error)
-        results.add(builder)
-        builder.init()
+    fun result(
+        requestedPath: Path,
+        error: Error = NoError,
+        init: RequestedPathResultBuilder.() -> Unit
+    ) {
+        addBuilder(RequestedPathResultBuilder(requestedPath, error), results, init)
     }
 
-    fun result(path: String, error: Error = NoError, init: RequestedPathResultBuilder.() -> Unit) {
-        val builder = RequestedPathResultBuilder(Path(path), error)
-        results.add(builder)
-        builder.init()
+    fun result(
+        requestedPath: String,
+        error: Error = NoError,
+        init: RequestedPathResultBuilder.() -> Unit
+    ) {
+        addBuilder(RequestedPathResultBuilder(Path(requestedPath), error), results, init)
     }
 
     override fun buildResponse() = Response(
@@ -76,21 +120,17 @@ class GetRespBuilder internal constructor(messageId: String) :
 
 class RequestedPathResultBuilder internal constructor(
     private val requestedPath: Path,
-    val error: Error = NoError
+    private val error: Error
 ) {
 
     private val resolvedPaths = mutableListOf<ResolvedPathResultBuilder>()
 
-    fun resolvedPath(path: Path, init: ResolvedPathResultBuilder.() -> Unit) {
-        val builder = ResolvedPathResultBuilder(path)
-        resolvedPaths.add(builder)
-        builder.init()
+    fun resolvedPath(resolvedPath: Path, init: ResolvedPathResultBuilder.() -> Unit) {
+        addBuilder(ResolvedPathResultBuilder(resolvedPath), resolvedPaths, init)
     }
 
-    fun resolvedPath(path: String, init: ResolvedPathResultBuilder.() -> Unit) {
-        val builder = ResolvedPathResultBuilder(Path(path))
-        resolvedPaths.add(builder)
-        builder.init()
+    fun resolvedPath(resolvedPath: String, init: ResolvedPathResultBuilder.() -> Unit) {
+        addBuilder(ResolvedPathResultBuilder(Path(resolvedPath)), resolvedPaths, init)
     }
 
     fun build() = GetResp.RequestedPathResult(
@@ -109,14 +149,535 @@ class ResolvedPathResultBuilder internal constructor(private val resolvedPath: P
         GetResp.ResolvedPathResult(resolved_path = resolvedPath.toString(), result_params = params)
 }
 
-//class GetSupportedDMRespBuilder internal constructor(messageId: String) :
-//    ResponseMessageBuilder(Header.MsgType.GET_SUPPORTED_DM_RESP, messageId) {
-//
-//    internal constructor(request: Msg) : this(request.id) {
-//        request.requireType(Header.MsgType.GET_SUPPORTED_DM_RESP)
-//    }
-//
-//    override fun buildResponse(): Response {
-//        return Response(get_supported_dm_resp = GetSupportedDMResp())
-//    }
-//}
+// --- GetSupportedDMRespBuilder -------------------------------------------------------------------
+
+class GetSupportedDMRespBuilder internal constructor(messageId: String) :
+    ResponseMessageBuilder(Header.MsgType.GET_SUPPORTED_DM_RESP, messageId) {
+
+    internal constructor(request: Msg) : this(request.id) {
+        request.requireType(Header.MsgType.GET_SUPPORTED_DM_RESP)
+    }
+
+    private val results = mutableListOf<RequestedObjectResultBuilder>()
+
+    fun result(
+        requestedPath: Path,
+        uri: String,
+        error: Error = NoError,
+        init: RequestedObjectResultBuilder.() -> Unit
+    ) {
+        addBuilder(RequestedObjectResultBuilder(requestedPath, uri, error), results, init)
+    }
+
+    fun result(
+        requestedPath: String,
+        uri: String,
+        error: Error = NoError,
+        init: RequestedObjectResultBuilder.() -> Unit
+    ) {
+        addBuilder(RequestedObjectResultBuilder(Path(requestedPath), uri, error), results, init)
+    }
+
+    override fun buildResponse() =
+        Response(get_supported_dm_resp = GetSupportedDMResp(results.map { it.build() }))
+}
+
+class RequestedObjectResultBuilder internal constructor(
+    private val path: Path,
+    private val uri: String,
+    private val error: Error
+) {
+    private val objectResults = mutableListOf<SupportedObjectResultBuilder>()
+
+    fun objectResult(
+        supportedPath: Path,
+        accessType: GetSupportedDMResp.ObjAccessType,
+        isMultiInstance: Boolean,
+        init: SupportedObjectResultBuilder.() -> Unit
+    ) {
+        addBuilder(
+            SupportedObjectResultBuilder(supportedPath, accessType, isMultiInstance),
+            objectResults,
+            init
+        )
+    }
+
+    fun objectResult(
+        supportedPath: String,
+        accessType: GetSupportedDMResp.ObjAccessType,
+        isMultiInstance: Boolean,
+        init: SupportedObjectResultBuilder.() -> Unit
+    ) {
+        addBuilder(
+            SupportedObjectResultBuilder(Path(supportedPath), accessType, isMultiInstance),
+            objectResults,
+            init
+        )
+    }
+
+    fun build() = GetSupportedDMResp.RequestedObjectResult(
+        req_obj_path = path.toString(),
+        err_code = error.code,
+        err_msg = if (error.code == 0) "" else error.name,
+        data_model_inst_uri = uri,
+        supported_objs = objectResults.map { it.build() }
+    )
+}
+
+class SupportedObjectResultBuilder internal constructor(
+    private val path: Path,
+    private val accessType: GetSupportedDMResp.ObjAccessType,
+    private val isMultiInstance: Boolean
+) {
+    private val supportedCommands = mutableListOf<SupportedCommandResultBuilder>()
+    private val supportedEvents = mutableListOf<SupportedEventResultBuilder>()
+    private val supportedParams = mutableListOf<GetSupportedDMResp.SupportedParamResult>()
+
+    val divergentPaths = mutableListOf<String>()
+
+    fun commandResult(
+        name: String,
+        type: GetSupportedDMResp.CmdType,
+        init: SupportedCommandResultBuilder.() -> Unit
+    ) {
+        addBuilder(SupportedCommandResultBuilder(name, type), supportedCommands, init)
+    }
+
+    fun eventResult(name: String, init: SupportedEventResultBuilder.() -> Unit) {
+        addBuilder(SupportedEventResultBuilder(name), supportedEvents, init)
+    }
+
+    fun paramResult(
+        name: String, accessType: GetSupportedDMResp.ParamAccessType,
+        valueType: GetSupportedDMResp.ParamValueType,
+        valueChangeType: GetSupportedDMResp.ValueChangeType
+    ) {
+        supportedParams.add(
+            GetSupportedDMResp.SupportedParamResult(
+                param_name = name,
+                access = accessType,
+                value_type = valueType,
+                value_change = valueChangeType
+            )
+        )
+    }
+
+    fun build(): GetSupportedDMResp.SupportedObjectResult {
+        return GetSupportedDMResp.SupportedObjectResult(
+            supported_obj_path = path.toString(),
+            access = accessType,
+            is_multi_instance = isMultiInstance,
+            supported_commands = supportedCommands.map { it.build() },
+            supported_events = supportedEvents.map { it.build() },
+            supported_params = supportedParams,
+            divergent_paths = divergentPaths
+        )
+    }
+}
+
+class SupportedCommandResultBuilder internal constructor(
+    private val name: String,
+    private val type: GetSupportedDMResp.CmdType
+) {
+    val inputArgs = mutableListOf<String>()
+
+    val outputArgs = mutableListOf<String>()
+
+    fun build() = GetSupportedDMResp.SupportedCommandResult(
+        command_name = name,
+        input_arg_names = inputArgs,
+        output_arg_names = outputArgs,
+        command_type = type
+    )
+}
+
+class SupportedEventResultBuilder internal constructor(private val name: String) {
+
+    val args = mutableListOf<String>()
+
+    fun build() = GetSupportedDMResp.SupportedEventResult(event_name = name, arg_names = args)
+}
+
+// --- GetInstancesRespBuilder ---------------------------------------------------------------------
+
+class GetInstancesRespBuilder internal constructor(messageId: String) :
+    ResponseMessageBuilder(Header.MsgType.GET_INSTANCES_RESP, messageId) {
+
+    internal constructor(request: Msg) : this(request.id) {
+        request.requireType(Header.MsgType.GET_SUPPORTED_DM_RESP)
+    }
+
+    private val results = mutableListOf<GetInstancesRespResultBuilder>()
+
+    fun result(path: Path, error: Error = NoError, init: GetInstancesRespResultBuilder.() -> Unit) {
+        addBuilder(GetInstancesRespResultBuilder(path, error), results, init)
+    }
+
+    fun result(
+        path: String,
+        error: Error = NoError,
+        init: GetInstancesRespResultBuilder.() -> Unit
+    ) {
+        addBuilder(GetInstancesRespResultBuilder(Path(path), error), results, init)
+    }
+
+    override fun buildResponse() =
+        Response(get_instances_resp = GetInstancesResp(req_path_results = results.map { it.build() }))
+}
+
+class GetInstancesRespResultBuilder(private val path: Path, private val error: Error) {
+
+    private val currInstances = mutableListOf<CurrInstanceBuilder>()
+
+    fun currInstance(instantiatedPath: Path, init: CurrInstanceBuilder.() -> Unit) {
+        addBuilder(CurrInstanceBuilder(instantiatedPath), currInstances, init)
+    }
+
+    fun currInstance(instantiatedPath: String, init: CurrInstanceBuilder.() -> Unit) {
+        addBuilder(CurrInstanceBuilder(Path(instantiatedPath)), currInstances, init)
+    }
+
+    fun build() = GetInstancesResp.RequestedPathResult(
+        requested_path = path.toString(),
+        err_code = error.code,
+        err_msg = if (error.code == 0) "" else error.name,
+        curr_insts = currInstances.map { it.build() }
+    )
+}
+
+class CurrInstanceBuilder(private val path: Path) {
+
+    val uniqueKeys = mutableMapOf<String, String>()
+
+    fun build() = GetInstancesResp.CurrInstance(path.toString(), uniqueKeys)
+}
+
+// --- SetRespBuilder ------------------------------------------------------------------------------
+
+class SetRespBuilder internal constructor(messageId: String) :
+    ResponseMessageBuilder(Header.MsgType.SET_RESP, messageId) {
+
+    internal constructor(request: Msg) : this(request.id) {
+        request.requireType(Header.MsgType.SET_RESP)
+    }
+
+    private val results = mutableListOf<UpdatedObjectResultBuilder>()
+
+    fun result(requestedPath: Path, init: UpdatedObjectResultBuilder.() -> Unit) {
+        addBuilder(UpdatedObjectResultBuilder(requestedPath), results, init)
+    }
+
+    fun result(requestedPath: String, init: UpdatedObjectResultBuilder.() -> Unit) {
+        addBuilder(UpdatedObjectResultBuilder(Path(requestedPath)), results, init)
+    }
+
+    override fun buildResponse() =
+        Response(set_resp = SetResp(updated_obj_results = results.map { it.build() }))
+}
+
+class UpdatedObjectResultBuilder internal constructor(private val path: Path) {
+
+    private val statusBuilder = SetOperationStatusBuilder()
+
+    fun status(init: SetOperationStatusBuilder.() -> Unit) {
+        statusBuilder.init()
+    }
+
+    fun build() = SetResp.UpdatedObjectResult(
+        requested_path = path.toString(),
+        oper_status = statusBuilder.build()
+    )
+}
+
+class SetOperationStatusBuilder internal constructor() {
+
+    private var failure: SetOperationFailureBuilder? = null
+
+    private var succes: SetOperationSuccessBuilder? = null
+
+    fun failure(error: Error, init: SetOperationFailureBuilder.() -> Unit) {
+        failure = SetOperationFailureBuilder(error).also(init)
+    }
+
+    fun success(init: SetOperationSuccessBuilder.() -> Unit) {
+        succes = SetOperationSuccessBuilder().also(init)
+    }
+
+    fun build(): SetResp.UpdatedObjectResult.OperationStatus {
+        return if (failure != null) {
+            SetResp.UpdatedObjectResult.OperationStatus(oper_failure = failure!!.build())
+        } else if (succes != null) {
+            SetResp.UpdatedObjectResult.OperationStatus(oper_success = succes!!.build())
+        } else {
+            throw IllegalStateException("SetOperationStatus must contain either failure or success")
+        }
+    }
+}
+
+class SetOperationFailureBuilder internal constructor(private val error: Error) {
+
+    private val failures = mutableListOf<UpdatedInstanceFailureBuilder>()
+
+    fun instanceFailure(path: Path, init: UpdatedInstanceFailureBuilder.() -> Unit) {
+        addBuilder(UpdatedInstanceFailureBuilder(path), failures, init)
+    }
+
+    fun instanceFailure(path: String, init: UpdatedInstanceFailureBuilder.() -> Unit) {
+        addBuilder(UpdatedInstanceFailureBuilder(Path(path)), failures, init)
+    }
+
+    fun build(): SetResp.UpdatedObjectResult.OperationStatus.OperationFailure {
+        return SetResp.UpdatedObjectResult.OperationStatus.OperationFailure(
+            err_code = error.code,
+            err_msg = error.name,
+            updated_inst_failures = failures.map { it.build() }
+        )
+    }
+}
+
+class UpdatedInstanceFailureBuilder internal constructor(private val path: Path) {
+
+    private val errors = mutableListOf<ParameterizedError>()
+
+    fun addError(param: String, error: Error) {
+        errors.add(ParameterizedError(param, error))
+    }
+
+    fun build(): SetResp.UpdatedInstanceFailure {
+        return SetResp.UpdatedInstanceFailure(
+            path.toString(),
+            errors.map {
+                SetResp.ParameterError(
+                    param_ = it.param,
+                    err_code = it.error.code,
+                    err_msg = it.error.name
+                )
+            })
+    }
+}
+
+class SetOperationSuccessBuilder internal constructor() {
+
+    private val result = mutableListOf<UpdatedInstanceResultBuilder>()
+
+    fun instanceResult(affectedPath: Path, init: UpdatedInstanceResultBuilder.() -> Unit) {
+        addBuilder(UpdatedInstanceResultBuilder(affectedPath), result, init)
+    }
+
+    fun instanceResult(affectedPath: String, init: UpdatedInstanceResultBuilder.() -> Unit) {
+        addBuilder(UpdatedInstanceResultBuilder(Path(affectedPath)), result, init)
+    }
+
+    fun build() =
+        SetResp.UpdatedObjectResult.OperationStatus.OperationSuccess(result.map { it.build() })
+}
+
+class UpdatedInstanceResultBuilder internal constructor(private val path: Path) {
+
+    private val errors = mutableListOf<ParameterizedError>()
+
+    fun addError(param: String, error: Error) {
+        errors.add(ParameterizedError(param, error))
+    }
+
+    val params = mutableMapOf<String, String>()
+
+    fun build(): SetResp.UpdatedInstanceResult {
+        return SetResp.UpdatedInstanceResult(
+            affected_path = path.toString(),
+            param_errs = errors.map {
+                SetResp.ParameterError(
+                    param_ = it.param,
+                    err_code = it.error.code,
+                    err_msg = it.error.name
+                )
+            },
+            updated_params = params
+        )
+    }
+}
+
+// --- AddRespBuilder ------------------------------------------------------------------------------
+
+class AddRespBuilder internal constructor(messageId: String) :
+    ResponseMessageBuilder(Header.MsgType.ADD_RESP, messageId) {
+
+    internal constructor(request: Msg) : this(request.id) {
+        request.requireType(Header.MsgType.ADD_RESP)
+    }
+
+    private val results = mutableListOf<CreatedObjectResultBuilder>()
+
+    fun result(requestedPath: Path, init: CreatedObjectResultBuilder.() -> Unit) {
+        addBuilder(CreatedObjectResultBuilder(requestedPath), results, init)
+    }
+
+    fun result(requestedPath: String, init: CreatedObjectResultBuilder.() -> Unit) {
+        addBuilder(CreatedObjectResultBuilder(Path(requestedPath)), results, init)
+    }
+
+    override fun buildResponse() = Response(add_resp = AddResp(results.map { it.build() }))
+}
+
+class CreatedObjectResultBuilder internal constructor(private val path: Path) {
+
+    private var failure: Error? = null
+
+    private var success: AddOperationSuccessBuilder? = null
+
+    fun failure(error: Error) {
+        this.failure = error
+    }
+
+    fun success(instantiatedPath: Path, init: AddOperationSuccessBuilder.() -> Unit) {
+        success = AddOperationSuccessBuilder(instantiatedPath).also(init)
+    }
+
+    fun success(instantiatedPath: String, init: AddOperationSuccessBuilder.() -> Unit) {
+        success = AddOperationSuccessBuilder(Path(instantiatedPath)).also(init)
+    }
+
+    fun build(): CreatedObjectResult {
+        return if (failure != null) {
+            CreatedObjectResult(
+                requested_path = path.toString(),
+                oper_status = CreatedObjectResult.OperationStatus(
+                    oper_failure = CreatedObjectResult.OperationStatus.OperationFailure(
+                        failure!!.code,
+                        failure!!.name
+                    )
+                )
+            )
+        } else if (success != null) {
+            CreatedObjectResult(
+                requested_path = path.toString(),
+                oper_status = CreatedObjectResult.OperationStatus(oper_success = success!!.build())
+            )
+        } else {
+            throw IllegalStateException("Either success or failure must exist")
+        }
+    }
+}
+
+class AddOperationSuccessBuilder internal constructor(private val instantiatedPath: Path) {
+
+    private val errors = mutableListOf<ParameterizedError>()
+
+    val uniqueKeys = mutableMapOf<String, String>()
+
+    fun addError(param: String, error: Error) {
+        errors.add(ParameterizedError(param, error))
+    }
+
+    fun build() = CreatedObjectResult.OperationStatus.OperationSuccess(
+        instantiated_path = instantiatedPath.toString(),
+        param_errs = errors.map {
+            AddResp.ParameterError(
+                param_ = it.param,
+                err_code = it.error.code,
+                err_msg = it.error.name
+            )
+        },
+        unique_keys = uniqueKeys
+    )
+}
+
+// --- DeleteRespBuilder ---------------------------------------------------------------------------
+
+class DeleteRespBuilder internal constructor(messageId: String) :
+    ResponseMessageBuilder(Header.MsgType.DELETE_RESP, messageId) {
+
+    internal constructor(request: Msg) : this(request.id) {
+        request.requireType(Header.MsgType.DELETE_RESP)
+    }
+
+    private val results = mutableListOf<DeletedObjectResultBuilder>()
+
+    fun result(requestedPath: Path, init: DeletedObjectResultBuilder.() -> Unit) {
+        addBuilder(DeletedObjectResultBuilder(requestedPath), results, init)
+    }
+
+    fun result(requestedPath: String, init: DeletedObjectResultBuilder.() -> Unit) {
+        addBuilder(DeletedObjectResultBuilder(Path(requestedPath)), results, init)
+    }
+
+    override fun buildResponse() = Response(delete_resp = DeleteResp(results.map { it.build() }))
+}
+
+class DeletedObjectResultBuilder internal constructor(private val path: Path) {
+
+    private var failure: Error? = null
+
+    private var success: DeleteOperationSuccessBuilder? = null
+
+    fun failure(error: Error) {
+        this.failure = error
+    }
+
+    fun success(affectedPath: Path, init: DeleteOperationSuccessBuilder.() -> Unit) {
+        success = DeleteOperationSuccessBuilder(affectedPath).also(init)
+    }
+
+    fun success(affectedPath: String, init: DeleteOperationSuccessBuilder.() -> Unit) {
+        success = DeleteOperationSuccessBuilder(Path(affectedPath)).also(init)
+    }
+
+    fun build(): DeletedObjectResult {
+        return if (failure != null) {
+            DeletedObjectResult(
+                requested_path = path.toString(),
+                oper_status = DeletedObjectResult.OperationStatus(
+                    oper_failure = DeletedObjectResult.OperationStatus.OperationFailure(
+                        failure!!.code,
+                        failure!!.name
+                    )
+                )
+            )
+        } else if (success != null) {
+            DeletedObjectResult(
+                requested_path = path.toString(),
+                oper_status = DeletedObjectResult.OperationStatus(oper_success = success!!.build())
+            )
+        } else {
+            throw IllegalStateException("Either success or failure must be set")
+        }
+    }
+}
+
+class DeleteOperationSuccessBuilder internal constructor(private val path: Path) {
+
+    private val errors = mutableListOf<ParameterizedError>()
+
+    private val paths = mutableListOf<Path>()
+
+    fun addPath(affectedPath: Path) {
+        paths.add(affectedPath)
+    }
+
+    fun addPath(affectedPath: String) {
+        paths.add(Path(affectedPath))
+    }
+
+    fun addError(unaffectedPath: String, error: Error) {
+        errors.add(ParameterizedError(unaffectedPath, error))
+    }
+
+    fun addError(unaffectedPath: Path, error: Error) {
+        errors.add(ParameterizedError(unaffectedPath.toString(), error))
+    }
+
+    fun build(): DeletedObjectResult.OperationStatus.OperationSuccess {
+        return DeletedObjectResult.OperationStatus.OperationSuccess(
+            affected_paths = paths.toStrings(),
+            unaffected_path_errs = errors.map {
+                DeleteResp.UnaffectedPathError(
+                    it.param,
+                    it.error.code,
+                    it.error.name
+                )
+            }
+        )
+    }
+}
+
+internal data class ParameterizedError(val param: String, val error: Error)
