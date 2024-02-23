@@ -26,7 +26,7 @@ class RequestBuildersTest {
     fun `create Get message`() {
         val get = Get {
             maxDepth = 42
-            path(*samplePaths)
+            addPath(*samplePaths)
         }
 
         assertMessageType(Header.MsgType.GET, get)
@@ -39,7 +39,7 @@ class RequestBuildersTest {
     fun `create Set message`() {
         val set = Set {
             allowPartial = false
-            path(samplePaths[0]) {
+            addPath(samplePaths[0]) {
                 params["param1"] = "value1" required true
             }
         }
@@ -56,7 +56,7 @@ class RequestBuildersTest {
     fun `create Add message`() {
         val add = Add {
             allowPartial = false
-            path(samplePaths[0]) {
+            addPath(samplePaths[0]) {
                 params["param1"] = "value1" required true
             }
         }
@@ -73,7 +73,7 @@ class RequestBuildersTest {
     fun `create Delete message`() {
         val delete = Delete {
             allowPartial = false
-            path(samplePaths[0])
+            addPath(samplePaths[0])
         }
 
         assertMessageType(Header.MsgType.DELETE, delete)
@@ -86,7 +86,7 @@ class RequestBuildersTest {
     fun `create Register message`() {
         val register = Register {
             allowPartial = false
-            path(samplePaths[0])
+            addPath(samplePaths[0])
         }
 
         assertMessageType(Header.MsgType.REGISTER, register)
@@ -98,7 +98,7 @@ class RequestBuildersTest {
     @Test
     fun `create Deregister message`() {
         val deregister = Deregister {
-            path(samplePaths[0])
+            addPath(samplePaths[0])
         }
 
         assertMessageType(Header.MsgType.DEREGISTER, deregister)
@@ -287,7 +287,7 @@ class RequestBuildersTest {
     fun `create GetInstances message`() {
         val getInstances = GetInstances {
             firstLevelOnly = false
-            path(*samplePaths)
+            addPath(*samplePaths)
         }
 
         assertMessageType(Header.MsgType.GET_INSTANCES, getInstances)

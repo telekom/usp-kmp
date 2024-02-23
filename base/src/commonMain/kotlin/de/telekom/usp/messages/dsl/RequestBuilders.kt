@@ -207,12 +207,12 @@ abstract class PathRequestBuilder internal constructor(type: Header.MsgType) :
     /**
      * Adds the specified path o this request
      */
-    fun path(vararg paths: String) = paths.forEach { _paths.add(Path(it)) }
+    fun addPath(vararg paths: String) = paths.forEach { _paths.add(Path(it)) }
 
     /**
      * Adds the specified path o this request
      */
-    fun path(vararg paths: Path) = paths.forEach { _paths.add(it) }
+    fun addPath(vararg paths: Path) = paths.forEach { _paths.add(it) }
 }
 
 class GetRequestBuilder internal constructor() : PathRequestBuilder(Header.MsgType.GET) {
@@ -264,7 +264,7 @@ class SetRequestBuilder internal constructor() : RequestMessageBuilder(Header.Ms
 
     var allowPartial = true
 
-    fun path(path: String, init: ParamSettingsBuilder.() -> Unit) {
+    fun addPath(path: String, init: ParamSettingsBuilder.() -> Unit) {
         addBuilder(ParamSettingsBuilder(path), paramSettingsBuilder, init)
     }
 
@@ -284,7 +284,7 @@ class AddRequestBuilder internal constructor() : RequestMessageBuilder(Header.Ms
 
     var allowPartial = true
 
-    fun path(path: String, init: ParamSettingsBuilder.() -> Unit) {
+    fun addPath(path: String, init: ParamSettingsBuilder.() -> Unit) {
         addBuilder(ParamSettingsBuilder(path), paramSettingsBuilder, init)
     }
 
@@ -341,15 +341,11 @@ class NotifyRequestBuilder internal constructor(private val subscriptionId: Stri
     var sendResponse = true
 
     fun event(path: Path, name: String, init: EventBuilder.() -> Unit) {
-        event = EventBuilder(path, name).apply {
-            init()
-        }
+        event = EventBuilder(path, name).also(init)
     }
 
     fun event(path: String, name: String, init: EventBuilder.() -> Unit) {
-        event = EventBuilder(Path(path), name).apply {
-            init()
-        }
+        event = EventBuilder(Path(path), name).also(init)
     }
 
     fun valueChange(path: Path, value: String) {
@@ -361,15 +357,11 @@ class NotifyRequestBuilder internal constructor(private val subscriptionId: Stri
     }
 
     fun objectCreation(path: String, init: ObjectCreationBuilder.() -> Unit) {
-        objectCreation = ObjectCreationBuilder(Path(path)).apply {
-            init()
-        }
+        objectCreation = ObjectCreationBuilder(Path(path)).also(init)
     }
 
     fun objectCreation(path: Path, init: ObjectCreationBuilder.() -> Unit) {
-        objectCreation = ObjectCreationBuilder(path).apply {
-            init()
-        }
+        objectCreation = ObjectCreationBuilder(path).also(init)
     }
 
     fun objectDeletion(path: Path) {
@@ -386,9 +378,7 @@ class NotifyRequestBuilder internal constructor(private val subscriptionId: Stri
         commandKey: String,
         init: OperationCompleteBuilder.() -> Unit
     ) {
-        operationComplete = OperationCompleteBuilder(path, commandName, commandKey).apply {
-            init()
-        }
+        operationComplete = OperationCompleteBuilder(path, commandName, commandKey).also(init)
     }
 
     fun operationComplete(
@@ -397,9 +387,7 @@ class NotifyRequestBuilder internal constructor(private val subscriptionId: Stri
         commandKey: String,
         init: OperationCompleteBuilder.() -> Unit
     ) {
-        operationComplete = OperationCompleteBuilder(Path(path), commandName, commandKey).apply {
-            init()
-        }
+        operationComplete = OperationCompleteBuilder(Path(path), commandName, commandKey).also(init)
     }
 
     fun onBoardRequest(
@@ -417,16 +405,16 @@ class NotifyRequestBuilder internal constructor(private val subscriptionId: Stri
             notify = Notify(
                 subscription_id = subscriptionId,
                 send_resp = sendResponse,
-                event = event?.event(),
+                event = event?.build(),
                 value_change = valueChange?.let {
                     Notify.ValueChange(
                         it.first.toString(),
                         it.second
                     )
                 },
-                obj_creation = objectCreation?.objectCreation(),
+                obj_creation = objectCreation?.build(),
                 obj_deletion = objectDeletion?.let { Notify.ObjectDeletion(it.toString()) },
-                oper_complete = operationComplete?.operationComplete(),
+                oper_complete = operationComplete?.build(),
                 on_board_req = onBoardRequest?.onBoardRequest()
             )
         )
@@ -441,7 +429,7 @@ class EventBuilder internal constructor(private val path: Path, private val name
 
     val params = mutableMapOf<String, String>()
 
-    fun event(): Notify.Event {
+    fun build(): Notify.Event {
         return Notify.Event(path.toString(), name, params)
     }
 }
@@ -450,7 +438,7 @@ class ObjectCreationBuilder internal constructor(private val path: Path) {
 
     val uniqueKeys = mutableMapOf<String, String>()
 
-    fun objectCreation() = Notify.ObjectCreation(path.toString(), uniqueKeys)
+    fun build() = Notify.ObjectCreation(path.toString(), uniqueKeys)
 }
 
 class OperationCompleteBuilder internal constructor(
@@ -463,7 +451,7 @@ class OperationCompleteBuilder internal constructor(
 
     var commandFailure: Pair<Int, String>? = null
 
-    fun operationComplete(): Notify.OperationComplete {
+    fun build(): Notify.OperationComplete {
         if (outputArgs.isNotEmpty() && commandFailure != null) {
             throw IllegalArgumentException("Must choose one of: output_args or command_failure")
         }

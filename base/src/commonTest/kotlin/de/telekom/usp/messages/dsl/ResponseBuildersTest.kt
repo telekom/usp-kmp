@@ -23,12 +23,12 @@ class ResponseBuildersTest {
     @Test
     fun `create GetResp message`() {
         val resp = GetResp("id-1") {
-            result("Device.") {
-                resolvedPath("Device.WiFi.") {
+            addResult("Device.") {
+                addResolvedPath("Device.WiFi.") {
                     params["abc"] = "123"
                     params["def"] = "456"
                 }
-                resolvedPath(Path("Device.Network.")) {
+                addResolvedPath(Path("Device.Network.")) {
                     params["eth0"] = "789"
                 }
             }
@@ -54,16 +54,16 @@ class ResponseBuildersTest {
     @Test
     fun `create GetSupportedDMResp message`() {
         val resp = GetSupportedDMResp("msg-1") {
-            result("Device.Wifi.", "urn:broadband-forum-org:tr-181-2-12-0") {
-                objectResult("Device.Wifi.ResetCounter", ObjAccessType.OBJ_ADD_ONLY, true) {
-                    commandResult("cmd-1", CmdType.CMD_SYNC) {
+            addResult("Device.Wifi.", "urn:broadband-forum-org:tr-181-2-12-0") {
+                addObject("Device.Wifi.ResetCounter", ObjAccessType.OBJ_ADD_ONLY, true) {
+                    addCommand("cmd-1", CmdType.CMD_SYNC) {
                         inputArgs.add("cmd-input")
                         outputArgs.add("cmd-output")
                     }
-                    eventResult("evt-1") {
+                    addEvent("evt-1") {
                         args.add("evt-arg")
                     }
-                    paramResult(
+                    addParam(
                         "param-1",
                         ParamAccessType.PARAM_READ_ONLY,
                         ParamValueType.PARAM_BOOLEAN,
@@ -112,11 +112,11 @@ class ResponseBuildersTest {
     @Test
     fun `create GetInstancesResp message`() {
         val resp = GetInstancesResp("42") {
-            result("Device.Wifi.") {
-                currInstance("Relative.") {
+            addResult("Device.Wifi.") {
+                addCurrInstance("Relative.") {
                     uniqueKeys["key-1"] = "value-1"
                 }
-                currInstance("Relative2.") {
+                addCurrInstance("Relative2.") {
                     uniqueKeys["key-2"] = "value-2"
                 }
             }
@@ -139,10 +139,10 @@ class ResponseBuildersTest {
     @Test
     fun `create SetResp message`() {
         val success = SetResp("set-1") {
-            result("Device.") {
+            addResult("Device.") {
                 status {
                     success {
-                        instanceResult("Device.Wifi.") {
+                        addInstance("Device.Wifi.") {
                             params["too-much"] = "nesting"
                             addError("just another", InternalError)
                         }
@@ -169,10 +169,10 @@ class ResponseBuildersTest {
 
 
         val failure = SetResp("set-2") {
-            result("Device.") {
+            addResult("Device.") {
                 status {
                     failure(MessageNotSupported) {
-                        instanceFailure("Device.Wifi.") {
+                        addInstance("Device.Wifi.") {
                             addError("param-1", RequestDenied)
                         }
                     }
@@ -201,7 +201,7 @@ class ResponseBuildersTest {
     @Test
     fun `create AddResp message`() {
         val success = AddResp("add-1") {
-            result("Device.") {
+            addResult("Device.") {
                 success("Device.WiFi.") {
                     uniqueKeys["created"] = "yes"
                     addError("error-1", RequestDenied)
@@ -226,7 +226,7 @@ class ResponseBuildersTest {
         )
 
         val failure = AddResp("add-2") {
-            result("Device.") {
+            addResult("Device.") {
                 failure(MessageNotSupported)
             }
         }
@@ -246,7 +246,7 @@ class ResponseBuildersTest {
     @Test
     fun `create DeleteResp message`() {
         val success = DeleteResp("del-1") {
-            result("Device.") {
+            addResult("Device.") {
                 success("Device.Wifi.") {
                     addPath("Device.Wifi.1.")
                     addError("Device.Wifi.1.", ParameterActionFailed)
@@ -270,7 +270,7 @@ class ResponseBuildersTest {
         )
 
         val failure = DeleteResp("del-2") {
-            result("Device.") {
+            addResult("Device.") {
                 failure(InvalidType)
             }
         }

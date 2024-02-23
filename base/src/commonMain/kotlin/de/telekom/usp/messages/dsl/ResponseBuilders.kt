@@ -97,7 +97,7 @@ class GetRespBuilder internal constructor(messageId: String) :
 
     private val results = mutableListOf<RequestedPathResultBuilder>()
 
-    fun result(
+    fun addResult(
         requestedPath: Path,
         error: Error = NoError,
         init: RequestedPathResultBuilder.() -> Unit
@@ -105,7 +105,7 @@ class GetRespBuilder internal constructor(messageId: String) :
         addBuilder(RequestedPathResultBuilder(requestedPath, error), results, init)
     }
 
-    fun result(
+    fun addResult(
         requestedPath: String,
         error: Error = NoError,
         init: RequestedPathResultBuilder.() -> Unit
@@ -125,11 +125,11 @@ class RequestedPathResultBuilder internal constructor(
 
     private val resolvedPaths = mutableListOf<ResolvedPathResultBuilder>()
 
-    fun resolvedPath(resolvedPath: Path, init: ResolvedPathResultBuilder.() -> Unit) {
+    fun addResolvedPath(resolvedPath: Path, init: ResolvedPathResultBuilder.() -> Unit) {
         addBuilder(ResolvedPathResultBuilder(resolvedPath), resolvedPaths, init)
     }
 
-    fun resolvedPath(resolvedPath: String, init: ResolvedPathResultBuilder.() -> Unit) {
+    fun addResolvedPath(resolvedPath: String, init: ResolvedPathResultBuilder.() -> Unit) {
         addBuilder(ResolvedPathResultBuilder(Path(resolvedPath)), resolvedPaths, init)
     }
 
@@ -160,7 +160,7 @@ class GetSupportedDMRespBuilder internal constructor(messageId: String) :
 
     private val results = mutableListOf<RequestedObjectResultBuilder>()
 
-    fun result(
+    fun addResult(
         requestedPath: Path,
         uri: String,
         error: Error = NoError,
@@ -169,7 +169,7 @@ class GetSupportedDMRespBuilder internal constructor(messageId: String) :
         addBuilder(RequestedObjectResultBuilder(requestedPath, uri, error), results, init)
     }
 
-    fun result(
+    fun addResult(
         requestedPath: String,
         uri: String,
         error: Error = NoError,
@@ -189,7 +189,7 @@ class RequestedObjectResultBuilder internal constructor(
 ) {
     private val objectResults = mutableListOf<SupportedObjectResultBuilder>()
 
-    fun objectResult(
+    fun addObject(
         supportedPath: Path,
         accessType: GetSupportedDMResp.ObjAccessType,
         isMultiInstance: Boolean,
@@ -202,7 +202,7 @@ class RequestedObjectResultBuilder internal constructor(
         )
     }
 
-    fun objectResult(
+    fun addObject(
         supportedPath: String,
         accessType: GetSupportedDMResp.ObjAccessType,
         isMultiInstance: Boolean,
@@ -235,7 +235,7 @@ class SupportedObjectResultBuilder internal constructor(
 
     val divergentPaths = mutableListOf<String>()
 
-    fun commandResult(
+    fun addCommand(
         name: String,
         type: GetSupportedDMResp.CmdType,
         init: SupportedCommandResultBuilder.() -> Unit
@@ -243,11 +243,11 @@ class SupportedObjectResultBuilder internal constructor(
         addBuilder(SupportedCommandResultBuilder(name, type), supportedCommands, init)
     }
 
-    fun eventResult(name: String, init: SupportedEventResultBuilder.() -> Unit) {
+    fun addEvent(name: String, init: SupportedEventResultBuilder.() -> Unit) {
         addBuilder(SupportedEventResultBuilder(name), supportedEvents, init)
     }
 
-    fun paramResult(
+    fun addParam(
         name: String, accessType: GetSupportedDMResp.ParamAccessType,
         valueType: GetSupportedDMResp.ParamValueType,
         valueChangeType: GetSupportedDMResp.ValueChangeType
@@ -309,11 +309,15 @@ class GetInstancesRespBuilder internal constructor(messageId: String) :
 
     private val results = mutableListOf<GetInstancesRespResultBuilder>()
 
-    fun result(path: Path, error: Error = NoError, init: GetInstancesRespResultBuilder.() -> Unit) {
+    fun addResult(
+        path: Path,
+        error: Error = NoError,
+        init: GetInstancesRespResultBuilder.() -> Unit
+    ) {
         addBuilder(GetInstancesRespResultBuilder(path, error), results, init)
     }
 
-    fun result(
+    fun addResult(
         path: String,
         error: Error = NoError,
         init: GetInstancesRespResultBuilder.() -> Unit
@@ -329,11 +333,11 @@ class GetInstancesRespResultBuilder(private val path: Path, private val error: E
 
     private val currInstances = mutableListOf<CurrInstanceBuilder>()
 
-    fun currInstance(instantiatedPath: Path, init: CurrInstanceBuilder.() -> Unit) {
+    fun addCurrInstance(instantiatedPath: Path, init: CurrInstanceBuilder.() -> Unit) {
         addBuilder(CurrInstanceBuilder(instantiatedPath), currInstances, init)
     }
 
-    fun currInstance(instantiatedPath: String, init: CurrInstanceBuilder.() -> Unit) {
+    fun addCurrInstance(instantiatedPath: String, init: CurrInstanceBuilder.() -> Unit) {
         addBuilder(CurrInstanceBuilder(Path(instantiatedPath)), currInstances, init)
     }
 
@@ -363,11 +367,11 @@ class SetRespBuilder internal constructor(messageId: String) :
 
     private val results = mutableListOf<UpdatedObjectResultBuilder>()
 
-    fun result(requestedPath: Path, init: UpdatedObjectResultBuilder.() -> Unit) {
+    fun addResult(requestedPath: Path, init: UpdatedObjectResultBuilder.() -> Unit) {
         addBuilder(UpdatedObjectResultBuilder(requestedPath), results, init)
     }
 
-    fun result(requestedPath: String, init: UpdatedObjectResultBuilder.() -> Unit) {
+    fun addResult(requestedPath: String, init: UpdatedObjectResultBuilder.() -> Unit) {
         addBuilder(UpdatedObjectResultBuilder(Path(requestedPath)), results, init)
     }
 
@@ -418,11 +422,11 @@ class SetOperationFailureBuilder internal constructor(private val error: Error) 
 
     private val failures = mutableListOf<UpdatedInstanceFailureBuilder>()
 
-    fun instanceFailure(path: Path, init: UpdatedInstanceFailureBuilder.() -> Unit) {
+    fun addInstance(path: Path, init: UpdatedInstanceFailureBuilder.() -> Unit) {
         addBuilder(UpdatedInstanceFailureBuilder(path), failures, init)
     }
 
-    fun instanceFailure(path: String, init: UpdatedInstanceFailureBuilder.() -> Unit) {
+    fun addInstance(path: String, init: UpdatedInstanceFailureBuilder.() -> Unit) {
         addBuilder(UpdatedInstanceFailureBuilder(Path(path)), failures, init)
     }
 
@@ -460,11 +464,11 @@ class SetOperationSuccessBuilder internal constructor() {
 
     private val result = mutableListOf<UpdatedInstanceResultBuilder>()
 
-    fun instanceResult(affectedPath: Path, init: UpdatedInstanceResultBuilder.() -> Unit) {
+    fun addInstance(affectedPath: Path, init: UpdatedInstanceResultBuilder.() -> Unit) {
         addBuilder(UpdatedInstanceResultBuilder(affectedPath), result, init)
     }
 
-    fun instanceResult(affectedPath: String, init: UpdatedInstanceResultBuilder.() -> Unit) {
+    fun addInstance(affectedPath: String, init: UpdatedInstanceResultBuilder.() -> Unit) {
         addBuilder(UpdatedInstanceResultBuilder(Path(affectedPath)), result, init)
     }
 
@@ -508,11 +512,11 @@ class AddRespBuilder internal constructor(messageId: String) :
 
     private val results = mutableListOf<CreatedObjectResultBuilder>()
 
-    fun result(requestedPath: Path, init: CreatedObjectResultBuilder.() -> Unit) {
+    fun addResult(requestedPath: Path, init: CreatedObjectResultBuilder.() -> Unit) {
         addBuilder(CreatedObjectResultBuilder(requestedPath), results, init)
     }
 
-    fun result(requestedPath: String, init: CreatedObjectResultBuilder.() -> Unit) {
+    fun addResult(requestedPath: String, init: CreatedObjectResultBuilder.() -> Unit) {
         addBuilder(CreatedObjectResultBuilder(Path(requestedPath)), results, init)
     }
 
@@ -593,11 +597,11 @@ class DeleteRespBuilder internal constructor(messageId: String) :
 
     private val results = mutableListOf<DeletedObjectResultBuilder>()
 
-    fun result(requestedPath: Path, init: DeletedObjectResultBuilder.() -> Unit) {
+    fun addResult(requestedPath: Path, init: DeletedObjectResultBuilder.() -> Unit) {
         addBuilder(DeletedObjectResultBuilder(requestedPath), results, init)
     }
 
-    fun result(requestedPath: String, init: DeletedObjectResultBuilder.() -> Unit) {
+    fun addResult(requestedPath: String, init: DeletedObjectResultBuilder.() -> Unit) {
         addBuilder(DeletedObjectResultBuilder(Path(requestedPath)), results, init)
     }
 
