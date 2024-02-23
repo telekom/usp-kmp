@@ -138,25 +138,30 @@ class ResponseBuildersTest {
 
     @Test
     fun `create SetResp message`() {
-        val success = SetResp("set-1") {
+        val resp = SetResp("set-1") {
             addResult("Device.") {
-                status {
-                    success {
-                        addInstance("Device.Wifi.") {
-                            params["too-much"] = "nesting"
-                            addError("just another", InternalError)
-                        }
+                success {
+                    addInstance("Device.Wifi.") {
+                        params["param1"] = "value1"
+                        addError("just another", InternalError)
+                    }
+                }
+            }
+            addResult("Device.NAT.") {
+                failure(MessageNotSupported) {
+                    addInstance("Device.Wifi.") {
+                        addError("param-1", RequestDenied)
                     }
                 }
             }
         }
 
-        assertMessageType(Header.MsgType.SET_RESP, success)
-        assertNotNull(success.body!!.response!!.set_resp)
-        assertEquals("set-1", success.header_!!.msg_id)
+        assertMessageType(Header.MsgType.SET_RESP, resp)
+        assertNotNull(resp.body!!.response!!.set_resp)
+        assertEquals("set-1", resp.header_!!.msg_id)
 
-        val results = success.body!!.response!!.set_resp!!.updated_obj_results
-        assertEquals(1, results.size)
+        val results = resp.body!!.response!!.set_resp!!.updated_obj_results
+        assertEquals(2, results.size)
         assertNotNull(results[0].oper_status)
         assertNotNull(results[0].oper_status!!.oper_success)
         assertNull(results[0].oper_status!!.oper_failure)
@@ -164,35 +169,16 @@ class ResponseBuildersTest {
 
         val instances = results[0].oper_status!!.oper_success!!.updated_inst_results
         assertEquals("Device.Wifi.", instances[0].affected_path)
-        assertEquals("nesting", instances[0].updated_params["too-much"])
+        assertEquals("value1", instances[0].updated_params["param1"])
         assertEquals(InternalError.code, instances[0].param_errs[0].err_code)
 
+        assertNotNull(results[1].oper_status)
+        assertNotNull(results[1].oper_status!!.oper_failure)
+        assertNull(results[1].oper_status!!.oper_success)
+        assertEquals(1, results[1].oper_status!!.oper_failure!!.updated_inst_failures.size)
+        assertEquals(MessageNotSupported.code, results[1].oper_status!!.oper_failure!!.err_code)
 
-        val failure = SetResp("set-2") {
-            addResult("Device.") {
-                status {
-                    failure(MessageNotSupported) {
-                        addInstance("Device.Wifi.") {
-                            addError("param-1", RequestDenied)
-                        }
-                    }
-                }
-            }
-        }
-
-        assertMessageType(Header.MsgType.SET_RESP, failure)
-        assertNotNull(failure.body!!.response!!.set_resp)
-        assertEquals("set-2", failure.header_!!.msg_id)
-
-        val objects = failure.body!!.response!!.set_resp!!.updated_obj_results
-        assertEquals(1, objects.size)
-        assertNotNull(objects[0].oper_status)
-        assertNotNull(objects[0].oper_status!!.oper_failure)
-        assertNull(objects[0].oper_status!!.oper_success)
-        assertEquals(1, objects[0].oper_status!!.oper_failure!!.updated_inst_failures.size)
-        assertEquals(MessageNotSupported.code, objects[0].oper_status!!.oper_failure!!.err_code)
-
-        val failures = objects[0].oper_status!!.oper_failure!!.updated_inst_failures
+        val failures = results[1].oper_status!!.oper_failure!!.updated_inst_failures
         assertEquals("Device.Wifi.", failures[0].affected_path)
         assertEquals(RequestDenied.code, failures[0].param_errs[0].err_code)
         assertEquals("param-1", failures[0].param_errs[0].param_)
@@ -200,21 +186,24 @@ class ResponseBuildersTest {
 
     @Test
     fun `create AddResp message`() {
-        val success = AddResp("add-1") {
+        val resp = AddResp("add-1") {
             addResult("Device.") {
                 success("Device.WiFi.") {
                     uniqueKeys["created"] = "yes"
                     addError("error-1", RequestDenied)
                 }
             }
+            addResult("Device.NAT.") {
+                failure(MessageNotSupported)
+            }
         }
 
-        assertMessageType(Header.MsgType.ADD_RESP, success)
-        assertNotNull(success.body!!.response!!.add_resp)
-        assertEquals("add-1", success.header_!!.msg_id)
+        assertMessageType(Header.MsgType.ADD_RESP, resp)
+        assertNotNull(resp.body!!.response!!.add_resp)
+        assertEquals("add-1", resp.header_!!.msg_id)
 
-        val results = success.body!!.response!!.add_resp!!.created_obj_results
-        assertEquals(1, results.size)
+        val results = resp.body!!.response!!.add_resp!!.created_obj_results
+        assertEquals(2, results.size)
         assertEquals("Device.", results[0].requested_path)
         assertNotNull(results[0].oper_status!!.oper_success)
         assertNull(results[0].oper_status!!.oper_failure)
@@ -225,41 +214,32 @@ class ResponseBuildersTest {
             results[0].oper_status!!.oper_success!!.param_errs[0].err_code
         )
 
-        val failure = AddResp("add-2") {
-            addResult("Device.") {
-                failure(MessageNotSupported)
-            }
-        }
-
-        assertMessageType(Header.MsgType.ADD_RESP, failure)
-        assertNotNull(failure.body!!.response!!.add_resp)
-        assertEquals("add-2", failure.header_!!.msg_id)
-
-        val fails = failure.body!!.response!!.add_resp!!.created_obj_results
-        assertEquals(1, fails.size)
-        assertEquals("Device.", fails[0].requested_path)
-        assertNotNull(fails[0].oper_status!!.oper_failure)
-        assertNull(fails[0].oper_status!!.oper_success)
-        assertEquals(MessageNotSupported.code, fails[0].oper_status!!.oper_failure!!.err_code)
+        assertEquals("Device.NAT.", results[1].requested_path)
+        assertNotNull(results[1].oper_status!!.oper_failure)
+        assertNull(results[1].oper_status!!.oper_success)
+        assertEquals(MessageNotSupported.code, results[1].oper_status!!.oper_failure!!.err_code)
     }
 
     @Test
     fun `create DeleteResp message`() {
-        val success = DeleteResp("del-1") {
+        val resp = DeleteResp("del-1") {
             addResult("Device.") {
                 success("Device.Wifi.") {
                     addPath("Device.Wifi.1.")
                     addError("Device.Wifi.1.", ParameterActionFailed)
                 }
             }
+            addResult("Device.NAT.") {
+                failure(InvalidType)
+            }
         }
 
-        assertMessageType(Header.MsgType.DELETE_RESP, success)
-        assertNotNull(success.body!!.response!!.delete_resp)
-        assertEquals("del-1", success.header_!!.msg_id)
+        assertMessageType(Header.MsgType.DELETE_RESP, resp)
+        assertNotNull(resp.body!!.response!!.delete_resp)
+        assertEquals("del-1", resp.header_!!.msg_id)
 
-        val results = success.body!!.response!!.delete_resp!!.deleted_obj_results
-        assertEquals(1, results.size)
+        val results = resp.body!!.response!!.delete_resp!!.deleted_obj_results
+        assertEquals(2, results.size)
         assertEquals("Device.", results[0].requested_path)
         assertNotNull(results[0].oper_status!!.oper_success)
         assertNull(results[0].oper_status!!.oper_failure)
@@ -269,21 +249,123 @@ class ResponseBuildersTest {
             results[0].oper_status!!.oper_success!!.unaffected_path_errs[0].err_code
         )
 
-        val failure = DeleteResp("del-2") {
-            addResult("Device.") {
-                failure(InvalidType)
+        assertEquals("Device.NAT.", results[1].requested_path)
+        assertNull(results[1].oper_status!!.oper_success)
+        assertNotNull(results[1].oper_status!!.oper_failure)
+    }
+
+    @Test
+    fun `create OperateResp message`() {
+        val resp = OperateResp("oper-1") {
+            addResult("Device.SelfTestDiagnostics()") {
+                requestObjectPath("Device.LocalAgent.Request.1.")
+            }
+            addResult("Device.WiFi.") {
+                commandFailure(ParameterActionFailed)
+            }
+            addResult("Device.Network.") {
+                requestedOutputArgs["test"] = "123"
             }
         }
 
-        assertMessageType(Header.MsgType.DELETE_RESP, failure)
-        assertNotNull(failure.body!!.response!!.delete_resp)
-        assertEquals("del-2", failure.header_!!.msg_id)
+        assertMessageType(Header.MsgType.OPERATE_RESP, resp)
+        assertNotNull(resp.body!!.response!!.operate_resp)
+        assertEquals("oper-1", resp.header_!!.msg_id)
 
-        val failures = failure.body!!.response!!.delete_resp!!.deleted_obj_results
-        assertEquals(1, failures.size)
-        assertEquals("Device.", failures[0].requested_path)
-        assertNull(failures[0].oper_status!!.oper_success)
-        assertNotNull(failures[0].oper_status!!.oper_failure)
+        val results = resp.body!!.response!!.operate_resp!!.operation_results
+        assertEquals(3, results.size)
+        assertEquals("Device.SelfTestDiagnostics()", results[0].executed_command)
+        assertEquals("Device.LocalAgent.Request.1.", results[0].req_obj_path)
+        assertEquals("Device.WiFi.", results[1].executed_command)
+        assertEquals(ParameterActionFailed.code, results[1].cmd_failure!!.err_code)
+        assertEquals("Device.Network.", results[2].executed_command)
+        assertEquals("123", results[2].req_output_args!!.output_args["test"])
+    }
+
+    @Test
+    fun `create NotifyResp message`() {
+        val resp = NotifyResp("notify-1", "subscription_1")
+
+        assertMessageType(Header.MsgType.NOTIFY_RESP, resp)
+        assertNotNull(resp.body!!.response!!.notify_resp)
+        assertEquals("notify-1", resp.header_!!.msg_id)
+        assertEquals("subscription_1", resp.body!!.response!!.notify_resp!!.subscription_id)
+    }
+
+    @Test
+    fun `create GetSupportedProtocolResp message`() {
+        val resp = GetSupportedProtocolResp("proto-1", "1.2,1.3")
+
+        assertMessageType(Header.MsgType.GET_SUPPORTED_PROTO_RESP, resp)
+        assertNotNull(resp.body!!.response!!.get_supported_protocol_resp)
+        assertEquals("proto-1", resp.header_!!.msg_id)
+        assertEquals(
+            "1.2,1.3",
+            resp.body!!.response!!.get_supported_protocol_resp!!.agent_supported_protocol_versions
+        )
+    }
+
+    @Test
+    fun `create RegisterResp message`() {
+        val resp = RegisterResp("resp-1") {
+            addResult("Device.") {
+                registeredPath("Device.Network.")
+            }
+            addResult("Device.WiFi.") {
+                failure(ParameterActionFailed)
+            }
+        }
+
+        assertMessageType(Header.MsgType.REGISTER_RESP, resp)
+        assertNotNull(resp.body!!.response!!.register_resp)
+        assertEquals("resp-1", resp.header_!!.msg_id)
+
+        val results = resp.body!!.response!!.register_resp!!.registered_path_results
+        assertEquals(2, results.size)
+
+        assertEquals("Device.", results[0].requested_path)
+        assertNotNull(results[0].oper_status!!.oper_success)
+        assertNull(results[0].oper_status!!.oper_failure)
+        assertEquals("Device.Network.", results[0].oper_status!!.oper_success!!.registered_path)
+
+        assertEquals("Device.WiFi.", results[1].requested_path)
+        assertNotNull(results[1].oper_status!!.oper_failure)
+        assertNull(results[1].oper_status!!.oper_success)
+        assertEquals(ParameterActionFailed.code, results[1].oper_status!!.oper_failure!!.err_code)
+    }
+
+    @Test
+    fun `create DeregisterResp message`() {
+        val resp = DeregisterResp("de-1") {
+            addResult("Device.") {
+                addDeregisteredPath("Device.Network.")
+                addDeregisteredPath("Device.WiFi.")
+            }
+            addResult("Device.NAT.") {
+                failure(ParameterActionFailed)
+            }
+        }
+
+        assertMessageType(Header.MsgType.DEREGISTER_RESP, resp)
+        assertNotNull(resp.body!!.response!!.deregister_resp)
+        assertEquals("de-1", resp.header_!!.msg_id)
+
+        val results = resp.body!!.response!!.deregister_resp!!.deregistered_path_results
+        assertEquals(2, results.size)
+
+        assertEquals("Device.", results[0].requested_path)
+        assertNotNull(results[0].oper_status!!.oper_success)
+        assertNull(results[0].oper_status!!.oper_failure)
+        assertEquals(
+            "Device.Network.",
+            results[0].oper_status!!.oper_success!!.deregistered_path[0]
+        )
+        assertEquals("Device.WiFi.", results[0].oper_status!!.oper_success!!.deregistered_path[1])
+
+        assertEquals("Device.NAT.", results[1].requested_path)
+        assertNotNull(results[1].oper_status!!.oper_failure)
+        assertNull(results[1].oper_status!!.oper_success)
+        assertEquals(ParameterActionFailed.code, results[1].oper_status!!.oper_failure!!.err_code)
     }
 }
 
