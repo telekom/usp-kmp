@@ -2,6 +2,7 @@ package de.telekom.usp.mtp
 
 import co.touchlab.kermit.Logger
 import de.telekom.usp.EndpointConnection
+import de.telekom.usp.EndpointConnectionEvent
 import de.telekom.usp.EndpointIdentifier
 import de.telekom.usp.mtp.util.KtorKermitBridge
 import io.ktor.client.HttpClient
@@ -48,8 +49,8 @@ class WebSocketConnection(
     debugMode: Boolean = false
 ) : EndpointConnection {
 
-    private val _events = MutableSharedFlow<ConnectionEvent>()
-    override val events: SharedFlow<ConnectionEvent>
+    private val _events = MutableSharedFlow<EndpointConnectionEvent>()
+    override val events: SharedFlow<EndpointConnectionEvent>
         get() = _events.asSharedFlow()
 
     private val input =
@@ -100,7 +101,7 @@ class WebSocketConnection(
                     }
                 } catch (ex: Exception) {
                     Logger.e(throwable = ex) { "Error establishing connectivity of ${this@WebSocketConnection}" }
-                    emit(ConnectionEvent.ConnectionFailed(this@WebSocketConnection, ex))
+                    emit(EndpointConnectionEvent.ConnectionFailed(this@WebSocketConnection, ex))
                 }
             }
         }
@@ -113,7 +114,7 @@ class WebSocketConnection(
             receiverRoutine?.cancelAndJoin()
             senderRoutine = null
             receiverRoutine = null
-            emit(ConnectionEvent.Disconnected(from = this))
+            emit(EndpointConnectionEvent.Disconnected(from = this))
         }
     }
 
@@ -126,7 +127,7 @@ class WebSocketConnection(
     private suspend fun connected() {
         mutex.withLock {
             this.isConnected = true
-            emit(ConnectionEvent.Connected(to = this))
+            emit(EndpointConnectionEvent.Connected(to = this))
             Logger.d { "New state of $this is: CONNECTED" }
         }
     }
@@ -143,12 +144,12 @@ class WebSocketConnection(
         }
     }
 
-    private suspend fun emit(event: ConnectionEvent) {
+    private suspend fun emit(event: EndpointConnectionEvent) {
         _events.emit(event)
     }
 
     private suspend fun emit(bytes: ByteString) {
-        _events.emit(ConnectionEvent.BytesReceived(bytes))
+        _events.emit(EndpointConnectionEvent.BytesReceived(bytes))
     }
 
     private suspend fun DefaultClientWebSocketSession.incomingMessagesLoop() {

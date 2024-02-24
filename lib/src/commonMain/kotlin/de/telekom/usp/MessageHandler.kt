@@ -33,17 +33,19 @@ import de.telekom.usp.messages.proto.operateResponse
 import de.telekom.usp.messages.proto.registerResponse
 import de.telekom.usp.messages.proto.requireType
 import de.telekom.usp.messages.proto.setResponse
-import de.telekom.usp.mtp.ConnectionEvent
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
+import kotlinx.datetime.Clock
+import kotlinx.datetime.Instant
 import kotlin.jvm.JvmName
 
-class MessageMediator(
+class MessageHandler(
     private val converter: MessageConverter,
     private val connection: EndpointConnection,
+    private val clock: Clock = Clock.System,
     scope: CoroutineScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
 ) {
     init {
@@ -59,7 +61,7 @@ class MessageMediator(
         }
     }
 
-    private val pendingRequests = mutableListOf<PendingRequest<*>>()
+    private val pendingRequests = mutableMapOf<String, PendingRequest<*>>()
 
     @JvmName("sendGetRequest")
     suspend fun sendRequest(msg: Msg, onResponse: (GetResp) -> Unit, onError: (Error) -> Unit) {
@@ -165,14 +167,14 @@ class MessageMediator(
         connection.send(converter.noSessionContextMessage(msg))
 
         if (onResponse != null && onError != null) {
-            val x = PendingRequest(msg.id, onResponse, onError, retrieveResponse)
-            pendingRequests.add(x)
+            pendingRequests[msg.id] =
+                PendingRequest(onResponse, onError, retrieveResponse, clock.now())
         }
     }
 
-    private suspend fun handleConnectionEvent(event: ConnectionEvent) {
+    private suspend fun handleConnectionEvent(event: EndpointConnectionEvent) {
         when (event) {
-            is ConnectionEvent.BytesReceived -> {
+            is EndpointConnectionEvent.BytesReceived -> {
                 converter.next(event.bytes)
             }
 
@@ -227,17 +229,24 @@ class MessageMediator(
 
     @Suppress("UNCHECKED_CAST")
     private fun findPendingRequest(msg: Msg): PendingRequest<Any>? {
-        return pendingRequests.firstOrNull { pending -> pending.messageId == msg.id } as? PendingRequest<Any>
+        return (pendingRequests[msg.id] as? PendingRequest<Any>).also {
+            Logger.d { "Found pending request for message id ${msg.id}: $it" }
+        }
     }
 
     private fun removePendingRequest(msg: Msg) {
-        pendingRequests.removeAll { pending -> pending.messageId == msg.id }
+        Logger.d { "Removing pending request for message id ${msg.id}" }
+        pendingRequests.remove(msg.id)
     }
 
-    private data class PendingRequest<T>(
-        val messageId: String,
+    private class PendingRequest<T>(
         val onResponse: (T) -> Unit,
         val onError: (Error) -> Unit,
-        val responseFor: (Msg) -> T
-    )
+        val responseFor: (Msg) -> T,
+        val creationTime: Instant
+    ) {
+        override fun toString(): String {
+            return "PendingRequest($onResponse, )"
+        }
+    }
 }

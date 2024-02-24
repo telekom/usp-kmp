@@ -1,29 +1,28 @@
-package de.telekom.usp.mtp
+package de.telekom.usp
 
-import de.telekom.usp.EndpointConnection
 import okio.ByteString
 
-sealed class ConnectionEvent {
+sealed class EndpointConnectionEvent {
 
     /**
      * Indicates that the `EndpointConnection` is successfully connected to its remote host.
      */
-    data class Connected(val to: EndpointConnection) : ConnectionEvent()
+    data class Connected(val to: EndpointConnection) : EndpointConnectionEvent()
 
     /**
      * Indicates that the `EndpointConnection` has been (intentionally) disconnected from its remote
      * host.
      */
-    data class Disconnected(val from: EndpointConnection) : ConnectionEvent()
+    data class Disconnected(val from: EndpointConnection) : EndpointConnectionEvent()
 
     /**
      * Indicates that the `EndpointConnection` cannot establish a connection to its remote host.
      */
     data class ConnectionFailed(val from: EndpointConnection, val reason: Throwable?) :
-        ConnectionEvent()
+        EndpointConnectionEvent()
 
     /**
      * Indicates that the `EndpointConnection` received a byte string from the remote host.
      */
-    data class BytesReceived(val bytes: ByteString) : ConnectionEvent()
+    data class BytesReceived(val bytes: ByteString) : EndpointConnectionEvent()
 }
