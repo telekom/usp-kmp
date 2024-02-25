@@ -45,7 +45,7 @@ class ErrorBuilder internal constructor(
         return Msg(
             header_ = Header(
                 msg_type = Header.MsgType.ERROR,
-                msg_id = messageId ?: "ERROR-${MessageIdFactory.next()}"
+                msg_id = messageId ?: MessageIdFactory.next("ERROR-")
             ),
             body = Body(
                 error = Error(

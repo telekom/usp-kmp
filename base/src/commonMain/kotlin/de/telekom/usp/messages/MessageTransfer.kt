@@ -4,7 +4,10 @@ import kotlinx.coroutines.flow.SharedFlow
 import okio.ByteString
 
 /**
- * Abstraction for the message transfer protocol.
+ * Abstraction for the message transfer protocol. Allows sending and receiving of byte strings
+ * (which actually represent USP records, hence this interface should actually be called
+ * RecordTransfer, but as the USP specification uses the term message transfer, we adopt it here
+ * as well).
  */
 interface MessageTransfer {
 

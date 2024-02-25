@@ -1,4 +1,4 @@
-package de.telekom.usp
+package de.telekom.usp.messages
 
 /**
  * The message transfer protocols defined in the USP specification chapter 4. Note that as CoAP is

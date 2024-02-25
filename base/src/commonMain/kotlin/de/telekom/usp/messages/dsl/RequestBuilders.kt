@@ -188,7 +188,7 @@ abstract class RequestMessageBuilder internal constructor(type: Header.MsgType) 
         return Msg(
             header_ = Header(
                 msg_type = type,
-                msg_id = messageId ?: "$type-${MessageIdFactory.next()}"
+                msg_id = messageId ?: MessageIdFactory.next("$type-")
             ),
             body = Body(request = buildRequest())
         )

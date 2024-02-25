@@ -8,7 +8,7 @@ import de.telekom.usp.util.AtomicSequence
  */
 object MessageIdFactory {
 
-    private val id = AtomicSequence(0)
+    private val sequence = AtomicSequence(0)
 
-    fun next() = id.next().toString()
+    fun next(prefix: String = "") = prefix + sequence.next()
 }
