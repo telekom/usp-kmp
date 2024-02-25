@@ -28,14 +28,18 @@ kotlin {
         commonMain.dependencies {
             implementation(project(":base"))
             implementation(project(":records"))
-            implementation(project(":mtp"))
             implementation(libs.kotlinx.datetime)
             implementation(libs.kermit)
             api(libs.wire.runtime)
             api(libs.kotlinx.coroutines.core)
+            api(libs.ktor.client.core)
+            api(libs.ktor.client.cio)
+            api(libs.ktor.client.websockets)
+            api(libs.ktor.client.logging)
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)
+            implementation(libs.ktor.client.mock)
         }
     }
 }
