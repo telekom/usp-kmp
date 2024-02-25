@@ -1,9 +1,9 @@
 package de.telekom.usp.mtp
 
 import co.touchlab.kermit.Logger
-import de.telekom.usp.EndpointConnection
-import de.telekom.usp.EndpointConnectionEvent
 import de.telekom.usp.EndpointIdentifier
+import de.telekom.usp.messages.MessageTransfer
+import de.telekom.usp.messages.MessageTransferEvent
 import de.telekom.usp.mtp.util.KtorKermitBridge
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.HttpClientEngine
@@ -39,7 +39,7 @@ import kotlin.time.Duration.Companion.seconds
 private const val USP_WEB_SOCKET_PROTOCOL = "v1.usp"
 private const val USP_WEB_SOCKET_EXTENSION = "bbf-usp-protocol"
 
-class WebSocketConnection(
+class WebSocketTransfer(
     private val host: String,
     private val port: Int,
     private val from: EndpointIdentifier,
@@ -47,10 +47,10 @@ class WebSocketConnection(
     engine: HttpClientEngine = CIO.create(),
     pingDuration: Duration = 20.seconds,
     debugMode: Boolean = false
-) : EndpointConnection {
+) : MessageTransfer {
 
-    private val _events = MutableSharedFlow<EndpointConnectionEvent>()
-    override val events: SharedFlow<EndpointConnectionEvent>
+    private val _events = MutableSharedFlow<MessageTransferEvent>()
+    override val events: SharedFlow<MessageTransferEvent>
         get() = _events.asSharedFlow()
 
     private val input =
@@ -100,8 +100,8 @@ class WebSocketConnection(
                         receiverRoutine?.join()
                     }
                 } catch (ex: Exception) {
-                    Logger.e(throwable = ex) { "Error establishing connectivity of ${this@WebSocketConnection}" }
-                    emit(EndpointConnectionEvent.ConnectionFailed(this@WebSocketConnection, ex))
+                    Logger.e(throwable = ex) { "Error establishing connectivity of ${this@WebSocketTransfer}" }
+                    emit(MessageTransferEvent.ConnectionFailed(this@WebSocketTransfer, ex))
                 }
             }
         }
@@ -114,7 +114,7 @@ class WebSocketConnection(
             receiverRoutine?.cancelAndJoin()
             senderRoutine = null
             receiverRoutine = null
-            emit(EndpointConnectionEvent.Disconnected(from = this))
+            emit(MessageTransferEvent.Disconnected(from = this))
         }
     }
 
@@ -127,7 +127,7 @@ class WebSocketConnection(
     private suspend fun connected() {
         mutex.withLock {
             this.isConnected = true
-            emit(EndpointConnectionEvent.Connected(to = this))
+            emit(MessageTransferEvent.Connected(to = this))
             Logger.d { "New state of $this is: CONNECTED" }
         }
     }
@@ -144,28 +144,28 @@ class WebSocketConnection(
         }
     }
 
-    private suspend fun emit(event: EndpointConnectionEvent) {
+    private suspend fun emit(event: MessageTransferEvent) {
         _events.emit(event)
     }
 
     private suspend fun emit(bytes: ByteString) {
-        _events.emit(EndpointConnectionEvent.BytesReceived(bytes))
+        _events.emit(MessageTransferEvent.BytesReceived(bytes))
     }
 
     private suspend fun DefaultClientWebSocketSession.incomingMessagesLoop() {
         try {
-            Logger.d { "${this@WebSocketConnection} waiting for incoming frames..." }
+            Logger.d { "${this@WebSocketTransfer} waiting for incoming frames..." }
 
             for (frame in incoming) {
                 when (frame) {
                     // Note that in non-raw mode, we should never receive Close, Ping or Pong frames
                     is Frame.Binary -> {
-                        Logger.d { "${this@WebSocketConnection} received data frame of size: ${frame.data.size}" }
+                        Logger.d { "${this@WebSocketTransfer} received data frame of size: ${frame.data.size}" }
                         emit(frame.readBytes().toByteString())
                     }
 
                     else -> {
-                        Logger.e { "${this@WebSocketConnection} received unexpected frame: $frame" }
+                        Logger.e { "${this@WebSocketTransfer} received unexpected frame: $frame" }
                     }
                 }
             }
@@ -173,26 +173,26 @@ class WebSocketConnection(
             disconnect()
 
         } catch (ex: CancellationException) {
-            Logger.d { "Incoming message queue of ${this@WebSocketConnection} has been cancelled" }
+            Logger.d { "Incoming message queue of ${this@WebSocketTransfer} has been cancelled" }
             disconnect()
         } catch (ex: Exception) {
-            Logger.e(throwable = ex) { "${this@WebSocketConnection} error while receiving messages: " + ex::class }
+            Logger.e(throwable = ex) { "${this@WebSocketTransfer} error while receiving messages: " + ex::class }
         }
     }
 
     private suspend fun DefaultClientWebSocketSession.outgoingMessagesLoop() {
         try {
-            Logger.d { "${this@WebSocketConnection} waiting for messages to send..." }
+            Logger.d { "${this@WebSocketTransfer} waiting for messages to send..." }
 
             input.collect { bytes ->
                 outgoing.send(Frame.Binary(fin = true, data = bytes.toByteArray()))
                 Logger.d { "Data frame of size ${bytes.size} sent to $host:$port" }
             }
         } catch (ex: CancellationException) {
-            Logger.d { "Outgoing message queue of ${this@WebSocketConnection} has been cancelled" }
+            Logger.d { "Outgoing message queue of ${this@WebSocketTransfer} has been cancelled" }
             disconnect()
         } catch (ex: Exception) {
-            Logger.e(throwable = ex) { "${this@WebSocketConnection} error while sending messages: " + ex::class }
+            Logger.e(throwable = ex) { "${this@WebSocketTransfer} error while sending messages: " + ex::class }
         }
     }
 

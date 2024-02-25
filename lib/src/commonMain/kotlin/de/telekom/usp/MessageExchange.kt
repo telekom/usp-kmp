@@ -3,6 +3,8 @@ package de.telekom.usp
 import co.touchlab.kermit.Logger
 import de.telekom.usp.messages.MessageConversionResult
 import de.telekom.usp.messages.MessageConverter
+import de.telekom.usp.messages.MessageTransfer
+import de.telekom.usp.messages.MessageTransferEvent
 import de.telekom.usp.messages.proto.AddResp
 import de.telekom.usp.messages.proto.DeleteResp
 import de.telekom.usp.messages.proto.DeregisterResp
@@ -44,7 +46,7 @@ import kotlin.jvm.JvmName
 
 class MessageExchange(
     private val converter: MessageConverter,
-    private val connection: EndpointConnection,
+    private val connection: MessageTransfer,
     private val clock: Clock = Clock.System,
     scope: CoroutineScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
 ) {
@@ -172,9 +174,9 @@ class MessageExchange(
         }
     }
 
-    private suspend fun handleConnectionEvent(event: EndpointConnectionEvent) {
+    private suspend fun handleConnectionEvent(event: MessageTransferEvent) {
         when (event) {
-            is EndpointConnectionEvent.BytesReceived -> {
+            is MessageTransferEvent.BytesReceived -> {
                 converter.next(event.bytes)
             }
 

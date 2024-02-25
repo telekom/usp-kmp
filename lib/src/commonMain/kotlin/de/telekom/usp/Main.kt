@@ -5,7 +5,7 @@ import de.telekom.usp.messages.MessageConverterImpl
 import de.telekom.usp.messages.dsl.Get
 import de.telekom.usp.messages.proto.GetResp
 import de.telekom.usp.messages.proto.debugMessage
-import de.telekom.usp.mtp.WebSocketConnection
+import de.telekom.usp.mtp.WebSocketTransfer
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 import kotlin.time.Duration.Companion.minutes
@@ -17,7 +17,7 @@ fun main(args: Array<String>) {
     val from = EndpointIdentifier("proto::usp-demo")
     val converter: MessageConverter = MessageConverterImpl(from, to)
     val connection =
-        WebSocketConnection(host, port, from, debugMode = true, pingDuration = 10.minutes)
+        WebSocketTransfer(host, port, from, debugMode = true, pingDuration = 10.minutes)
     val msg = Get {
         this.maxDepth = 1
         addPath(DeviceInfo)
