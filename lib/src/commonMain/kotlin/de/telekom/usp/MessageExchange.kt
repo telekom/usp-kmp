@@ -3,8 +3,6 @@ package de.telekom.usp
 import co.touchlab.kermit.Logger
 import de.telekom.usp.messages.MessageConversionResult
 import de.telekom.usp.messages.MessageConverter
-import de.telekom.usp.messages.MessageTransfer
-import de.telekom.usp.messages.MessageTransferEvent
 import de.telekom.usp.messages.proto.AddResp
 import de.telekom.usp.messages.proto.DeleteResp
 import de.telekom.usp.messages.proto.DeregisterResp
@@ -35,6 +33,8 @@ import de.telekom.usp.messages.proto.operateResponse
 import de.telekom.usp.messages.proto.registerResponse
 import de.telekom.usp.messages.proto.requireType
 import de.telekom.usp.messages.proto.setResponse
+import de.telekom.usp.mtp.MessageTransfer
+import de.telekom.usp.mtp.MessageTransferEvent
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
