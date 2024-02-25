@@ -24,7 +24,7 @@ fun main(args: Array<String>) {
     }
 //    val msg = Operate(Reboot, "key") { }
 
-    val handler = MessageHandler(converter, connection)
+    val handler = MessageExchange(converter, connection)
     runBlocking {
         handler.sendRequest(msg, { response: GetResp ->
             println(response.debugMessage())

@@ -3,11 +3,11 @@ package de.telekom.usp.util
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
-class AtomicCounterTest {
+class AtomicSequenceTest {
 
     @Test
     fun `increments integers`() {
-        val int = AtomicCounter(1)
+        val int = AtomicSequence(1)
         assertEquals(2, int.next())
         assertEquals(3, int.next())
         assertEquals(4, int.next())

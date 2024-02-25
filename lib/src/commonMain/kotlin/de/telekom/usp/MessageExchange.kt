@@ -42,7 +42,7 @@ import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
 import kotlin.jvm.JvmName
 
-class MessageHandler(
+class MessageExchange(
     private val converter: MessageConverter,
     private val connection: EndpointConnection,
     private val clock: Clock = Clock.System,

@@ -43,7 +43,7 @@ class MessageConverterImpl(
     private val remote: EndpointIdentifier,
     private val version: String = Versions.mostRecent,
     private val cache: RecordBuffer = InMemoryRecordBuffer(),
-    private val allowSessionContext: Boolean = true,
+    override val allowSessionContext: Boolean = true,
 ) : MessageConverter {
 
     private val _results = MutableSharedFlow<MessageConversionResult>()

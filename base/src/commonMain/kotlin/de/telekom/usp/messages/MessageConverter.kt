@@ -11,6 +11,12 @@ import okio.ByteString
  */
 interface MessageConverter {
 
+    /**
+     * Reflects R-E2E.6a: an agent may not be allowed to establish a session context. In this case
+     * the value of `allowSessionContext` must be `false`, otherwise it is `true`.
+     */
+    val allowSessionContext: Boolean
+
     val results: SharedFlow<MessageConversionResult>
 
     /**
