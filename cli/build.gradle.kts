@@ -24,6 +24,6 @@ distributions {
 
 dependencies {
     implementation(project(":base"))
-    implementation(project(":messages"))
+    implementation(project(":records"))
     implementation(libs.clikt)
 }
