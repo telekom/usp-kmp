@@ -46,7 +46,7 @@ import kotlin.jvm.JvmName
 
 class MessageExchange(
     private val converter: MessageConverter,
-    private val connection: MessageTransfer,
+    private val transfer: MessageTransfer,
     private val clock: Clock = Clock.System,
     scope: CoroutineScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
 ) {
@@ -57,8 +57,8 @@ class MessageExchange(
             }
         }
         scope.launch {
-            connection.events.collect { event ->
-                handleConnectionEvent(event)
+            transfer.events.collect { event ->
+                handleTransferEvent(event)
             }
         }
     }
@@ -66,122 +66,127 @@ class MessageExchange(
     private val pendingRequests = mutableMapOf<String, PendingRequest<*>>()
 
     @JvmName("sendGetRequest")
-    suspend fun sendRequest(msg: Msg, onResponse: (GetResp) -> Unit, onError: (Error) -> Unit) {
+    suspend fun sendRequest(msg: Msg, onError: (Error) -> Unit, onResponse: (GetResp) -> Unit) {
         msg.requireType(Header.MsgType.GET)
-        sendRequest(msg, onResponse, onError, Msg::getResponse)
+        sendRequest(msg, onError, onResponse, Msg::getResponse)
     }
 
     @JvmName("sendGetSupportedDMRequest")
     suspend fun sendRequest(
         msg: Msg,
-        onResponse: (GetSupportedDMResp) -> Unit,
-        onError: (Error) -> Unit
+        onError: (Error) -> Unit,
+        onResponse: (GetSupportedDMResp) -> Unit
     ) {
         msg.requireType(Header.MsgType.GET_SUPPORTED_DM)
-        sendRequest(msg, onResponse, onError, Msg::getSupportedDmResponse)
+        sendRequest(msg, onError, onResponse, Msg::getSupportedDmResponse)
     }
 
     @JvmName("sendGetInstancesRequest")
     suspend fun sendRequest(
         msg: Msg,
-        onResponse: (GetInstancesResp) -> Unit,
-        onError: (Error) -> Unit
+        onError: (Error) -> Unit,
+        onResponse: (GetInstancesResp) -> Unit
     ) {
         msg.requireType(Header.MsgType.GET_INSTANCES)
-        sendRequest(msg, onResponse, onError, Msg::getInstancesResponse)
+        sendRequest(msg, onError, onResponse, Msg::getInstancesResponse)
     }
 
     @JvmName("sendGetSupportedProtocolRequest")
     suspend fun sendRequest(
         msg: Msg,
-        onResponse: (GetSupportedProtocolResp) -> Unit,
-        onError: (Error) -> Unit
+        onError: (Error) -> Unit,
+        onResponse: (GetSupportedProtocolResp) -> Unit
     ) {
         msg.requireType(Header.MsgType.GET_SUPPORTED_PROTO)
-        sendRequest(msg, onResponse, onError, Msg::getSupportedProtocolResponse)
+        sendRequest(msg, onError, onResponse, Msg::getSupportedProtocolResponse)
     }
 
     @JvmName("sendSetRequest")
-    suspend fun sendRequest(msg: Msg, onResponse: (SetResp) -> Unit, onError: (Error) -> Unit) {
+    suspend fun sendRequest(msg: Msg, onError: (Error) -> Unit, onResponse: (SetResp) -> Unit) {
         msg.requireType(Header.MsgType.SET)
-        sendRequest(msg, onResponse, onError, Msg::setResponse)
+        sendRequest(msg, onError, onResponse, Msg::setResponse)
     }
 
     @JvmName("sendAddRequest")
-    suspend fun sendRequest(msg: Msg, onResponse: (AddResp) -> Unit, onError: (Error) -> Unit) {
+    suspend fun sendRequest(msg: Msg, onError: (Error) -> Unit, onResponse: (AddResp) -> Unit) {
         msg.requireType(Header.MsgType.ADD)
-        sendRequest(msg, onResponse, onError, Msg::addResponse)
+        sendRequest(msg, onError, onResponse, Msg::addResponse)
     }
 
     @JvmName("sendDeleteRequest")
-    suspend fun sendRequest(msg: Msg, onResponse: (DeleteResp) -> Unit, onError: (Error) -> Unit) {
+    suspend fun sendRequest(msg: Msg, onError: (Error) -> Unit, onResponse: (DeleteResp) -> Unit) {
         msg.requireType(Header.MsgType.DELETE)
-        sendRequest(msg, onResponse, onError, Msg::deleteResponse)
+        sendRequest(msg, onError, onResponse, Msg::deleteResponse)
     }
 
     @JvmName("sendOperateRequest")
     suspend fun sendRequest(
         msg: Msg,
-        onResponse: ((OperateResp) -> Unit)?,
-        onError: ((Error) -> Unit)?
+        onError: ((Error) -> Unit),
+        onResponse: ((OperateResp) -> Unit)?
     ) {
         msg.requireType(Header.MsgType.OPERATE)
-        sendRequest(msg, onResponse, onError, Msg::operateResponse)
+        sendRequest(msg, onError, onResponse, Msg::operateResponse)
     }
 
     @JvmName("sendNotifyRequest")
     suspend fun sendRequest(
         msg: Msg,
+        onError: ((Error) -> Unit),
         onResponse: ((NotifyResp) -> Unit)?,
-        onError: ((Error) -> Unit)?
     ) {
         msg.requireType(Header.MsgType.NOTIFY)
-        sendRequest(msg, onResponse, onError, Msg::notifyResponse)
+        sendRequest(msg, onError, onResponse, Msg::notifyResponse)
     }
 
     @JvmName("sendRegisterRequest")
     suspend fun sendRequest(
         msg: Msg,
-        onResponse: (RegisterResp) -> Unit,
-        onError: (Error) -> Unit
+        onError: (Error) -> Unit,
+        onResponse: (RegisterResp) -> Unit
     ) {
         msg.requireType(Header.MsgType.REGISTER)
-        sendRequest(msg, onResponse, onError, Msg::registerResponse)
+        sendRequest(msg, onError, onResponse, Msg::registerResponse)
     }
 
     @JvmName("sendDeregisterRequest")
     suspend fun sendRequest(
         msg: Msg,
-        onResponse: (DeregisterResp) -> Unit,
-        onError: (Error) -> Unit
+        onError: (Error) -> Unit,
+        onResponse: (DeregisterResp) -> Unit
     ) {
         msg.requireType(Header.MsgType.DEREGISTER)
-        sendRequest(msg, onResponse, onError, Msg::deregisterResponse)
+        sendRequest(msg, onError, onResponse, Msg::deregisterResponse)
     }
 
     private suspend fun <T> sendRequest(
         msg: Msg,
+        onError: ((Error) -> Unit),
         onResponse: ((T) -> Unit)?,
-        onError: ((Error) -> Unit)?,
         retrieveResponse: (Msg) -> T
     ) {
-        connection.connect()
-        connection.send(converter.noSessionContextMessage(msg))
+        transfer.connect()
 
-        if (onResponse != null && onError != null) {
+        if (converter.allowSessionContext) {
+            converter.sessionContextMessage(msg = msg).forEach { transfer.send(it) }
+        } else {
+            transfer.send(converter.noSessionContextMessage(msg))
+        }
+
+        if (onResponse != null) {
             pendingRequests[msg.id] =
                 PendingRequest(onResponse, onError, retrieveResponse, clock.now())
         }
     }
 
-    private suspend fun handleConnectionEvent(event: MessageTransferEvent) {
+    private suspend fun handleTransferEvent(event: MessageTransferEvent) {
         when (event) {
             is MessageTransferEvent.BytesReceived -> {
                 converter.next(event.bytes)
             }
 
             else -> {
-                Logger.d { " Ignoring connection event $event for now..." }
+                Logger.d { "Ignoring connection event $event for now..." }
             }
         }
     }

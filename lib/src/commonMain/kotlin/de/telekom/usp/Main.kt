@@ -26,10 +26,10 @@ fun main(args: Array<String>) {
 
     val handler = MessageExchange(converter, connection)
     runBlocking {
-        handler.sendRequest(msg, { response: GetResp ->
-            println(response.debugMessage())
-        }) { error ->
+        handler.sendRequest(msg, { error ->
             println("Error received: $error")
+        }) { response: GetResp ->
+            println(response.debugMessage())
         }
         delay(2000)
     }
