@@ -284,6 +284,10 @@ class AddRequestBuilder internal constructor() : RequestMessageBuilder(Header.Ms
 
     var allowPartial = true
 
+    fun addPath(path: Path, init: ParamSettingsBuilder.() -> Unit) {
+        addBuilder(ParamSettingsBuilder(path.toString()), paramSettingsBuilder, init)
+    }
+
     fun addPath(path: String, init: ParamSettingsBuilder.() -> Unit) {
         addBuilder(ParamSettingsBuilder(path), paramSettingsBuilder, init)
     }

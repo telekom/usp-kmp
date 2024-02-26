@@ -7,15 +7,26 @@ fun GetResp.debugMessage(): String {
     return buildString {
         req_path_results.forEach { requestedResult ->
             if (requestedResult.err_code != NoError.code) {
-                append("------------- ${Error.from(requestedResult.err_code)} -------------\n")
+                append("------------- ${Error.from(requestedResult.err_code)} -------------")
             } else {
-                requestedResult.resolved_path_results.forEach { pathResult ->
-                    append("------------- ${pathResult.resolved_path} -------------\n")
-                    pathResult.result_params.forEach { param ->
-                        append("${param.key}=${param.value}\n")
+                if (requestedResult.resolved_path_results.isEmpty()) {
+                    append("------------- ${requestedResult.requested_path} -------------\n[]")
+                } else {
+                    requestedResult.resolved_path_results.forEach { pathResult ->
+                        append("\n")
+                        append(pathResult.debugMessage())
                     }
                 }
             }
         }
+    }
+}
+
+fun GetResp.ResolvedPathResult.debugMessage(): String {
+    return result_params.entries.joinToString(
+        separator = "\n",
+        prefix = "------------- ${this.resolved_path} -------------\n"
+    ) {
+        "${it.key}=${it.value}"
     }
 }

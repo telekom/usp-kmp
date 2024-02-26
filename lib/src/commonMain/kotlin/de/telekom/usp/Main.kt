@@ -2,7 +2,10 @@ package de.telekom.usp
 
 import de.telekom.usp.messages.MessageConverter
 import de.telekom.usp.messages.MessageConverterImpl
+import de.telekom.usp.messages.dsl.Add
 import de.telekom.usp.messages.dsl.Get
+import de.telekom.usp.messages.dsl.required
+import de.telekom.usp.messages.proto.AddResp
 import de.telekom.usp.messages.proto.GetResp
 import de.telekom.usp.messages.proto.debugMessage
 import de.telekom.usp.mtp.WebSocketTransfer
@@ -18,20 +21,32 @@ fun main(args: Array<String>) {
     val converter: MessageConverter = MessageConverterImpl(from, to)
     val connection =
         WebSocketTransfer(host, port, from, debugMode = true, pingDuration = 10.minutes)
-    val msg = Get {
-        this.maxDepth = 1
-        addPath(DeviceInfo)
+    val get1 = Get {
+        this.maxDepth = 2
+        addPath(Device)
     }
-//    val msg = Operate(Reboot, "key") { }
+    val addWifi = Add {
+        allowPartial = false
+        addPath(WiFi + "SSID.") {
+            params["LowerLayers"] = "Device.WiFi.Radio.1." required true
+            params["SSID"] = "My-New-WiFi" required true
+        }
+    }
+    val errorHandler: (MessageExchangeFailure) -> Unit = { println("Error received: $it") }
+    val exchange = MessageExchange(converter, connection)
 
-    val handler = MessageExchange(converter, connection)
+    exchange.start()
     runBlocking {
-        handler.sendRequest(msg, { error ->
-            println("Error received: $error")
-        }) { response: GetResp ->
+        exchange.sendRequest(get1, errorHandler) { response: GetResp ->
             println(response.debugMessage())
         }
-        delay(2000)
+        delay(1000)
+        exchange.sendRequest(addWifi, errorHandler) { response: AddResp ->
+            println(response)
+        }
+        delay(1000)
+        exchange.stop()
+        delay(500)
     }
     println("Main terminated...")
 }

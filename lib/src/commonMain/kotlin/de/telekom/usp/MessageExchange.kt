@@ -6,7 +6,6 @@ import de.telekom.usp.messages.MessageConverter
 import de.telekom.usp.messages.proto.AddResp
 import de.telekom.usp.messages.proto.DeleteResp
 import de.telekom.usp.messages.proto.DeregisterResp
-import de.telekom.usp.messages.proto.Error
 import de.telekom.usp.messages.proto.GetInstancesResp
 import de.telekom.usp.messages.proto.GetResp
 import de.telekom.usp.messages.proto.GetSupportedDMResp
@@ -28,45 +27,70 @@ import de.telekom.usp.messages.proto.getSupportedProtocolResponse
 import de.telekom.usp.messages.proto.id
 import de.telekom.usp.messages.proto.isError
 import de.telekom.usp.messages.proto.isResponse
+import de.telekom.usp.messages.proto.notifyRequest
 import de.telekom.usp.messages.proto.notifyResponse
+import de.telekom.usp.messages.proto.operateRequest
 import de.telekom.usp.messages.proto.operateResponse
 import de.telekom.usp.messages.proto.registerResponse
 import de.telekom.usp.messages.proto.requireType
 import de.telekom.usp.messages.proto.setResponse
 import de.telekom.usp.mtp.MessageTransfer
 import de.telekom.usp.mtp.MessageTransferEvent
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancelAndJoin
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
 import kotlin.jvm.JvmName
+import kotlin.time.Duration
+import kotlin.time.Duration.Companion.seconds
 
 class MessageExchange(
     private val converter: MessageConverter,
     private val transfer: MessageTransfer,
     private val clock: Clock = Clock.System,
-    scope: CoroutineScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
+    private val scope: CoroutineScope = CoroutineScope(Dispatchers.IO + SupervisorJob()),
+    private val requestTimeout: Duration = 20.seconds
 ) {
-    init {
-        scope.launch {
+    private val pendingRequests = mutableMapOf<String, PendingRequest<*>>()
+
+    private val jobs = mutableListOf<Job>()
+
+    private var remoteAllowsSessionContext = true
+
+    fun start() {
+        jobs.add(scope.launch {
             converter.results.collect { result ->
                 handleDecoderResult(result)
             }
-        }
-        scope.launch {
+        })
+        jobs.add(scope.launch {
             transfer.events.collect { event ->
                 handleTransferEvent(event)
             }
-        }
+        })
+        jobs.add(scope.launch {
+            watchdog()
+        })
     }
 
-    private val pendingRequests = mutableMapOf<String, PendingRequest<*>>()
+    suspend fun stop() {
+        jobs.forEach { it.cancelAndJoin() }
+        jobs.clear()
+    }
 
     @JvmName("sendGetRequest")
-    suspend fun sendRequest(msg: Msg, onError: (Error) -> Unit, onResponse: (GetResp) -> Unit) {
+    suspend fun sendRequest(
+        msg: Msg,
+        onError: (MessageExchangeFailure) -> Unit,
+        onResponse: (GetResp) -> Unit
+    ) {
         msg.requireType(Header.MsgType.GET)
         sendRequest(msg, onError, onResponse, Msg::getResponse)
     }
@@ -74,7 +98,7 @@ class MessageExchange(
     @JvmName("sendGetSupportedDMRequest")
     suspend fun sendRequest(
         msg: Msg,
-        onError: (Error) -> Unit,
+        onError: (MessageExchangeFailure) -> Unit,
         onResponse: (GetSupportedDMResp) -> Unit
     ) {
         msg.requireType(Header.MsgType.GET_SUPPORTED_DM)
@@ -84,7 +108,7 @@ class MessageExchange(
     @JvmName("sendGetInstancesRequest")
     suspend fun sendRequest(
         msg: Msg,
-        onError: (Error) -> Unit,
+        onError: (MessageExchangeFailure) -> Unit,
         onResponse: (GetInstancesResp) -> Unit
     ) {
         msg.requireType(Header.MsgType.GET_INSTANCES)
@@ -94,7 +118,7 @@ class MessageExchange(
     @JvmName("sendGetSupportedProtocolRequest")
     suspend fun sendRequest(
         msg: Msg,
-        onError: (Error) -> Unit,
+        onError: (MessageExchangeFailure) -> Unit,
         onResponse: (GetSupportedProtocolResp) -> Unit
     ) {
         msg.requireType(Header.MsgType.GET_SUPPORTED_PROTO)
@@ -102,19 +126,31 @@ class MessageExchange(
     }
 
     @JvmName("sendSetRequest")
-    suspend fun sendRequest(msg: Msg, onError: (Error) -> Unit, onResponse: (SetResp) -> Unit) {
+    suspend fun sendRequest(
+        msg: Msg,
+        onError: (MessageExchangeFailure) -> Unit,
+        onResponse: (SetResp) -> Unit
+    ) {
         msg.requireType(Header.MsgType.SET)
         sendRequest(msg, onError, onResponse, Msg::setResponse)
     }
 
     @JvmName("sendAddRequest")
-    suspend fun sendRequest(msg: Msg, onError: (Error) -> Unit, onResponse: (AddResp) -> Unit) {
+    suspend fun sendRequest(
+        msg: Msg,
+        onError: (MessageExchangeFailure) -> Unit,
+        onResponse: (AddResp) -> Unit
+    ) {
         msg.requireType(Header.MsgType.ADD)
         sendRequest(msg, onError, onResponse, Msg::addResponse)
     }
 
     @JvmName("sendDeleteRequest")
-    suspend fun sendRequest(msg: Msg, onError: (Error) -> Unit, onResponse: (DeleteResp) -> Unit) {
+    suspend fun sendRequest(
+        msg: Msg,
+        onError: (MessageExchangeFailure) -> Unit,
+        onResponse: (DeleteResp) -> Unit
+    ) {
         msg.requireType(Header.MsgType.DELETE)
         sendRequest(msg, onError, onResponse, Msg::deleteResponse)
     }
@@ -122,27 +158,33 @@ class MessageExchange(
     @JvmName("sendOperateRequest")
     suspend fun sendRequest(
         msg: Msg,
-        onError: ((Error) -> Unit),
+        onError: ((MessageExchangeFailure) -> Unit),
         onResponse: ((OperateResp) -> Unit)?
     ) {
         msg.requireType(Header.MsgType.OPERATE)
+        if ((onResponse != null) && !msg.operateRequest.send_resp) {
+            throw IllegalArgumentException("When expecting a response, also specify a response handler")
+        }
         sendRequest(msg, onError, onResponse, Msg::operateResponse)
     }
 
     @JvmName("sendNotifyRequest")
     suspend fun sendRequest(
         msg: Msg,
-        onError: ((Error) -> Unit),
+        onError: ((MessageExchangeFailure) -> Unit),
         onResponse: ((NotifyResp) -> Unit)?,
     ) {
         msg.requireType(Header.MsgType.NOTIFY)
+        if ((onResponse != null) && !msg.notifyRequest.send_resp) {
+            throw IllegalArgumentException("When expecting a response, also specify a response handler")
+        }
         sendRequest(msg, onError, onResponse, Msg::notifyResponse)
     }
 
     @JvmName("sendRegisterRequest")
     suspend fun sendRequest(
         msg: Msg,
-        onError: (Error) -> Unit,
+        onError: (MessageExchangeFailure) -> Unit,
         onResponse: (RegisterResp) -> Unit
     ) {
         msg.requireType(Header.MsgType.REGISTER)
@@ -152,7 +194,7 @@ class MessageExchange(
     @JvmName("sendDeregisterRequest")
     suspend fun sendRequest(
         msg: Msg,
-        onError: (Error) -> Unit,
+        onError: (MessageExchangeFailure) -> Unit,
         onResponse: (DeregisterResp) -> Unit
     ) {
         msg.requireType(Header.MsgType.DEREGISTER)
@@ -161,13 +203,13 @@ class MessageExchange(
 
     private suspend fun <T> sendRequest(
         msg: Msg,
-        onError: ((Error) -> Unit),
+        onError: ((MessageExchangeFailure) -> Unit),
         onResponse: ((T) -> Unit)?,
         retrieveResponse: (Msg) -> T
     ) {
         transfer.connect()
 
-        if (converter.allowSessionContext) {
+        if (converter.allowSessionContext && remoteAllowsSessionContext) {
             converter.sessionContextMessage(msg = msg).forEach { transfer.send(it) }
         } else {
             transfer.send(converter.noSessionContextMessage(msg))
@@ -175,7 +217,7 @@ class MessageExchange(
 
         if (onResponse != null) {
             pendingRequests[msg.id] =
-                PendingRequest(onResponse, onError, retrieveResponse, clock.now())
+                PendingRequest(onResponse, onError, retrieveResponse, clock.now() + requestTimeout)
         }
     }
 
@@ -191,66 +233,109 @@ class MessageExchange(
         }
     }
 
-    private fun handleDecoderResult(result: MessageConversionResult) {
+    private suspend fun handleDecoderResult(result: MessageConversionResult) {
         when (result) {
-            is MessageConversionResult.Message -> {
-                val msg = result.msg
-                if (msg.isResponse) {
-                    handleResponse(msg)
-                } else if (msg.isError) {
-                    handleError(msg)
-                } else {
-                    handleRequest(msg)
-                }
-            }
-
+            is MessageConversionResult.Message -> handleMessage(result)
+            is MessageConversionResult.UspError -> handleUspError(result)
+            is MessageConversionResult.Disconnect -> handleDisconnect(result)
+            is MessageConversionResult.DecoderError -> handleDecoderError(result)
+            is MessageConversionResult.SessionEstablished -> handleSessionEstablished(result)
             else -> {
                 Logger.d { "Ignoring decoder result $result for now..." }
             }
         }
     }
 
-    private fun handleResponse(msg: Msg) {
+    private fun handleMessage(result: MessageConversionResult.Message) {
+        val msg = result.msg
         val request = findPendingRequest(msg)
-        if (request != null) {
-            request.onResponse(request.responseFor(msg))
-            removePendingRequest(msg)
+
+        if (msg.isResponse) {
+            if (request != null) {
+                request.onResponse(request.responseFor(msg))
+                removePendingRequest(msg)
+            } else {
+                Logger.e { "Received response with unknown message id: $msg" }
+            }
+        } else if (msg.isError) {
+            if (request != null) {
+                request.onError(MessageExchangeFailure.ResponseError(msg.error))
+                removePendingRequest(msg)
+            } else {
+                Logger.e { "Received error with unknown message id: $msg" }
+            }
         } else {
-            Logger.e { "Received a " }
+            Logger.e { "Request handling not yet implemented: ${msg.body?.request}" }
         }
     }
 
-    private fun handleError(msg: Msg) {
-        val request = findPendingRequest(msg)
-        if (request != null) {
-            request.onError(msg.error)
-            removePendingRequest(msg)
+    private fun handleUspError(result: MessageConversionResult.UspError) {
+        val error = result.error
+        Logger.e { "Client sent error message: $error" }
+    }
+
+    private suspend fun handleDisconnect(result: MessageConversionResult.Disconnect) {
+        val error = result.error
+        if (error.code == SessionContextNotAllowed.code) {
+            Logger.i { "Client sent SessionContextNotAllowed message reconnecting..." }
+            remoteAllowsSessionContext = false
+            transfer.disconnect()
+            transfer.connect()
+        } else if (error.code == NoError.code) {
+            Logger.d { "Client gracefully disconnected" }
+            transfer.disconnect()
         } else {
-            Logger.e { "Received a " }
+            Logger.e { "Client sent disconnect with an error: $error" }
+            transfer.disconnect()
         }
     }
 
-    private fun handleRequest(msg: Msg) {
-        Logger.e { "Request handling not yet implemented: ${msg.body?.request}" }
+    private fun handleDecoderError(result: MessageConversionResult.DecoderError) {
+        Logger.e(throwable = result.cause, messageString = "Internal error decoding a message")
+    }
+
+    private fun handleSessionEstablished(result: MessageConversionResult.SessionEstablished) {
+        remoteAllowsSessionContext = true // Just in case...
+        Logger.d { "USP session established, restarted=${result.isRestarted}" }
     }
 
     @Suppress("UNCHECKED_CAST")
     private fun findPendingRequest(msg: Msg): PendingRequest<Any>? {
         return (pendingRequests[msg.id] as? PendingRequest<Any>).also {
-            Logger.d { "Found pending request for message id ${msg.id}: $it" }
+            Logger.d { "Found pending request for message id: ${msg.id}: $it" }
         }
     }
 
     private fun removePendingRequest(msg: Msg) {
-        Logger.d { "Removing pending request for message id ${msg.id}" }
+        Logger.d { "Removing pending request for message id: ${msg.id}" }
         pendingRequests.remove(msg.id)
+    }
+
+    private suspend fun watchdog() {
+        try {
+            while (true) {
+                delay(1.seconds)
+                Logger.v { "Message exchange watchdog checking for expired requests, candidates: ${pendingRequests.size}" }
+                val now = clock.now()
+                val iterator = pendingRequests.iterator()
+                while (iterator.hasNext()) {
+                    val entry = iterator.next()
+                    if (entry.value.expirationTime > now) {
+                        entry.value.onError(MessageExchangeFailure.TimeoutOccurred(entry.key))
+                        iterator.remove()
+                    }
+                }
+            }
+        } catch (ex: CancellationException) {
+            Logger.d { "Message exchange watchdog has been terminated" }
+        }
     }
 
     private class PendingRequest<T>(
         val onResponse: (T) -> Unit,
-        val onError: (Error) -> Unit,
+        val onError: (MessageExchangeFailure) -> Unit,
         val responseFor: (Msg) -> T,
-        val creationTime: Instant
+        val expirationTime: Instant
     ) {
         override fun toString(): String {
             return "PendingRequest($onResponse, )"
