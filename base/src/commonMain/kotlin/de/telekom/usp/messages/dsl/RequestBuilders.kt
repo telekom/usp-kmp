@@ -425,6 +425,7 @@ class NotifyRequestBuilder internal constructor(private val subscriptionId: Stri
     }
 }
 
+@MessageDslMarker
 class EventBuilder internal constructor(private val path: Path, private val name: String) {
 
     init {
@@ -438,6 +439,7 @@ class EventBuilder internal constructor(private val path: Path, private val name
     }
 }
 
+@MessageDslMarker
 class ObjectCreationBuilder internal constructor(private val path: Path) {
 
     val uniqueKeys = mutableMapOf<String, String>()
@@ -445,6 +447,7 @@ class ObjectCreationBuilder internal constructor(private val path: Path) {
     fun build() = Notify.ObjectCreation(path.toString(), uniqueKeys)
 }
 
+@MessageDslMarker
 class OperationCompleteBuilder internal constructor(
     private val path: Path,
     private val commandName: String,
@@ -469,6 +472,7 @@ class OperationCompleteBuilder internal constructor(
     }
 }
 
+@MessageDslMarker
 data class OnBoardRequestBuilder internal constructor(
     val oui: String,
     val productClass: String,
@@ -503,7 +507,7 @@ class DeregisterBuilder internal constructor() : PathRequestBuilder(Header.MsgTy
     override fun buildRequest() = Request(deregister = Deregister(paths))
 }
 
-
+@MessageDslMarker
 class ParamSettingsBuilder internal constructor(val path: String) {
 
     val params = mutableMapOf<String, ParamValue>()

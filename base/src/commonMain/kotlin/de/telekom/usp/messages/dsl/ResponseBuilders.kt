@@ -155,6 +155,7 @@ class GetRespBuilder internal constructor(messageId: String) :
     )
 }
 
+@MessageDslMarker
 class RequestedPathResultBuilder internal constructor(
     private val requestedPath: Path,
     private val error: Error
@@ -178,6 +179,7 @@ class RequestedPathResultBuilder internal constructor(
     )
 }
 
+@MessageDslMarker
 class ResolvedPathResultBuilder internal constructor(private val resolvedPath: Path) {
 
     val params = mutableMapOf<String, String>()
@@ -219,6 +221,7 @@ class GetSupportedDMRespBuilder internal constructor(messageId: String) :
         Response(get_supported_dm_resp = GetSupportedDMResp(results.map { it.build() }))
 }
 
+@MessageDslMarker
 class RequestedObjectResultBuilder internal constructor(
     private val path: Path,
     private val uri: String,
@@ -261,6 +264,7 @@ class RequestedObjectResultBuilder internal constructor(
     )
 }
 
+@MessageDslMarker
 class SupportedObjectResultBuilder internal constructor(
     private val path: Path,
     private val accessType: GetSupportedDMResp.ObjAccessType,
@@ -312,6 +316,7 @@ class SupportedObjectResultBuilder internal constructor(
     }
 }
 
+@MessageDslMarker
 class SupportedCommandResultBuilder internal constructor(
     private val name: String,
     private val type: GetSupportedDMResp.CmdType
@@ -328,6 +333,7 @@ class SupportedCommandResultBuilder internal constructor(
     )
 }
 
+@MessageDslMarker
 class SupportedEventResultBuilder internal constructor(private val name: String) {
 
     val args = mutableListOf<String>()
@@ -366,6 +372,7 @@ class GetInstancesRespBuilder internal constructor(messageId: String) :
         Response(get_instances_resp = GetInstancesResp(req_path_results = results.map { it.build() }))
 }
 
+@MessageDslMarker
 class GetInstancesRespResultBuilder(private val path: Path, private val error: Error) {
 
     private val currInstances = mutableListOf<CurrInstanceBuilder>()
@@ -386,6 +393,7 @@ class GetInstancesRespResultBuilder(private val path: Path, private val error: E
     )
 }
 
+@MessageDslMarker
 class CurrInstanceBuilder(private val path: Path) {
 
     val uniqueKeys = mutableMapOf<String, String>()
@@ -416,6 +424,7 @@ class SetRespBuilder internal constructor(messageId: String) :
         Response(set_resp = SetResp(updated_obj_results = results.map { it.build() }))
 }
 
+@MessageDslMarker
 class SetOperationStatusBuilder internal constructor(private val path: Path) {
 
     private var failure: SetOperationFailureBuilder? = null
@@ -446,6 +455,7 @@ class SetOperationStatusBuilder internal constructor(private val path: Path) {
     }
 }
 
+@MessageDslMarker
 class SetOperationFailureBuilder internal constructor(private val error: Error) {
 
     private val failures = mutableListOf<UpdatedInstanceFailureBuilder>()
@@ -467,6 +477,7 @@ class SetOperationFailureBuilder internal constructor(private val error: Error) 
     }
 }
 
+@MessageDslMarker
 class UpdatedInstanceFailureBuilder internal constructor(private val path: Path) {
 
     private val errors = mutableListOf<ParameterizedError>()
@@ -478,6 +489,7 @@ class UpdatedInstanceFailureBuilder internal constructor(private val path: Path)
     fun build() = SetResp.UpdatedInstanceFailure(path.toString(), errors.toSetParameters())
 }
 
+@MessageDslMarker
 class SetOperationSuccessBuilder internal constructor() {
 
     private val result = mutableListOf<UpdatedInstanceResultBuilder>()
@@ -494,6 +506,7 @@ class SetOperationSuccessBuilder internal constructor() {
         SetResp.UpdatedObjectResult.OperationStatus.OperationSuccess(result.map { it.build() })
 }
 
+@MessageDslMarker
 class UpdatedInstanceResultBuilder internal constructor(private val path: Path) {
 
     private val errors = mutableListOf<ParameterizedError>()
@@ -535,6 +548,7 @@ class AddRespBuilder internal constructor(messageId: String) :
     override fun buildResponse() = Response(add_resp = AddResp(results.map { it.build() }))
 }
 
+@MessageDslMarker
 class CreatedObjectResultBuilder internal constructor(private val path: Path) {
 
     private var failure: Error? = null
@@ -575,6 +589,7 @@ class CreatedObjectResultBuilder internal constructor(private val path: Path) {
     }
 }
 
+@MessageDslMarker
 class AddOperationSuccessBuilder internal constructor(private val instantiatedPath: Path) {
 
     private val errors = mutableListOf<ParameterizedError>()
@@ -614,6 +629,7 @@ class DeleteRespBuilder internal constructor(messageId: String) :
     override fun buildResponse() = Response(delete_resp = DeleteResp(results.map { it.build() }))
 }
 
+@MessageDslMarker
 class DeletedObjectResultBuilder internal constructor(private val path: Path) {
 
     private var failure: Error? = null
@@ -654,6 +670,7 @@ class DeletedObjectResultBuilder internal constructor(private val path: Path) {
     }
 }
 
+@MessageDslMarker
 class DeleteOperationSuccessBuilder internal constructor(private val path: Path) {
 
     private val errors = mutableListOf<ParameterizedError>()
@@ -706,6 +723,7 @@ class OperateRespBuilder internal constructor(messageId: String) :
     override fun buildResponse() = Response(operate_resp = OperateResp(results.map { it.build() }))
 }
 
+@MessageDslMarker
 class OperationResultBuilder internal constructor(private val path: Path) {
 
     private var requestObjectPath: Path? = null
@@ -808,6 +826,7 @@ class RegisterRespBuilder internal constructor(messageId: String) :
         Response(register_resp = RegisterResp(results.map { it.build() }))
 }
 
+@MessageDslMarker
 class RegisteredPathResultBuilder internal constructor(private val path: Path) {
 
     private var registeredPath: Path? = null
@@ -872,6 +891,7 @@ class DeregisterRespBuilder internal constructor(messageId: String) :
         Response(deregister_resp = DeregisterResp(results.map { it.build() }))
 }
 
+@MessageDslMarker
 class DeregisteredPathResultBuilder internal constructor(private val path: Path) {
 
     private val deregisteredPaths = mutableListOf<Path>()
