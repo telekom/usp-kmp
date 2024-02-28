@@ -1,6 +1,6 @@
 package de.telekom.usp
 
-import de.telekom.usp.PathElement.*
+import de.telekom.usp.PathElement.Object
 
 // All object of first and second order:
 val Device = Path(Object("Device."))

@@ -29,7 +29,7 @@ kotlin {
     sourceSets {
         commonMain {
             dependencies {
-                implementation(project(":base"))
+                implementation(project(":core"))
                 implementation(libs.kotlinx.datetime)
                 implementation(libs.kotlinx.coroutines.core)
                 implementation(libs.kermit)

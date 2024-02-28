@@ -1,6 +1,6 @@
 package de.telekom.usp
 
-import de.telekom.usp.PathElement.*
+import de.telekom.usp.PathElement.Command
 
 // All Device. commands:
 val Reboot = Path(Device.first(), Command("Reboot()"))

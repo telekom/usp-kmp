@@ -16,7 +16,7 @@ dependencyResolutionManagement {
 
 rootProject.name = "USP-Library"
 include(":lib")
-include(":base")
+include(":core")
 include(":records")
 include(":cli")
 include(":mtp")

@@ -26,7 +26,7 @@ kotlin {
 
     sourceSets {
         commonMain.dependencies {
-            implementation(project(":base"))
+            implementation(project(":core"))
             implementation(project(":records"))
             implementation(libs.kotlinx.datetime)
             implementation(libs.kermit)
