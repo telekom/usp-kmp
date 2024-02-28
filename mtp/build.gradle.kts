@@ -30,6 +30,8 @@ kotlin {
             implementation(project(":records"))
             implementation(libs.kotlinx.datetime)
             implementation(libs.kermit)
+            implementation(libs.kmqtt.common)
+            implementation(libs.kmqtt.client)
             api(libs.wire.runtime)
             api(libs.kotlinx.coroutines.core)
             api(libs.ktor.client.core)

@@ -195,6 +195,6 @@ class WebSocketTransfer(
     }
 
     override fun toString(): String {
-        return "WebSocketConnection [from: '$from' to: $host:$port]"
+        return "WebSocketTransfer [from: '$from', to: $host:$port]"
     }
 }

@@ -5,6 +5,7 @@ kotlinx-coroutines = "1.7.3"
 wire = "4.9.3"
 moshi = "1.14.0"
 ktor = "2.3.8"
+kmqtt = "0.4.6"
 
 [libraries]
 kotlin-test = { module = "org.jetbrains.kotlin:kotlin-test", version.ref = "kotlin" }
@@ -21,6 +22,8 @@ wire-runtime = { module = "com.squareup.wire:wire-runtime", version.ref = "wire"
 wire-moshi = { module = "com.squareup.wire:wire-moshi-adapter", version.ref = "wire" }
 moshi-kotlin = { module = "com.squareup.moshi:moshi-kotlin", version.ref = "moshi" }
 kermit = "co.touchlab:kermit:2.0.2"
+kmqtt-common = { module = "io.github.davidepianca98:kmqtt-common", version.ref = "kmqtt" }
+kmqtt-client = { module = "io.github.davidepianca98:kmqtt-client", version.ref = "kmqtt" }
 
 [plugins]
 androidApplication = { id = "com.android.application", version.ref = "agp" }
