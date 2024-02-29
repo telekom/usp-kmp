@@ -22,13 +22,7 @@ import kotlinx.coroutines.IO
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancelAndJoin
-import kotlinx.coroutines.channels.BufferOverflow
-import kotlinx.coroutines.flow.MutableSharedFlow
-import kotlinx.coroutines.flow.SharedFlow
-import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.sync.Mutex
-import kotlinx.coroutines.sync.withLock
 import okio.ByteString
 import okio.ByteString.Companion.toByteString
 import kotlin.time.Duration
@@ -45,14 +39,7 @@ class WebSocketTransfer(
     engine: HttpClientEngine = CIO.create(),
     pingDuration: Duration = 20.seconds,
     debugMode: Boolean = false
-) : MessageTransfer {
-
-    private val _events = MutableSharedFlow<MessageTransferEvent>()
-    override val events: SharedFlow<MessageTransferEvent>
-        get() = _events.asSharedFlow()
-
-    private val input =
-        MutableSharedFlow<ByteString>(replay = 10, onBufferOverflow = BufferOverflow.DROP_OLDEST)
+) : AbstractMessageTransfer() {
 
     private val client = HttpClient(engine) {
         install(Logging) {
@@ -65,16 +52,8 @@ class WebSocketTransfer(
         developmentMode = debugMode
     }
 
-    private val mutex = Mutex()
-
-    private var isConnected = false
-
-    private var receiverRoutine: Job? = null
-    private var senderRoutine: Job? = null
-
-    override suspend fun send(bytes: ByteString) {
-        input.emit(bytes)
-    }
+    private var receiverJob: Job? = null
+    private var senderJob: Job? = null
 
     override suspend fun connect() {
         if (!isConnected()) {
@@ -90,12 +69,13 @@ class WebSocketTransfer(
                             headers[HttpHeaders.SecWebSocketExtensions] = USP_WEB_SOCKET_EXTENSION
                         }
                     ) {
-                        connected()
-                        receiverRoutine = launch { incomingMessagesLoop() }
-                        senderRoutine = launch { outgoingMessagesLoop() }
+                        setConnected(true)
+                        emit(MessageTransferEvent.Connected(to = this@WebSocketTransfer))
+                        receiverJob = launch { incomingMessagesLoop() }
+                        senderJob = launch { outgoingMessagesLoop() }
 
-                        senderRoutine?.join()
-                        receiverRoutine?.join()
+                        senderJob?.join()
+                        receiverJob?.join()
                     }
                 } catch (ex: Exception) {
                     Logger.e(throwable = ex) { "Error establishing connectivity of ${this@WebSocketTransfer}" }
@@ -106,48 +86,19 @@ class WebSocketTransfer(
     }
 
     override suspend fun disconnect() {
-        if (shouldDisconnect()) {
+        if (isConnected()) {
             client.close()
-            senderRoutine?.cancelAndJoin()
-            receiverRoutine?.cancelAndJoin()
-            senderRoutine = null
-            receiverRoutine = null
+            senderJob?.cancelAndJoin()
+            receiverJob?.cancelAndJoin()
+            senderJob = null
+            receiverJob = null
+            setConnected(false)
             emit(MessageTransferEvent.Disconnected(from = this))
         }
     }
 
-    private suspend fun isConnected(): Boolean {
-        mutex.withLock {
-            return isConnected
-        }
-    }
-
-    private suspend fun connected() {
-        mutex.withLock {
-            this.isConnected = true
-            emit(MessageTransferEvent.Connected(to = this))
-            Logger.d { "New state of $this is: CONNECTED" }
-        }
-    }
-
-    private suspend fun shouldDisconnect(): Boolean {
-        mutex.withLock {
-            if (isConnected) {
-                isConnected = false
-                Logger.d { "New state of $this is: DISCONNECTED" }
-                return true
-            } else {
-                return false
-            }
-        }
-    }
-
-    private suspend fun emit(event: MessageTransferEvent) {
-        _events.emit(event)
-    }
-
     private suspend fun emit(bytes: ByteString) {
-        _events.emit(MessageTransferEvent.BytesReceived(bytes))
+        emit(MessageTransferEvent.BytesReceived(bytes))
     }
 
     private suspend fun DefaultClientWebSocketSession.incomingMessagesLoop() {
@@ -182,7 +133,7 @@ class WebSocketTransfer(
         try {
             Logger.d { "${this@WebSocketTransfer} waiting for messages to send..." }
 
-            input.collect { bytes ->
+            inputBuffer.collect { bytes ->
                 outgoing.send(Frame.Binary(fin = true, data = bytes.toByteArray()))
                 Logger.d { "Data frame of size ${bytes.size} sent to $host:$port" }
             }
