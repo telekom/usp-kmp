@@ -32,6 +32,7 @@ kotlin {
             implementation(libs.kermit)
             implementation(libs.kmqtt.common)
             implementation(libs.kmqtt.client)
+            implementation(libs.okio)
             api(libs.wire.runtime)
             api(libs.kotlinx.coroutines.core)
             api(libs.ktor.client.core)
@@ -42,6 +43,7 @@ kotlin {
         commonTest.dependencies {
             implementation(libs.kotlin.test)
             implementation(libs.ktor.client.mock)
+            implementation(libs.okio)
         }
     }
 }
