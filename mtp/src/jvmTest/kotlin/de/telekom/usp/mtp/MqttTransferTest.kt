@@ -28,7 +28,7 @@ class MqttTransferTest {
             password = passwd,
             tls = TLSClientSettings(),
             from = from,
-            subscribeTopics = mutableListOf("usp-demo-topic"),
+            subscribeTopics = mutableSetOf("usp/controllers/proto::usp-demo"),
             replyToTopic = "test"
         )
         GlobalScope.launch {
