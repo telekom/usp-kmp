@@ -4,7 +4,11 @@ import okio.ByteString
 
 interface Message {
 
+    val version: MqttVersion
+
     val topic: Topic
+
+    val responseTopic: Topic
 
     val contentType: String?
 
@@ -13,7 +17,7 @@ interface Message {
     val qos: QoS
 
     fun isUspContent() =
-        contentType == null || contentType == USP_CONTENT_TYPE || contentType == USP_MIME_TYPE
+        version == MqttVersion.Mqtt3_1_1 || contentType == USP_CONTENT_TYPE || contentType == USP_MIME_TYPE
 
     companion object {
 

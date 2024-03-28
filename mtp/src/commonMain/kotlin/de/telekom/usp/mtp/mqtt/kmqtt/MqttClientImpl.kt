@@ -4,23 +4,31 @@ import MQTTClient
 import co.touchlab.kermit.Logger
 import de.telekom.usp.EndpointIdentifier
 import de.telekom.usp.mtp.mqtt.ClientId
+import de.telekom.usp.mtp.mqtt.Message
 import de.telekom.usp.mtp.mqtt.MqttClient
 import de.telekom.usp.mtp.mqtt.MqttClientCallback
 import de.telekom.usp.mtp.mqtt.QoS
 import de.telekom.usp.mtp.mqtt.Subscription
 import de.telekom.usp.mtp.mqtt.Topic
 import io.ktor.utils.io.core.toByteArray
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancelAndJoin
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import mqtt.MQTTVersion
 import mqtt.packets.mqtt.MQTTConnack
 import mqtt.packets.mqtt.MQTTDisconnect
 import mqtt.packets.mqtt.MQTTPublish
 import mqtt.packets.mqttv5.MQTT5Properties
+import mqtt.packets.mqttv5.ReasonCode
 import mqtt.packets.mqttv5.SubscriptionOptions
 import okio.ByteString
+import socket.SocketClosedException
 import socket.tls.TLSClientSettings
 import kotlin.time.Duration.Companion.milliseconds
 
@@ -37,13 +45,19 @@ class MqttClientImpl(
     private val scope: CoroutineScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
 ) : MqttClient {
 
-    // Unfortunately the MQTT client library uses polling to retrieve published messages, hence we
-    // need to run it in a polling loop.
-    private val pollingInterval = 50.milliseconds
+    private val connectProperties = MQTT5Properties().apply {
+        // R-MQTT.12: An MQTT 5.0 USP Endpoint MUST support setting the Request Response Information property to 1
+        requestResponseInformation = 1u
 
-    private val connectProperties = MQTT5Properties()
+        // R-MQTT.13: An MQTT 5.0 USP Endpoint MUST include a User Property name-value pair in the CONNECT packet with name of “usp-endpoint-id”
+        addUserProperty(MqttClient.PROPERTY_ENDPOINT_ID to from.toShortString())
+    }
 
-    private val publishingProperties = MQTT5Properties()
+    private val publishingProperties = MQTT5Properties().apply {
+
+        // R-MQTT.27 - USP Endpoints sending a USP Record using MQTT 5.0 MUST have “usp.msg” in the Content Type property.
+        contentType = Message.USP_CONTENT_TYPE
+    }
 
     private val client = MQTTClient(
         mqttVersion = mqttVersion,
@@ -59,10 +73,49 @@ class MqttClientImpl(
         publishReceived = ::publishReceived
     )
 
+    // Unfortunately the MQTT client library uses polling to retrieve published messages, hence we
+    // need to run it in a polling loop.
+    private val pollingInterval = 50.milliseconds
+
+    private var callback: MqttClientCallback? = null
+
+    private var clientJob: Job? = null
+
     // --- Interface methods -----------------------------------------------------------------------
 
-    override fun callback(callback: MqttClientCallback) {
-        TODO("Not yet implemented")
+    override fun setCallback(callback: MqttClientCallback) {
+        this.callback = callback
+    }
+
+    override fun connect() {
+        clientJob = scope.launch {
+            try {
+                while (client.running) {
+                    client.step()
+                    delay(pollingInterval)
+                }
+            } catch (ex: SocketClosedException) {
+                Logger.d { "MQTT socket closed, client no longer connected" }
+            } catch (ex: CancellationException) {
+                Logger.d { "MQTT polling session cancelled" }
+            } catch (ex: Exception) {
+                Logger.e(throwable = ex) { "Error handling MQTT socket connection" }
+            }
+
+            callback?.run {
+                onDisconnected()
+            }
+        }
+    }
+
+    override fun disconnect() {
+        clientJob?.let { job ->
+            clientJob = null
+            client.disconnect(ReasonCode.SUCCESS)
+            scope.launch {
+                job.cancelAndJoin()
+            }
+        }
     }
 
     override fun subscribeTo(topics: List<Subscription>) {
@@ -94,14 +147,20 @@ class MqttClientImpl(
     // --- Helper methods --------------------------------------------------------------------------
 
     private fun onConnected(connack: MQTTConnack) {
-        TODO()
+        callback?.run {
+            onConnected(connack.toConnack())
+        }
     }
 
     private fun onDisconnected(disconnect: MQTTDisconnect?) {
-        TODO()
+        callback?.run {
+            onDisconnected()
+        }
     }
 
     private fun publishReceived(publish: MQTTPublish) {
-        TODO()
+        callback?.run {
+            onMessage(publish.toMessage())
+        }
     }
 }

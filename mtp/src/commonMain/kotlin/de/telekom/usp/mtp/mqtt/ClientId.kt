@@ -6,13 +6,17 @@ import kotlin.jvm.JvmInline
 @JvmInline
 value class ClientId private constructor(val value: String) {
 
+    override fun toString(): String {
+        return value
+    }
+
     companion object {
 
         private val EMPTY = ClientId("")
 
         /**
          * Construct a valid client ID according to
-         * [R-MQTT.8](https://usp.technology/specification/index.htm#r-mqtt.8)
+         * [R-MQTT.8](https://usp.technology/specification/index.htm#r-mqtt.8).
          */
         fun from(clientId: String?, from: EndpointIdentifier, mqttVersion: MqttVersion): ClientId {
             return if (clientId.isNullOrBlank()) {
