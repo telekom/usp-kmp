@@ -25,7 +25,6 @@ kermit = "co.touchlab:kermit:2.0.2"
 okio = "com.squareup.okio:okio:3.8.0"
 kmqtt-common = { module = "io.github.davidepianca98:kmqtt-common", version.ref = "kmqtt" }
 kmqtt-client = { module = "io.github.davidepianca98:kmqtt-client", version.ref = "kmqtt" }
-kotlinpoet = "com.squareup:kotlinpoet:1.16.0"
 
 [plugins]
 androidApplication = { id = "com.android.application", version.ref = "agp" }

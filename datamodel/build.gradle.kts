@@ -49,7 +49,6 @@ kotlin {
             dependencies {
                 implementation(libs.moshi.kotlin)
                 implementation(libs.wire.moshi)
-                implementation(libs.kotlinpoet)
             }
         }
     }
