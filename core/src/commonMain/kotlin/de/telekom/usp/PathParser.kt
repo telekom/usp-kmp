@@ -17,7 +17,11 @@ internal class PathParser(private val text: String) {
             parseElement()
         }
 
-        return Path(elements)
+        return if (elements.isResolved()) {
+            ResolvedPathImpl(elements)
+        } else {
+            PathImpl(elements)
+        }
     }
 
     private fun parseElement() {

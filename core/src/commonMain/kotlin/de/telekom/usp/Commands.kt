@@ -3,8 +3,8 @@ package de.telekom.usp
 import de.telekom.usp.PathElement.Command
 
 // All Device. commands:
-val Reboot = Path(Device.first(), Command("Reboot()"))
-val FactoryReset = Path(Device.first(), Command("FactoryReset()"))
-val SelfTestDiagnostics = Path(Device.first(), Command("SelfTestDiagnostics()"))
-val PacketCaptureDiagnostics = Path(Device.first(), Command("PacketCaptureDiagnostics()"))
-val ScheduleTimer = Path(Device.first(), Command("ScheduleTimer()"))
+val Reboot: Path = PathImpl(Device.first(), Command("Reboot()"))
+val FactoryReset: Path = PathImpl(Device.first(), Command("FactoryReset()"))
+val SelfTestDiagnostics: Path = PathImpl(Device.first(), Command("SelfTestDiagnostics()"))
+val PacketCaptureDiagnostics: Path = PathImpl(Device.first(), Command("PacketCaptureDiagnostics()"))
+val ScheduleTimer: Path = PathImpl(Device.first(), Command("ScheduleTimer()"))

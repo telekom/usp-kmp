@@ -3,6 +3,8 @@
 package de.telekom.usp.messages.dsl
 
 import de.telekom.usp.Path
+import de.telekom.usp.isCommand
+import de.telekom.usp.isEvent
 import de.telekom.usp.messages.MessageIdFactory
 import de.telekom.usp.messages.proto.Add
 import de.telekom.usp.messages.proto.Body

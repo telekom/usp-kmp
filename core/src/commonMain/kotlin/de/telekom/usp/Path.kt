@@ -1,75 +1,23 @@
 package de.telekom.usp
 
-
-data class Path(val elements: List<PathElement>) {
-
-    constructor(vararg paths: PathElement) : this(paths.toList())
-
-    init {
-        require(elements.isNotEmpty()) { "Empty Path not allowed" }
-    }
-
-    val size = elements.size
-
-    val isRelative: Boolean
-        get() = first() != Device.first()
+interface Path {
 
     /**
-     * When `true` this path cannot be extended, i.e. its last element is either of type parameter,
-     * command or event.
+     * The list of elements this path consists off.
      */
-    val isTerminal: Boolean
-        get() = last().isTerminal
+    val elements: List<PathElement>
 
-    val isCommand: Boolean
-        get() = last() is PathElement.Command
+    /**
+     * The number of path elements of this.
+     */
+    val size: Int
 
-    val isEvent: Boolean
-        get() = last() is PathElement.Event
-
-    val isParameter: Boolean
-        get() = last() is PathElement.Parameter
-
+    /**
+     * Returns `true` when this path does not contain any search expressions, `false` otherwise
+     */
     val isResolved: Boolean
-        get() = elements.filterIsInstance<PathElement.Expression>().isEmpty()
 
-    operator fun plus(path: String): Path {
-        val child = Path(path)
-
-        require(!isTerminal) { "Path '$this' is terminal, cannot append more to it" }
-        require(child.first() != Device.first()) { "Cannot append a root path: '$path'" }
-        return copy(elements = elements + child.elements)
-    }
-
-    fun first(): PathElement = elements.first()
-
-    fun last(): PathElement = elements.last()
-
-    @Suppress("UNCHECKED_CAST")
-    fun <T : PathElement> lastAs(): T = elements.last() as T
-
-    fun subPath(fromIndex: Int, toIndex: Int): Path {
-        return Path(elements.subList(fromIndex, toIndex))
-    }
-
-    /**
-     * Determines whether the first elements of this path match exactly the specified path
-     */
-    fun startsWith(path: Path): Boolean {
-        if (path.size > this.size) {
-            return false
-        }
-        return this.elements.subList(0, path.size) == path.elements
-    }
-
-    /**
-     * Determines whether this path starts with 'Device.', that is: if it is an absolute path.
-     */
-    fun startsWithDevice() = startsWith(Device)
-
-    override fun toString(): String {
-        return elements.joinToString(separator = "")
-    }
+    fun asResolvedPath(): ResolvedPath
 }
 
 /**
@@ -81,13 +29,42 @@ fun Path(text: String): Path {
     return PathParser(text).parse()
 }
 
+operator fun Path.plus(path: String): Path {
+    val child = Path(path)
+
+    require(!isTerminal) { "Path '$this' is terminal, cannot append more to it" }
+    require(child.first() != Device.first()) { "Cannot append a root path: '$path'" }
+    return PathImpl(elements = elements + child.elements)
+}
+
+fun Path.first(): PathElement = elements.first()
+
+fun Path.last(): PathElement = elements.last()
+
+val Path.isTerminal: Boolean
+    get() = last().isTerminal
+
+val Path.isCommand: Boolean
+    get() = last() is PathElement.Command
+
+val Path.isEvent: Boolean
+    get() = last() is PathElement.Event
+
+@Suppress("UNCHECKED_CAST")
+fun <T : PathElement> Path.lastAs(): T = elements.last() as T
+
 /**
- * Determines whether the specified text is a syntactically valid path. This does not check if the
- * path actually exists on a device. For example "Device" (without trailing dot) is not correct,
- * but we treat it as valid here.
+ * Determines whether the first elements of this path match exactly the specified path
  */
-fun isValidPath(text: String): Boolean = runCatching { Path(text) }.isSuccess
+fun Path.startsWith(path: Path): Boolean {
+    if (path.size > this.size) {
+        return false
+    }
+    return this.elements.subList(0, path.size) == path.elements
+}
 
-inline fun List<Path>.toStrings(): List<String> = this.map { it.toString() }
-
+/**
+ * Determines whether this path starts with 'Device.', that is: if it is an absolute path.
+ */
+fun Path.startsWithDevice() = startsWith(Device)
 

@@ -79,3 +79,7 @@ sealed class PathElement(val text: String) {
         override val isTerminal = true
     }
 }
+
+fun List<PathElement>.isResolved(): Boolean {
+    return filterIsInstance<PathElement.Expression>().isEmpty()
+}
