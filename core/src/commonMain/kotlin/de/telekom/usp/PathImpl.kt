@@ -27,13 +27,4 @@ internal open class PathImpl(final override val elements: List<PathElement>) : P
     }
 }
 
-/**
- * Determines whether the specified text is a syntactically valid path. This does not check if the
- * path actually exists on a device. For example "Device" (without trailing dot) is not correct,
- * but we treat it as valid here.
- */
-fun isValidPath(text: String): Boolean = runCatching { Path(text) }.isSuccess
-
-inline fun List<Path>.toStrings(): List<String> = this.map { it.toString() }
-
 
