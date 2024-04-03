@@ -312,7 +312,7 @@ class OperateRequestBuilder internal constructor(
     RequestMessageBuilder(Header.MsgType.OPERATE) {
 
     init {
-        require(path.isCommand()) { "Operate request must contain a command path: '$path'" }
+        require(path.isCommand) { "Operate request must contain a command path: '$path'" }
     }
 
     val args = mutableMapOf<String, String>()
@@ -429,7 +429,7 @@ class NotifyRequestBuilder internal constructor(private val subscriptionId: Stri
 class EventBuilder internal constructor(private val path: Path, private val name: String) {
 
     init {
-        require(path.isEvent()) { "Notify event request must contain an event path: '$path'" }
+        require(path.isEvent) { "Notify event request must contain an event path: '$path'" }
     }
 
     val params = mutableMapOf<String, String>()

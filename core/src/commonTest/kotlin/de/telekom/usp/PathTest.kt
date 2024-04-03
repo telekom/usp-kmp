@@ -72,13 +72,13 @@ class PathTest {
 
     @Test
     fun `provides correct information about terminal paths`() {
-        assertTrue(Path("Device.IP.Interface.Parameter").isTerminal())
-        assertTrue(Path("Device.IP.Interface.Command()").isTerminal())
-        assertTrue(Path("Device.IP.Interface.Event!").isTerminal())
+        assertTrue(Path("Device.IP.Interface.Parameter").isTerminal)
+        assertTrue(Path("Device.IP.Interface.Command()").isTerminal)
+        assertTrue(Path("Device.IP.Interface.Event!").isTerminal)
 
-        assertFalse(Path("Device.IP.Interface.").isTerminal())
-        assertFalse(Path("Device.IP.Interface.*.").isTerminal())
-        assertFalse(Path("Device.IP.Interface.[Type==\"Normal\"&&Stats.ErrorsSent>0].").isTerminal())
+        assertFalse(Path("Device.IP.Interface.").isTerminal)
+        assertFalse(Path("Device.IP.Interface.*.").isTerminal)
+        assertFalse(Path("Device.IP.Interface.[Type==\"Normal\"&&Stats.ErrorsSent>0].").isTerminal)
     }
 
     @Test
@@ -115,5 +115,15 @@ class PathTest {
         assertTrue(DeviceInfo.startsWithDevice())
 
         assertFalse(Path("Relative.").startsWithDevice())
+    }
+
+    @Test
+    fun `resolved path property`() {
+        val resolved = Path("Device.IP.Interface.")
+        assertTrue(resolved.isResolved)
+
+        val keyed = Path("Device.IP.Interface.[Name==\"eth0\"].")
+        println(keyed.last()::class)
+        assertFalse(keyed.isResolved)
     }
 }

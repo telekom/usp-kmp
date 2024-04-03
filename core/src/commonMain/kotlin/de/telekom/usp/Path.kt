@@ -14,10 +14,29 @@ data class Path(val elements: List<PathElement>) {
     val isRelative: Boolean
         get() = first() != Device.first()
 
+    /**
+     * When `true` this path cannot be extended, i.e. its last element is either of type parameter,
+     * command or event.
+     */
+    val isTerminal: Boolean
+        get() = last().isTerminal
+
+    val isCommand: Boolean
+        get() = last() is PathElement.Command
+
+    val isEvent: Boolean
+        get() = last() is PathElement.Event
+
+    val isParameter: Boolean
+        get() = last() is PathElement.Parameter
+
+    val isResolved: Boolean
+        get() = elements.filterIsInstance<PathElement.Expression>().isEmpty()
+
     operator fun plus(path: String): Path {
         val child = Path(path)
 
-        require(!isTerminal()) { "Path '$this' is terminal, cannot append more to it" }
+        require(!isTerminal) { "Path '$this' is terminal, cannot append more to it" }
         require(child.first() != Device.first()) { "Cannot append a root path: '$path'" }
         return copy(elements = elements + child.elements)
     }
@@ -32,18 +51,6 @@ data class Path(val elements: List<PathElement>) {
     fun subPath(fromIndex: Int, toIndex: Int): Path {
         return Path(elements.subList(fromIndex, toIndex))
     }
-
-    /**
-     * When `true` this path cannot be extended, i.e. its last element is either of type parameter,
-     * command or event.
-     */
-    fun isTerminal(): Boolean = last().isTerminal
-
-    fun isCommand(): Boolean = last() is PathElement.Command
-
-    fun isEvent(): Boolean = last() is PathElement.Event
-
-    fun isParameter(): Boolean = last() is PathElement.Parameter
 
     /**
      * Determines whether the first elements of this path match exactly the specified path
