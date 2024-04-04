@@ -8,12 +8,13 @@ import de.telekom.usp.isResolved
 internal class PathParser(private val text: String) {
     private var start = 0
     private var current = 0
+    private var containsPlaceholder = false
     private val elements = mutableListOf<PathElement>()
 
     private val isAtEnd: Boolean
         get() = current >= text.length
 
-    fun parse(): Path {
+    fun parse(asSupportedDataModelPath: Boolean = false): Path {
         current = 0
         elements.clear()
 
@@ -22,7 +23,9 @@ internal class PathParser(private val text: String) {
             parseElement()
         }
 
-        return if (elements.isResolved()) {
+        return if (containsPlaceholder || asSupportedDataModelPath) {
+            SupportedDataModelPathImpl(elements)
+        } else if (elements.isResolved()) {
             ResolvedPathImpl(elements)
         } else {
             PathImpl(elements)
@@ -63,6 +66,10 @@ internal class PathParser(private val text: String) {
         when (val base: String = text.substring(start, current - 1)) {
             "*" -> add(wildcard)
             "Device" -> add(Device.first())
+            "{i}" -> {
+                containsPlaceholder = true
+                add(PathElement.Placeholder)
+            }
             else -> {
                 val instance = base.toIntOrNull()
                 val name = text.substring(start, current) // Includes the terminal dot

@@ -78,6 +78,14 @@ sealed class PathElement(val text: String) {
 
         override val isTerminal = true
     }
+
+    /**
+     * The placeholder path element is reserved for SupportedDataModelPath instances only.
+     */
+    object Placeholder : PathElement("{i}.") {
+
+        override val isTerminal = false
+    }
 }
 
 fun List<PathElement>.isResolved(): Boolean {
