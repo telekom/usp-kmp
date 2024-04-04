@@ -87,7 +87,7 @@ class EnumerationsCreator(private val dataTypes: List<DataType>, private val bas
             type.addEnumConstant(toEnumName(it.value), typeSpec.build())
         }
 
-        return FileSpec.builder(className).addType(type.build()).build()
+        return FileSpec.builder(className).indent(INDENT).addType(type.build()).build()
     }
 
     private fun toEnumName(name: String): String {

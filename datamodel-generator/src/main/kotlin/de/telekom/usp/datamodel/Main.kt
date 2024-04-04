@@ -6,6 +6,7 @@ import com.squareup.kotlinpoet.TypeSpec
 import java.io.File
 
 const val PACKAGE_NAME = "de.telekom.usp.types"
+const val INDENT = "    "
 
 fun main() {
     val baseType = ClassName(PACKAGE_NAME, "DataType")

@@ -30,7 +30,7 @@ class ValueClassesCreator(private val dataTypes: List<DataType>, private val bas
         val valueClass = classForType(typeString)
         val propertyClass = if (valueClass != PackedInts::class) valueClass else Long::class
         val className = ClassName(PACKAGE_NAME, dataType.name)
-        val fileSpec = FileSpec.builder(className)
+        val fileSpec = FileSpec.builder(className).indent(INDENT)
         val propName = "wrapped"
         val constructorModifiers =
             if (valueClass == PackedInts::class) arrayOf(KModifier.INTERNAL) else emptyArray()
@@ -65,6 +65,45 @@ class ValueClassesCreator(private val dataTypes: List<DataType>, private val bas
                         .addCode("return $propName")
                         .build()
                 )
+
+                if (dataType.patterns.isNotEmpty()) {
+                    val companion =
+                        TypeSpec.companionObjectBuilder().addModifiers(KModifier.PRIVATE)
+                    val patterns = dataType.patterns
+                    val patternVars = mutableListOf<String>()
+                    val containsBlankPattern = patterns.contains("")
+                    var index = 1
+
+                    patterns.forEach { pattern ->
+                        if (pattern.isNotBlank()) {
+                            companion.addProperty(
+                                PropertySpec.builder("pattern$index", Regex::class)
+                                    .addModifiers(KModifier.PRIVATE)
+                                    .initializer("\"\"\"$pattern\"\"\".toRegex()")
+                                    .build()
+                            )
+                            patternVars.add("pattern$index")
+                            index++
+                        }
+                    }
+                    type.addType(companion.build())
+
+                    val isValid = FunSpec.builder("isValid")
+                        .addKdoc("Determines whether this `${dataType.name}` has a valid format according to the specification.")
+                        .returns(Boolean::class)
+
+                    if (containsBlankPattern) {
+                        isValid.addStatement("if ($propName.isEmpty()) return true")
+                    }
+                    val lastPattern = patternVars.removeLast()
+
+                    patternVars.forEach {
+                        isValid.addStatement("if ($it.matches($propName)) return true")
+                    }
+                    isValid.addStatement("return $lastPattern.matches($propName)")
+
+                    type.addFunction(isValid.build())
+                }
             }
 
             Int::class -> {
