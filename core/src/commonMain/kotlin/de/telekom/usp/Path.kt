@@ -1,5 +1,8 @@
 package de.telekom.usp
 
+import de.telekom.usp.internal.PathImpl
+import de.telekom.usp.internal.PathParser
+
 interface Path {
 
     /**
@@ -17,7 +20,46 @@ interface Path {
      */
     val isResolved: Boolean
 
+    val isTerminal: Boolean
+        get() = last().isTerminal
+
+    val isCommand: Boolean
+        get() = last() is PathElement.Command
+
+    val isEvent: Boolean
+        get() = last() is PathElement.Event
+
     fun asResolvedPath(): ResolvedPath
+
+    operator fun plus(path: String): Path {
+        val child = Path(path)
+
+        require(!isTerminal) { "Path '$this' is terminal, cannot append more to it" }
+        require(child.first() != Device.first()) { "Can only append relative paths: '$path'" }
+        return PathImpl(elements = elements + child.elements)
+    }
+
+    fun first(): PathElement = elements.first()
+
+    fun last(): PathElement = elements.last()
+
+    @Suppress("UNCHECKED_CAST")
+    fun <T : PathElement> lastAs(): T = elements.last() as T
+
+    /**
+     * Determines whether the first elements of this path match exactly the specified path
+     */
+    fun startsWith(path: Path): Boolean {
+        if (path.size > this.size) {
+            return false
+        }
+        return this.elements.subList(0, path.size) == path.elements
+    }
+
+    /**
+     * Determines whether this path starts with 'Device.', that is: if it is an absolute path.
+     */
+    fun startsWithDevice() = startsWith(Device)
 }
 
 /**
@@ -28,45 +70,6 @@ fun Path(text: String): Path {
 
     return PathParser(text).parse()
 }
-
-operator fun Path.plus(path: String): Path {
-    val child = Path(path)
-
-    require(!isTerminal) { "Path '$this' is terminal, cannot append more to it" }
-    require(child.first() != Device.first()) { "Cannot append a root path: '$path'" }
-    return PathImpl(elements = elements + child.elements)
-}
-
-fun Path.first(): PathElement = elements.first()
-
-fun Path.last(): PathElement = elements.last()
-
-val Path.isTerminal: Boolean
-    get() = last().isTerminal
-
-val Path.isCommand: Boolean
-    get() = last() is PathElement.Command
-
-val Path.isEvent: Boolean
-    get() = last() is PathElement.Event
-
-@Suppress("UNCHECKED_CAST")
-fun <T : PathElement> Path.lastAs(): T = elements.last() as T
-
-/**
- * Determines whether the first elements of this path match exactly the specified path
- */
-fun Path.startsWith(path: Path): Boolean {
-    if (path.size > this.size) {
-        return false
-    }
-    return this.elements.subList(0, path.size) == path.elements
-}
-
-/**
- * Determines whether this path starts with 'Device.', that is: if it is an absolute path.
- */
-fun Path.startsWithDevice() = startsWith(Device)
 
 /**
  * Determines whether the specified text is a syntactically valid path. This does not check if the

@@ -1,4 +1,9 @@
-package de.telekom.usp
+package de.telekom.usp.internal
+
+import de.telekom.usp.Device
+import de.telekom.usp.Path
+import de.telekom.usp.PathElement
+import de.telekom.usp.isResolved
 
 internal class PathParser(private val text: String) {
     private var start = 0

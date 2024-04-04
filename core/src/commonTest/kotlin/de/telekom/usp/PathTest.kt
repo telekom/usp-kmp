@@ -122,8 +122,7 @@ class PathTest {
         val resolved = Path("Device.IP.Interface.")
         assertTrue(resolved.isResolved)
 
-        val keyed = Path("Device.IP.Interface.[Name==\"eth0\"].")
-        println(keyed.last()::class)
-        assertFalse(keyed.isResolved)
+        val expression = Path("Device.IP.Interface.[Name==\"eth0\"].")
+        assertFalse(expression.isResolved)
     }
 }

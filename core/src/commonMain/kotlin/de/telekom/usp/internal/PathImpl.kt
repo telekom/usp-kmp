@@ -1,4 +1,9 @@
-package de.telekom.usp
+package de.telekom.usp.internal
+
+import de.telekom.usp.Path
+import de.telekom.usp.PathElement
+import de.telekom.usp.ResolvedPath
+import de.telekom.usp.isResolved
 
 
 internal open class PathImpl(final override val elements: List<PathElement>) : Path {
@@ -11,11 +16,11 @@ internal open class PathImpl(final override val elements: List<PathElement>) : P
 
     override val size = elements.size
 
-    override val isResolved: Boolean
-        get() = elements.isResolved()
+    override val isResolved = elements.isResolved()
 
     override fun asResolvedPath(): ResolvedPath {
         if (isResolved) {
+            // Should not happen as the PathParser creates a ResolvedPathImpl from a resolvable path
             return ResolvedPathImpl(elements)
         } else {
             throw IllegalArgumentException("Path not resolved: $this")
