@@ -3,6 +3,12 @@ package de.telekom.usp
 import de.telekom.usp.internal.PathImpl
 import de.telekom.usp.internal.PathParser
 
+/**
+ * Represents a USP path.
+ *
+ * @see ResolvedPath
+ * @see SupportedDataModelPath
+ */
 interface Path {
 
     /**
@@ -63,12 +69,18 @@ interface Path {
 }
 
 /**
- * Factory function to create a path instance from a string.
+ * Factory function to create a path instance from a string. Don't use this function to create
+ * supported data model paths (i.e. paths which contain "{i}")! See the [SupportedDataModelPath]
+ * factory function for this.
  */
 fun Path(text: String): Path {
     require(text.isNotBlank()) { "Empty Path not allowed" }
 
-    return PathParser(text).parse()
+    val path = PathParser(text).parse()
+    if (path is SupportedDataModelPath) {
+        throw IllegalArgumentException("Use SupportedDataModelPath(String) to create supported data model paths")
+    }
+    return path
 }
 
 /**

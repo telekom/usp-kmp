@@ -118,11 +118,18 @@ class PathTest {
     }
 
     @Test
-    fun `resolved path property`() {
+    fun `auto-detect resolved paths`() {
         val resolved = Path("Device.IP.Interface.")
         assertTrue(resolved.isResolved)
 
         val expression = Path("Device.IP.Interface.[Name==\"eth0\"].")
         assertFalse(expression.isResolved)
+    }
+
+    @Test
+    fun `factory method does not return supported data model paths`() {
+        assertFailsWith<IllegalArgumentException> {
+            Path("\"Device.WiFi.SSID.{i}.")
+        }
     }
 }
