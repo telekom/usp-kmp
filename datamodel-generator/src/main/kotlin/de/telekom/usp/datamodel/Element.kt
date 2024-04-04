@@ -23,6 +23,16 @@ fun Element.firstChildOrNull(predicate: (Element) -> Boolean): Element? {
     return null
 }
 
+fun Element.withChildren(predicate: (Element) -> Boolean, handler: Element.() -> Unit) {
+    val children = childNodes
+    for (index in 0 until children.length) {
+        val child = children.item(index)
+        if ((child.nodeType == Node.ELEMENT_NODE) && predicate(child as Element)) {
+            handler(child)
+        }
+    }
+}
+
 fun <R> Element.mapChildren(childName: String, transform: (Element) -> R): List<R> {
     val list = getElementsByTagName(childName)
 

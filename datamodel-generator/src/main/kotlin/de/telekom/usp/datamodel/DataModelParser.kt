@@ -1,6 +1,8 @@
 package de.telekom.usp.datamodel
 
 import org.w3c.dom.Element
+import org.w3c.dom.Node
+import java.lang.String.format
 import javax.xml.parsers.DocumentBuilderFactory
 
 class DataModelParser {
@@ -38,6 +40,11 @@ class DataModelParser {
                 }
             }
         }
+
+        root.withChildren({ it.nodeName == "model" }) {
+            parseModel(this)
+        }
+
         return this
     }
 
@@ -61,5 +68,66 @@ class DataModelParser {
         return element?.nodeName == "list" && element.getAttribute("minItems") == "2" && element.getAttribute(
             "maxItems"
         ) == "2"
+    }
+
+    private fun parseModel(model: Element) {
+        var count = 0
+        val paths = mutableListOf<TerminalPath>()
+
+        model.withChildren({ it.nodeName == "object" }) {
+            val basePath = getAttribute("name")
+            val printElement: (Element) -> Unit = {
+                count++
+                println("${format("%04d", count)} $basePath${it.getAttribute("name")}")
+            }
+            childNodes.filter { it.nodeType == Node.ELEMENT_NODE }.forEach {
+                val child = it as Element
+                val name = basePath + child.getAttribute("name")
+                when (val nodeName = child.nodeName) {
+                    "parameter" -> {
+                        printElement(child)
+                        paths.add(
+                            TerminalPath.Parameter(
+                                name,
+                                child.childDescriptionText(),
+                                child.getAttribute("access")
+                            )
+                        )
+                    }
+
+                    "command" -> {
+                        printElement(child)
+                        paths.add(
+                            TerminalPath.Command(
+                                name,
+                                child.childDescriptionText(),
+                                child.getAttribute("async") == "true"
+                            )
+                        )
+                    }
+
+                    "event" -> {
+                        printElement(child)
+                        paths.add(
+                            TerminalPath.Event(
+                                name,
+                                child.childDescriptionText(),
+                                child.getAttribute("id")
+                            )
+                        )
+                    }
+
+                    "description" -> {}
+                    "uniqueKey" -> {}
+                    else -> {
+                        throw IllegalArgumentException("Unexpected element named: $nodeName")
+                    }
+                }
+            }
+        }
+        println("---------- sum of path elements: $count")
+
+        paths.forEach { println(it) }
+        println(paths.filterIsInstance<TerminalPath.Parameter>().map { it.access }.distinct())
     }
 }

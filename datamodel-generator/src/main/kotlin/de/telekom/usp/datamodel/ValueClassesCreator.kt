@@ -65,6 +65,30 @@ class ValueClassesCreator(private val dataTypes: List<DataType>, private val bas
                         .addCode("return $propName")
                         .build()
                 )
+                if (dataType.patterns.isNotEmpty()) {
+                    val companion = TypeSpec.companionObjectBuilder()
+                    val patterns = dataType.patterns
+                    val patternVars = mutableListOf<String>()
+                    val containsBlankPattern = patterns.contains("")
+
+                    companion.addProperty(
+                        PropertySpec.builder("allowEmpty", Boolean::class)
+                            .addModifiers(KModifier.CONST)
+                            .initializer(if (containsBlankPattern) "true" else "false")
+                            .build()
+                    )
+                    patterns.forEachIndexed { index, pattern ->
+                        if (pattern.isNotBlank()) {
+                            companion.addProperty(
+                                PropertySpec.builder("pattern$index", Regex::class)
+                                    .initializer("\"\"\"$pattern\"\"\".toRegex()")
+                                    .build()
+                            )
+                            patternVars.add("pattern$index")
+                        }
+                    }
+                    type.addType(companion.build())
+                }
             }
 
             Int::class -> {
