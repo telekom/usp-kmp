@@ -69,23 +69,23 @@ class ValueClassesCreator(private val dataTypes: List<DataType>, private val bas
                 if (dataType.patterns.isNotEmpty()) {
                     val companion =
                         TypeSpec.companionObjectBuilder().addModifiers(KModifier.PRIVATE)
-                    val patterns = dataType.patterns
+                    val patterns = dataType.patterns.toMutableList()
+                    val containsBlankPattern = patterns.removeAll { it.isBlank() }
                     val patternVars = mutableListOf<String>()
-                    val containsBlankPattern = patterns.contains("")
                     var index = 1
 
                     patterns.forEach { pattern ->
-                        if (pattern.isNotBlank()) {
-                            companion.addProperty(
-                                PropertySpec.builder("pattern$index", Regex::class)
-                                    .addModifiers(KModifier.PRIVATE)
-                                    .initializer("\"\"\"$pattern\"\"\".toRegex()")
-                                    .build()
-                            )
-                            patternVars.add("pattern$index")
-                            index++
-                        }
+                        val varName = if (patterns.size == 1) "pattern" else "pattern$index"
+                        companion.addProperty(
+                            PropertySpec.builder(varName, Regex::class)
+                                .addModifiers(KModifier.PRIVATE)
+                                .initializer("\"\"\"$pattern\"\"\".toRegex()")
+                                .build()
+                        )
+                        patternVars.add(varName)
+                        index++
                     }
+
                     type.addType(companion.build())
 
                     val isValid = FunSpec.builder("isValid")
@@ -95,8 +95,8 @@ class ValueClassesCreator(private val dataTypes: List<DataType>, private val bas
                     if (containsBlankPattern) {
                         isValid.addStatement("if ($propName.isEmpty()) return true")
                     }
-                    val lastPattern = patternVars.removeLast()
 
+                    val lastPattern = patternVars.removeLast()
                     patternVars.forEach {
                         isValid.addStatement("if ($it.matches($propName)) return true")
                     }
