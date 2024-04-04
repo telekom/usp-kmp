@@ -10,7 +10,7 @@ const val INDENT = "    "
 
 fun main() {
     val parser = DataModelParser().parse()
-    val root = File(".", "../datamodel/src/commonMain/kotlin")
+    val root = File(".", "../core/src/commonMain/kotlin")
 
     val baseType = ClassName(PACKAGE_NAME, "DataType")
     val baseTypeSpec = TypeSpec.interfaceBuilder(baseType)

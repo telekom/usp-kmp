@@ -2,7 +2,6 @@ package de.telekom.usp.datamodel
 
 import org.w3c.dom.Element
 import org.w3c.dom.Node
-import java.lang.String.format
 import javax.xml.parsers.DocumentBuilderFactory
 
 class DataModelParser {
@@ -65,20 +64,28 @@ class DataModelParser {
     }
 
     private fun isIntPairType(element: Element?): Boolean {
-        return element?.nodeName == "list" && element.getAttribute("minItems") == "2" && element.getAttribute(
-            "maxItems"
-        ) == "2"
+        return element?.nodeName == "list"
+                && element.getAttribute("minItems") == "2"
+                && element.getAttribute("maxItems") == "2"
     }
 
+    //
+    // Currently not of any use, might be of interest in the future
+    //
     private fun parseModel(model: Element) {
         var count = 0
         val paths = mutableListOf<TerminalPath>()
+        val instantiablePaths = mutableSetOf<String>()
 
         model.withChildren({ it.nodeName == "object" }) {
             val basePath = getAttribute("name")
+
+            if (basePath.endsWith("{i}.")) {
+                instantiablePaths.add(basePath)
+            }
             val printElement: (Element) -> Unit = {
                 count++
-                println("${format("%04d", count)} $basePath${it.getAttribute("name")}")
+                // println("${java.lang.String.format("%04d", count)} $basePath${it.getAttribute("name")}")
             }
             childNodes.filter { it.nodeType == Node.ELEMENT_NODE }.forEach {
                 val child = it as Element
@@ -86,6 +93,7 @@ class DataModelParser {
                 when (val nodeName = child.nodeName) {
                     "parameter" -> {
                         printElement(child)
+                        // TODO: read the data type of the parameter
                         paths.add(
                             TerminalPath.Parameter(
                                 name,
@@ -125,9 +133,7 @@ class DataModelParser {
                 }
             }
         }
-        println("---------- sum of path elements: $count")
-
-        paths.forEach { println(it) }
-        println(paths.filterIsInstance<TerminalPath.Parameter>().map { it.access }.distinct())
+        // println("---------- sum of path elements: $count")
+        // println("---------- number of instantiable paths: ${instantiablePaths.size}")
     }
 }
