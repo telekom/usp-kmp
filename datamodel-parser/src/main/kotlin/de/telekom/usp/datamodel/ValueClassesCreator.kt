@@ -5,7 +5,7 @@ import okio.ByteString
 import java.io.File
 import kotlin.reflect.KClass
 
-class ValueClassesCreator(private val dataTypes: List<DataType>, private val baseType: ClassName) {
+class ValueClassesCreator(private val dataTypes: List<DataType>) {
 
     fun createIn(root: File): Int {
         createHelperClass(root)
@@ -30,20 +30,21 @@ class ValueClassesCreator(private val dataTypes: List<DataType>, private val bas
         val valueClass = classForType(typeString)
         val propertyClass = if (valueClass != PackedInts::class) valueClass else Long::class
         val className = ClassName(PACKAGE_NAME, dataType.name)
-        val fileSpec = FileSpec.builder(className).indent(INDENT)
+        val fileSpec = FileSpec.uspBuilder(className)
         val propName = "wrapped"
         val constructorModifiers =
             if (valueClass == PackedInts::class) arrayOf(KModifier.INTERNAL) else emptyArray()
 
         val type = TypeSpec.classBuilder(className)
             .addAnnotation(JvmInline::class)
+            .addAnnotation(GeneratedClassName)
             .addModifiers(KModifier.VALUE)
             .addProperty(
                 PropertySpec.builder(propName, propertyClass)
                     .initializer("%L", propName)
                     .build()
             )
-            .addSuperinterface(baseType)
+            .addSuperinterface(DataTypeClassName)
             .primaryConstructor(
                 FunSpec.constructorBuilder()
                     .addModifiers(*constructorModifiers)

@@ -3,7 +3,7 @@ package de.telekom.usp.datamodel
 import com.squareup.kotlinpoet.*
 import java.io.File
 
-class EnumerationsCreator(private val dataTypes: List<DataType>, private val baseType: ClassName) {
+class EnumerationsCreator(private val dataTypes: List<DataType>) {
 
     fun createIn(root: File): Int {
         var count = 0
@@ -24,7 +24,8 @@ class EnumerationsCreator(private val dataTypes: List<DataType>, private val bas
                     .initializer("text")
                     .build()
             )
-            .addSuperinterface(baseType)
+            .addSuperinterface(DataTypeClassName)
+            .addAnnotation(GeneratedClassName)
 
         val companion = TypeSpec.companionObjectBuilder()
             .addFunction(
@@ -87,7 +88,7 @@ class EnumerationsCreator(private val dataTypes: List<DataType>, private val bas
             type.addEnumConstant(toEnumName(it.value), typeSpec.build())
         }
 
-        return FileSpec.builder(className).indent(INDENT).addType(type.build()).build()
+        return FileSpec.uspBuilder(className).addType(type.build()).build()
     }
 
     private fun toEnumName(name: String): String {
