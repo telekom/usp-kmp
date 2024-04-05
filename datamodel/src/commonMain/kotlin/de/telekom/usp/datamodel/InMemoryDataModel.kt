@@ -6,7 +6,7 @@ import de.telekom.usp.ResolvedPath
 
 class InMemoryDataModel : DataModel {
 
-    private val root = Node(Device.asResolvedPath())
+    private val root = Node(Device)
 
     override suspend fun read(path: ResolvedPath): List<InstanceObject> {
         checkPath(path)

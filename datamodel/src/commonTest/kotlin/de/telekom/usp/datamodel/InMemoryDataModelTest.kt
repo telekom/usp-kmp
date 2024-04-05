@@ -1,6 +1,6 @@
 package de.telekom.usp.datamodel
 
-import de.telekom.usp.ResolvedPath
+import de.telekom.usp.IP
 import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
 
@@ -18,9 +18,9 @@ class InMemoryDataModelTest {
     fun `set inserts values`() = runTest {
         val model = InMemoryDataModel()
         model.set(
-            InstanceObject(ResolvedPath("Device.IP.Interface.1."), rows),
-            InstanceObject(ResolvedPath("Device.IP.Interface.2."), rows),
-            InstanceObject(ResolvedPath("Device.IP.Interface.1.IPv4Address."), rows),
+            InstanceObject(IP + "Interface.1.", rows),
+            InstanceObject(IP + "Interface.2.", rows),
+            InstanceObject(IP + "Interface.1.IPv4Address.", rows),
         )
     }
 }
