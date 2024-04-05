@@ -45,9 +45,17 @@ interface Path {
         return PathImpl(elements = elements + child.elements)
     }
 
+    operator fun get(index: Int) = elements[index]
+
     fun first(): PathElement = elements.first()
 
     fun last(): PathElement = elements.last()
+
+    /**
+     * Returns a view of the portion of this `Path` between the specified [fromIndex] (inclusive)
+     * and [toIndex] (exclusive).
+     */
+    fun subPath(fromIndex: Int, toIndex: Int): Path = PathImpl(elements.subList(fromIndex, toIndex))
 
     @Suppress("UNCHECKED_CAST")
     fun <T : PathElement> lastAs(): T = elements.last() as T

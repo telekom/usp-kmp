@@ -15,6 +15,13 @@ interface ResolvedPath : Path {
         require(child.last() !is PathElement.Expression) { "Cannot append a search expression to a resolved path: '$path'" }
         return ResolvedPathImpl(elements = elements + child.elements)
     }
+
+    /**
+     * Returns a view of the portion of this `ResolvedPath` between the specified [fromIndex]
+     * (inclusive) and [toIndex] (exclusive).
+     */
+    override fun subPath(fromIndex: Int, toIndex: Int): ResolvedPath =
+        ResolvedPathImpl(elements.subList(fromIndex, toIndex))
 }
 
 /**
