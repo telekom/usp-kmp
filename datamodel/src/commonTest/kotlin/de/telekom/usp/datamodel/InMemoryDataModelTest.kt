@@ -23,4 +23,15 @@ class InMemoryDataModelTest {
             InstanceObject(IP + "Interface.1.IPv4Address.", rows),
         )
     }
+
+    @Test
+    fun `read finds proper values`() = runTest {
+        val model = InMemoryDataModel()
+        model.set(
+            InstanceObject(IP + "Interface.1.", rows),
+            InstanceObject(IP + "Interface.2.", rows),
+            InstanceObject(IP + "Interface.1.IPv4Address.", rows),
+        )
+        println(model.read(IP + "Interface.2."))
+    }
 }

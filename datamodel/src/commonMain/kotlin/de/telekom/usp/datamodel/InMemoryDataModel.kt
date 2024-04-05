@@ -9,8 +9,12 @@ class InMemoryDataModel : DataModel {
     private val root = Node(Device)
 
     override suspend fun read(path: ResolvedPath): List<InstanceObject> {
-        checkPath(path)
-        TODO("Not yet implemented")
+        val node = findNode(path)
+        return if (node != null) {
+            listOf(InstanceObject(node.path, node.rows))
+        } else {
+            emptyList()
+        }
     }
 
     override suspend fun set(vararg data: InstanceObject) {
@@ -32,22 +36,28 @@ class InMemoryDataModel : DataModel {
     }
 
     private fun checkPath(path: ResolvedPath) {
-        require(path.first() == Device) { "Path must start with Device. but starts with: '${path.first()}'" }
+        require(path.first() == Device.first()) { "Path must start with Device. but starts with: '${path.first()}'" }
         require(path.last() is PathElement.Object) { "Only object paths allowed, found: '$path'" }
     }
 
-    private fun findOrCreateNode(path: ResolvedPath): Node {
-        if (path.size == 1) {
-            return root
-        }
+    private fun findNode(path: ResolvedPath): Node? {
+        checkPath(path)
 
-        var current = root
-        for (index in 1 until path.elements.size) {
-            val pathElement = path[index] as PathElement.Object
-            val child = current.findChildNode(pathElement)
-            current = child ?: current.addChild(Node(path.subPath(0, index + 1)))
+        return if (path.size == 1) {
+            root
+        } else {
+            root.findChildNodeFor(path, 1)
         }
-        return current
+    }
+
+    private fun findOrCreateNode(path: ResolvedPath): Node {
+        checkPath(path)
+
+        return if (path.size == 1) {
+            root
+        } else {
+            root.findOrCreateChildNodeFor(path, 1)
+        }
     }
 
     private class Node(val path: ResolvedPath) : Comparable<Node> {
@@ -72,7 +82,28 @@ class InMemoryDataModel : DataModel {
             }
         }
 
-        fun findChildNode(pathElement: PathElement.Object): Node? {
+        fun findOrCreateChildNodeFor(path: ResolvedPath, fromIndex: Int): Node {
+            val child = childNodeWith(path[fromIndex] as PathElement.Object)
+                ?: addChild(Node(path.subPath(0, fromIndex + 1)))
+
+            return if (fromIndex == path.size - 1) {
+                child
+            } else {
+                child.findOrCreateChildNodeFor(path, fromIndex + 1)
+            }
+        }
+
+        fun findChildNodeFor(path: ResolvedPath, fromIndex: Int): Node? {
+            val child = childNodeWith(path[fromIndex] as PathElement.Object)
+
+            return if (fromIndex == path.size - 1) {
+                child
+            } else {
+                child?.findOrCreateChildNodeFor(path, fromIndex + 1)
+            }
+        }
+
+        fun childNodeWith(pathElement: PathElement.Object): Node? {
             var low = 0
             var high = children.size - 1
 
