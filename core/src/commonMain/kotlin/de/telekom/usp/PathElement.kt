@@ -45,7 +45,7 @@ sealed class PathElement(val text: String) {
 
         override val isTerminal = false
 
-        val isWildcard = instance == 0
+        val isResolved = instance != 0 && refFollow == null
     }
 
     class Expression internal constructor(text: String) : PathElement(text) {
@@ -89,5 +89,11 @@ sealed class PathElement(val text: String) {
 }
 
 fun List<PathElement>.isResolved(): Boolean {
-    return filterIsInstance<PathElement.Expression>().isEmpty()
+    return all { element ->
+        when (element) {
+            is PathElement.Object -> element.isResolved
+            is PathElement.Expression, PathElement.Placeholder -> false
+            else -> true
+        }
+    }
 }

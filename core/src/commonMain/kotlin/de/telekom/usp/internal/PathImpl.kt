@@ -39,6 +39,19 @@ internal open class PathImpl(final override val elements: List<PathElement>) : P
     override fun subPath(fromIndex: Int, toIndex: Int): Path =
         PathImpl(elements.subList(fromIndex, toIndex))
 
+    override fun hashCode(): Int {
+        return elements.hashCode()
+    }
+
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (other == null || this::class != other::class) return false
+
+        other as PathImpl
+
+        return elements == other.elements
+    }
+
     override fun toString(): String {
         return elements.joinToString(separator = "")
     }

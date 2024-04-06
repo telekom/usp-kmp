@@ -5,6 +5,7 @@ import kotlin.test.assertContains
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertFalse
+import kotlin.test.assertNotEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 
@@ -24,6 +25,16 @@ class PathTest {
         ).forEach { path ->
             assertEquals(path, Path(path).toString())
         }
+    }
+
+    @Test
+    fun `equals matches paths correctly`() {
+        assertEquals(Path("Device.IP.Interface.*."), Path("Device.IP.Interface.*."))
+        assertEquals(Path("Parameter"), Path("Parameter"))
+        assertEquals(Path("Device.Reboot()"), Path("Device.Reboot()"))
+        assertEquals(IP + "Interface.", IP + "Interface.")
+
+        assertNotEquals(Path("Parameter."), Path("Parameter"))
     }
 
     @Test
@@ -95,9 +106,8 @@ class PathTest {
 
     @Test
     fun `allows appending valid paths`() {
-        val path = Path("Device.IP.")
-        assertEquals("Device.IP.Interface.", (path + "Interface.").toString())
-        assertEquals("Device.IP.Interface.Event!", (path + "Interface.Event!").toString())
+        assertEquals("Device.IP.Interface.", (IP + "Interface.").toString())
+        assertEquals("Device.IP.Interface.Event!", (IP + "Interface.Event!").toString())
     }
 
     @Test
@@ -119,17 +129,40 @@ class PathTest {
 
     @Test
     fun `auto-detect resolved paths`() {
-        val resolved = Path("Device.IP.Interface.")
-        assertTrue(resolved.isResolved)
+        listOf(
+            "Device.IP.Interface.",
+            "Device.IP.Interface.Status",
+            "Device.IP.Interface.1.",
+            "Device.IP.Interface.1.Interface.3.IPv4Address.",
+            "Device.Reboot()",
+        ).forEach {
+            val resolved = Path(it)
+            assertTrue(resolved.isResolved)
+        }
 
         val expression = Path("Device.IP.Interface.[Name==\"eth0\"].")
         assertFalse(expression.isResolved)
+
+        val wildcard = Path("Device.IP.Interface.*.")
+        assertFalse(wildcard.isResolved)
+    }
+
+    @Test
+    fun `fail to resolve unresolvable paths`() {
+        listOf(
+            "Device.IP.Interface.*.",
+            "Device.IP.Interface.[Name==\"eth0\"]."
+        ).forEach {
+            assertFailsWith<IllegalArgumentException> {
+                ResolvedPath(it)
+            }
+        }
     }
 
     @Test
     fun `factory method does not return supported data model paths`() {
         assertFailsWith<IllegalArgumentException> {
-            Path("\"Device.WiFi.SSID.{i}.")
+            Path("Device.WiFi.SSID.{i}.")
         }
     }
 }

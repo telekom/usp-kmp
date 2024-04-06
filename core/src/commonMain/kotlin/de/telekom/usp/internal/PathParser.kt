@@ -64,7 +64,7 @@ internal class PathParser(private val text: String) {
 
     private fun objectPath() {
         when (val base: String = text.substring(start, current - 1)) {
-            "*" -> add(wildcard)
+            "*" -> add(Wildcard)
             "Device" -> add(Device.first())
             "{i}" -> {
                 containsPlaceholder = true
@@ -160,7 +160,7 @@ internal class PathParser(private val text: String) {
 
     companion object {
 
-        private val wildcard = PathElement.Object("*.", 0, null)
+        private val Wildcard = PathElement.Object("*.", 0, null)
 
         // Matches for example '#*+' or '#2+' or just '+'
         private val refRegex = Regex("""(#(\*|\d+))?\+$""")
