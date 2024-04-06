@@ -4,9 +4,9 @@ import de.telekom.usp.Device
 import de.telekom.usp.PathElement
 import de.telekom.usp.ResolvedPath
 
-class InMemoryDataModel : DataModel {
+open class InMemoryDataModel : DataModel {
 
-    private val root = Node(Device)
+    protected val root = Node(Device)
 
     override suspend fun read(path: ResolvedPath): List<InstanceObject> {
         val node = findNode(path)
@@ -36,7 +36,7 @@ class InMemoryDataModel : DataModel {
     }
 
     private fun checkPath(path: ResolvedPath) {
-        require(path.first() == Device.first()) { "Path must start with Device. but starts with: '${path.first()}'" }
+        require(path.startsWithDevice()) { "Path must start with Device., but starts with: '${path.first()}'" }
         require(path.last() is PathElement.Object) { "Only object paths allowed, found: '$path'" }
     }
 
@@ -60,7 +60,7 @@ class InMemoryDataModel : DataModel {
         }
     }
 
-    private class Node(val path: ResolvedPath) : Comparable<Node> {
+    protected class Node(val path: ResolvedPath) : Comparable<Node> {
 
         val rows = mutableMapOf<String, String>()
 
@@ -137,7 +137,7 @@ class InMemoryDataModel : DataModel {
                 if (this@Node.value != Device.first()) {
                     append("- ")
                 }
-                append(path)
+                append(value)
                 append(":\n")
                 rows.forEach { row ->
                     append(indent)
