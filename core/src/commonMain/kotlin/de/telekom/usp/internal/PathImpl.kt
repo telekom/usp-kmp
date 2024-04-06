@@ -1,5 +1,6 @@
 package de.telekom.usp.internal
 
+import de.telekom.usp.Device
 import de.telekom.usp.Path
 import de.telekom.usp.PathElement
 import de.telekom.usp.ResolvedPath
@@ -26,6 +27,17 @@ internal open class PathImpl(final override val elements: List<PathElement>) : P
             throw IllegalArgumentException("Path not resolved: $this")
         }
     }
+
+    override operator fun plus(path: String): Path {
+        val child = Path(path)
+
+        require(!isTerminal) { "Path '$this' is terminal, cannot append more to it" }
+        require(child.first() != Device.first()) { "Can only append relative paths: '$path'" }
+        return PathImpl(elements = elements + child.elements)
+    }
+
+    override fun subPath(fromIndex: Int, toIndex: Int): Path =
+        PathImpl(elements.subList(fromIndex, toIndex))
 
     override fun toString(): String {
         return elements.joinToString(separator = "")

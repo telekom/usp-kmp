@@ -1,6 +1,5 @@
 package de.telekom.usp
 
-import de.telekom.usp.internal.PathImpl
 import de.telekom.usp.internal.PathParser
 
 /**
@@ -26,6 +25,14 @@ interface Path {
      */
     val isResolved: Boolean
 
+    operator fun plus(path: String): Path
+
+    /**
+     * Returns a view of the portion of this `Path` between the specified [fromIndex] (inclusive)
+     * and [toIndex] (exclusive).
+     */
+    fun subPath(fromIndex: Int, toIndex: Int): Path
+
     val isTerminal: Boolean
         get() = last().isTerminal
 
@@ -37,25 +44,11 @@ interface Path {
 
     fun asResolvedPath(): ResolvedPath
 
-    operator fun plus(path: String): Path {
-        val child = Path(path)
-
-        require(!isTerminal) { "Path '$this' is terminal, cannot append more to it" }
-        require(child.first() != Device.first()) { "Can only append relative paths: '$path'" }
-        return PathImpl(elements = elements + child.elements)
-    }
-
     operator fun get(index: Int) = elements[index]
 
     fun first(): PathElement = elements.first()
 
     fun last(): PathElement = elements.last()
-
-    /**
-     * Returns a view of the portion of this `Path` between the specified [fromIndex] (inclusive)
-     * and [toIndex] (exclusive).
-     */
-    fun subPath(fromIndex: Int, toIndex: Int): Path = PathImpl(elements.subList(fromIndex, toIndex))
 
     @Suppress("UNCHECKED_CAST")
     fun <T : PathElement> lastAs(): T = elements.last() as T
