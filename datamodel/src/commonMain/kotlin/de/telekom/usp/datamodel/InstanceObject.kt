@@ -8,6 +8,6 @@ import de.telekom.usp.ResolvedPath
 data class InstanceObject(val path: ResolvedPath, val rows: Map<String, String>) {
 
     init {
-        require(!path.isTerminal) { "Instance object paths must not be terminal" }
+        require(!path.isTerminal) { "Instance object paths cannot be terminal: '$path'" }
     }
 }
