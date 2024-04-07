@@ -39,6 +39,8 @@ internal open class PathImpl(final override val elements: List<PathElement>) : P
     override fun subPath(fromIndex: Int, toIndex: Int): Path =
         PathImpl(elements.subList(fromIndex, toIndex))
 
+    override fun dropLast(n: Int): Path = PathImpl(elements.dropLast(n))
+
     override fun hashCode(): Int {
         return elements.hashCode()
     }

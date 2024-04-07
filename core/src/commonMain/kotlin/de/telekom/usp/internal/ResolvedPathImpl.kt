@@ -24,4 +24,6 @@ internal class ResolvedPathImpl(elements: List<PathElement>) : PathImpl(elements
 
     override fun subPath(fromIndex: Int, toIndex: Int): ResolvedPath =
         ResolvedPathImpl(elements.subList(fromIndex, toIndex))
+
+    override fun dropLast(n: Int): ResolvedPath = ResolvedPathImpl(elements.dropLast(n))
 }

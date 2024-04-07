@@ -33,6 +33,11 @@ interface Path {
      */
     fun subPath(fromIndex: Int, toIndex: Int): Path
 
+    /**
+     * Returns a path containing all elements except last n elements.
+     */
+    fun dropLast(n: Int): Path
+
     val isTerminal: Boolean
         get() = last().isTerminal
 

@@ -12,6 +12,12 @@ interface ResolvedPath : Path {
      * (inclusive) and [toIndex] (exclusive).
      */
     override fun subPath(fromIndex: Int, toIndex: Int): ResolvedPath
+
+
+    /**
+     * Returns a resolved path containing all elements except last n elements.
+     */
+    override fun dropLast(n: Int): ResolvedPath
 }
 
 /**

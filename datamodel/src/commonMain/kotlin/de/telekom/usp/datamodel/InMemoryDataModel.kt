@@ -1,39 +1,64 @@
 package de.telekom.usp.datamodel
 
+import co.touchlab.kermit.Logger
 import de.telekom.usp.Device
 import de.telekom.usp.PathElement
 import de.telekom.usp.ResolvedPath
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 
 open class InMemoryDataModel : DataModel {
 
     protected val root = Node(Device)
 
-    override suspend fun read(path: ResolvedPath): List<InstanceObject> {
-        val node = findNode(path)
-        return if (node != null) {
-            listOf(InstanceObject(node.path, node.rows))
-        } else {
-            emptyList()
+    private val mutex = Mutex()
+
+    override suspend fun read(path: ResolvedPath, maxDepth: Int): List<InstanceObject> {
+        mutex.withLock {
+            return buildList {
+                val node = findNode(path)
+                if (node != null) {
+                    add(InstanceObject(node.path, node.rows))
+                    collectChildData(this, node, maxDepth)
+                }
+            }
         }
     }
 
     override suspend fun set(vararg data: InstanceObject) {
-        for (instance in data) {
-            findOrCreateNode(instance.path).setRows(instance.rows)
+        mutex.withLock {
+            for (instance in data) {
+                findOrCreateNode(instance.path).setRows(instance.rows)
+            }
         }
-        println(root)
     }
 
     override suspend fun add(vararg data: InstanceObject) {
-        for (instance in data) {
-            findOrCreateNode(instance.path).addRows(instance.rows)
+        mutex.withLock {
+            for (instance in data) {
+                findOrCreateNode(instance.path).addRows(instance.rows)
+            }
         }
-        println(root)
     }
 
-    override suspend fun delete(vararg data: InstanceObject) {
-        TODO("Not yet implemented")
+    override suspend fun delete(path: ResolvedPath): Boolean {
+        checkPath(path)
+        return mutex.withLock {
+            if (path == Device) {
+                Logger.w("Cannot delete the root path (Device.) from a data model")
+                return false
+            }
+            val parent = findNode(path.dropLast(1))
+
+            parent?.removeChild(path.last() as PathElement.Object) ?: false
+        }
     }
+
+    override fun toString(): String {
+        return root.toString()
+    }
+
+    // --- Helper methods --------------------------------------------------------------------------
 
     private fun checkPath(path: ResolvedPath) {
         require(path.startsWithDevice()) { "Path must start with Device., but starts with: '${path.first()}'" }
@@ -60,30 +85,43 @@ open class InMemoryDataModel : DataModel {
         }
     }
 
+    private fun collectChildData(instances: MutableList<InstanceObject>, parent: Node, depth: Int) {
+        if (depth > 0) {
+            parent.children.forEach { child ->
+                instances.add(InstanceObject(child.path, child.rows))
+                collectChildData(instances, child, depth - 1)
+            }
+        }
+    }
+
     protected class Node(val path: ResolvedPath) : Comparable<Node> {
 
-        val rows = mutableMapOf<String, String>()
+        private val _rows = mutableMapOf<String, String>()
+        val rows: Map<String, String>
+            get() = _rows
 
-        val value: PathElement.Object
+        private val value: PathElement.Object
             get() = path.last() as PathElement.Object
 
-        private val children: MutableList<Node> = mutableListOf()
+        private val _children: MutableList<Node> = mutableListOf()
+        val children: List<Node>
+            get() = _children
 
-        fun addChild(node: Node): Node {
-            children.add(node)
-            children.sort()
+        private fun addChild(node: Node): Node {
+            _children.add(node)
+            _children.sort()
             return node
         }
 
-        fun removeChild(node: Node) {
-            val index = children.binarySearch(node)
-            if (index >= 0) {
-                children.removeAt(index)
-            }
+        fun removeChild(toRemove: PathElement.Object): Boolean {
+            return searchChildNode(toRemove)?.let {
+                _children.remove(it)
+                true
+            } ?: false
         }
 
         fun findOrCreateChildNodeFor(path: ResolvedPath, fromIndex: Int): Node {
-            val child = childNodeWith(path[fromIndex] as PathElement.Object)
+            val child = searchChildNode(path[fromIndex] as PathElement.Object)
                 ?: addChild(Node(path.subPath(0, fromIndex + 1)))
 
             return if (fromIndex == path.size - 1) {
@@ -94,22 +132,22 @@ open class InMemoryDataModel : DataModel {
         }
 
         fun findChildNodeFor(path: ResolvedPath, fromIndex: Int): Node? {
-            val child = childNodeWith(path[fromIndex] as PathElement.Object)
+            val child = searchChildNode(path[fromIndex] as PathElement.Object)
 
             return if (fromIndex == path.size - 1) {
                 child
             } else {
-                child?.findOrCreateChildNodeFor(path, fromIndex + 1)
+                child?.findChildNodeFor(path, fromIndex + 1)
             }
         }
 
-        fun childNodeWith(pathElement: PathElement.Object): Node? {
+        private fun searchChildNode(pathElement: PathElement.Object): Node? {
             var low = 0
-            var high = children.size - 1
+            var high = _children.size - 1
 
             while (low <= high) {
                 val mid = (low + high).ushr(1) // safe from overflows
-                val midVal = children[mid]
+                val midVal = _children[mid]
                 val cmp = midVal.value.text.compareTo(pathElement.text)
 
                 if (cmp < 0)
@@ -123,12 +161,12 @@ open class InMemoryDataModel : DataModel {
         }
 
         fun setRows(rows: Map<String, String>) {
-            this.rows.clear()
-            this.rows.putAll(rows)
+            this._rows.clear()
+            this._rows.putAll(rows)
         }
 
         fun addRows(rows: Map<String, String>) {
-            this.rows.putAll(rows)
+            this._rows.putAll(rows)
         }
 
         fun printNode(indent: String): String {
@@ -139,12 +177,12 @@ open class InMemoryDataModel : DataModel {
                 }
                 append(value)
                 append(":\n")
-                rows.forEach { row ->
+                _rows.forEach { row ->
                     append(indent)
                     append("  ")
                     row.toYaml(this)
                 }
-                children.forEach { child ->
+                _children.forEach { child ->
                     append(child.printNode("  $indent"))
                 }
             }

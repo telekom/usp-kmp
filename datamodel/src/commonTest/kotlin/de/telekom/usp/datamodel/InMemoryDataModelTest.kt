@@ -32,6 +32,6 @@ class InMemoryDataModelTest {
             InstanceObject(IP + "Interface.2.", rows),
             InstanceObject(IP + "Interface.1.IPv4Address.", rows),
         )
-        println(model.read(IP + "Interface.2."))
+        println(model.read(IP + "Interface.", 2))
     }
 }
