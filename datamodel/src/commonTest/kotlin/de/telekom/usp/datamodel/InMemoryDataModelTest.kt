@@ -1,9 +1,12 @@
 package de.telekom.usp.datamodel
 
+import de.telekom.usp.Device
 import de.telekom.usp.IP
+import de.telekom.usp.WiFi
 import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
 class InMemoryDataModelTest {
@@ -15,6 +18,20 @@ class InMemoryDataModelTest {
         "Name" to "",
         "LastChange" to "0",
     )
+
+    @Test
+    fun `root path is always present`() = runTest {
+        val model = InMemoryDataModel()
+        assertTrue(model.read(Device).isNotEmpty())
+    }
+
+    @Test
+    fun `read returns empty list for non existing paths`() = runTest {
+        val model = InMemoryDataModel()
+        model.add(InstanceObject(IP, rows))
+
+        assertTrue(model.read(WiFi).isEmpty())
+    }
 
     @Test
     fun `add stores values`() = runTest {
@@ -47,13 +64,30 @@ class InMemoryDataModelTest {
         model.add(InstanceObject(IP + "Interface.", rows))
         model.add(InstanceObject(IP + "Interface.1.", rows))
 
-        model.delete(IP + "Interface.1.")
+        assertTrue(model.delete(IP + "Interface.1."))
         assertTrue(model.read(IP + "Interface.1.", Int.MAX_VALUE).isEmpty())
         assertTrue(model.read(IP, Int.MAX_VALUE).size == 2)
     }
 
     @Test
-    fun `read traverses tree properly`() = runTest {
+    fun `deleting unknown paths returns false`() = runTest {
+        val model = InMemoryDataModel()
+        model.add(InstanceObject(IP, rows))
+
+        assertFalse(model.delete(WiFi))
+    }
+
+    @Test
+    fun `deleting the root path is not possible`() = runTest {
+        val model = InMemoryDataModel()
+        model.add(InstanceObject(IP, rows))
+
+        assertFalse(model.delete(Device))
+        assertTrue(model.read(IP).isNotEmpty())
+    }
+
+    @Test
+    fun `read traverses the tree properly`() = runTest {
         val model = InMemoryDataModel()
         model.set(
             InstanceObject(IP + "Interface.1.", rows),
