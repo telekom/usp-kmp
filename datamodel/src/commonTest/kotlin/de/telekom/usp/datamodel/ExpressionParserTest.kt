@@ -17,8 +17,8 @@ class ExpressionParserTest {
         listOf(
             "[Name==\"eth0\"]." to textExp("Name", EQUALS, "eth0"),
             "[Status==\"Enabled\"]." to textExp("Status", EQUALS, "Enabled"),
-            "[Enabled!=\"true\"]." to boolExp("Enabled", NOT_EQUALS, true),
-            "[Enabled==\"false\"]." to boolExp("Enabled", EQUALS, false),
+            "[Enabled!=\"true\"]." to numExp("Enabled", NOT_EQUALS, 1L),
+            "[Enabled==\"false\"]." to numExp("Enabled", EQUALS, 0L),
             "[Stats.ErrorsSent>0]." to numExp("Stats.ErrorsSent", GREATER_THAN, 0L),
             "[Capabilities~=\"IPv6Firewall\"]." to textExp(
                 "Capabilities",
@@ -67,12 +67,5 @@ class ExpressionParserTest {
         ExpressionComponent(Path(path), operator, Value.Text(text))
 
     private fun numExp(path: String, operator: Operator, num: Long) =
-        ExpressionComponent(Path(path), operator, Value.Number(num))
-
-    private fun boolExp(path: String, operator: Operator, bool: Boolean) =
-        ExpressionComponent(
-            Path(path),
-            operator,
-            if (bool) Value.Boolean.TRUE else Value.Boolean.FALSE
-        )
+        ExpressionComponent(Path(path), operator, Value.Numeric(num))
 }

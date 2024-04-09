@@ -2,6 +2,7 @@ package de.telekom.usp.datamodel
 
 import co.touchlab.kermit.Logger
 import de.telekom.usp.Path
+import kotlinx.datetime.Instant
 
 data class ExpressionComponent(
     val relpath: Path,
@@ -56,34 +57,22 @@ sealed class Value {
         override fun toString(): String {
             return text
         }
+
+        companion object {
+            val Empty = Text("")
+        }
     }
 
-    data class Number(val number: Long) : Value() {
+    data class Numeric(val number: Long) : Value() {
 
         override fun toString(): String {
             return number.toString()
         }
-    }
-
-    class Boolean private constructor(val bool: kotlin.Boolean) : Value() {
-
-        override fun equals(other: Any?): kotlin.Boolean {
-            return this === other
-        }
-
-        override fun hashCode(): Int {
-            return if (bool) 1231 else 1237
-        }
-
-        override fun toString(): String {
-            return if (bool) "true" else "false"
-        }
 
         companion object {
+            val Zero = Numeric(0L)
 
-            val TRUE = Boolean(true)
-
-            val FALSE = Boolean(false)
+            val One = Numeric(1L)
         }
     }
 
@@ -93,14 +82,32 @@ sealed class Value {
             // USP specification chap. 2.5.4: "Literal values are conceptually converted to a
             // suitable internal representation before comparison. For example, int values 123, +123
             // and 0123 all represent the same value, and so do boolean values 1 and true."
+            //
+            // Hence we do not support a data type Boolean, as we cannot distinguish between 1 and
+            // true nor 0 and false. And also date/time is converted into integer types:
 
-            return if (text == "true" || text == "1") {
-                Boolean.TRUE
-            } else if (text == "false") {
-                Boolean.FALSE
+            return if (text.isEmpty()) {
+                Text.Empty
+            } else if (text == "1" || text == "true") {
+                Numeric.One
+            } else if (text == "0" || text == "false") {
+                Numeric.Zero
             } else {
                 val num = text.toLongOrNull()
-                if (num != null) Number(num) else Text(text)
+
+                // If text is not an integer, but starts with a digit and has a reasonable length,
+                // try to parse is as date/time:
+                if (num == null && text[0].isDigit() && text.length > 18) {
+                    try {
+                        Numeric(Instant.parse(text).toEpochMilliseconds())
+                    } catch (ex: IllegalArgumentException) {
+                        Text(text)
+                    }
+                } else if (num != null) {
+                    Numeric(num)
+                } else {
+                    Text(text)
+                }
             }
         }
     }
@@ -113,30 +120,23 @@ private val EvalNotEquals: (Value, Value) -> Boolean = { left, right -> left != 
 
 private val EvalContains: (Value, Value) -> Boolean = { left, right ->
     // Do NOT use `left.toString().contains(right.toString())` as this may return false
-    // positives, for example: "NAT44".contains("44")  == true" which is not meant here!
+    // positives, for example: "NAT44,XYZ".contains("44")  == true" which is not meant here!
+    // However this still doesn't match "true,false ~= 1" which is acceptable for now.
     left.toString().split(",").map { it.trim() }.contains(right.toString())
 }
 
 private val EvalLess: (Value, Value) -> Boolean = { left, right ->
-    val leftInt = if (left === Value.Boolean.TRUE) 1 else (left as Value.Number).number
-    val rightInt = if (right === Value.Boolean.TRUE) 1 else (right as Value.Number).number
-    leftInt < rightInt
+    (left as Value.Numeric).number < (right as Value.Numeric).number
 }
 
 private val EvalGreater: (Value, Value) -> Boolean = { left, right ->
-    val leftInt = if (left === Value.Boolean.TRUE) 1 else (left as Value.Number).number
-    val rightInt = if (right === Value.Boolean.TRUE) 1 else (right as Value.Number).number
-    leftInt > rightInt
+    (left as Value.Numeric).number > (right as Value.Numeric).number
 }
 
 private val EvalLessEqual: (Value, Value) -> Boolean = { left, right ->
-    val leftInt = if (left === Value.Boolean.TRUE) 1 else (left as Value.Number).number
-    val rightInt = if (right === Value.Boolean.TRUE) 1 else (right as Value.Number).number
-    leftInt <= rightInt
+    (left as Value.Numeric).number <= (right as Value.Numeric).number
 }
 
 private val EvalGreaterEqual: (Value, Value) -> Boolean = { left, right ->
-    val leftInt = if (left === Value.Boolean.TRUE) 1 else (left as Value.Number).number
-    val rightInt = if (right === Value.Boolean.TRUE) 1 else (right as Value.Number).number
-    leftInt >= rightInt
+    (left as Value.Numeric).number >= (right as Value.Numeric).number
 }
