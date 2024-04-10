@@ -16,7 +16,6 @@ import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.launch
 import mqtt.MQTTVersion
 import mqtt.packets.Qos
-import mqtt.packets.mqttv5.ReasonCode
 import socket.tls.TLSClientSettings
 
 @OptIn(ExperimentalUnsignedTypes::class)
@@ -47,13 +46,13 @@ class MqttTransfer(
 
                         inputBuffer.collect { bytes ->
                             val payload = bytes.toByteArray().toUByteArray()
-                            client.publish(
-                                retain = false,
-                                qos = qos,
-                                topic = replyToTopic!!,
-                                payload = payload,
-                                properties = publishingProperties
-                            )
+//                            client.publish(
+//                                retain = false,
+//                                qos = qos,
+//                                topic = replyToTopic!!,
+//                                payload = payload,
+//                                properties = publishingProperties
+//                            )
                             Logger.d { "Payload of size ${bytes.size} sent to topic '$replyToTopic'" }
                         }
                     } catch (ex: CancellationException) {
@@ -70,7 +69,7 @@ class MqttTransfer(
 
     override suspend fun disconnect() {
         if (isConnected()) {
-            client.disconnect(ReasonCode.SUCCESS)
+//            client.disconnect(ReasonCode.SUCCESS)
             receiverJob?.cancelAndJoin()
             senderJob?.cancelAndJoin()
         }
@@ -91,7 +90,7 @@ class MqttTransfer(
         }
 
         if (subscribeTopics.isNotEmpty()) {
-            subscribe()
+//            subscribe()
         } else {
             // R-MQTT.16 when there are no topics at all, terminate the session
             Logger.w("MQTT client has no topics to subscribe to nor was one set, hence disconnecting!")

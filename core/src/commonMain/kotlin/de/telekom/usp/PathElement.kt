@@ -12,6 +12,12 @@ sealed class PathElement(val text: String) {
      */
     abstract val isTerminal: Boolean
 
+    /**
+     * Determines whether this element has resolved (like a fixed object path) or not resolved, like
+     * a wildcard or a search expression.
+     */
+    abstract val isResolved: Boolean
+
     override fun hashCode(): Int {
         return text.hashCode()
     }
@@ -45,12 +51,14 @@ sealed class PathElement(val text: String) {
 
         override val isTerminal = false
 
-        val isResolved = instance != 0 && refFollow == null
+        override val isResolved = instance != 0 && refFollow == null
     }
 
     class Expression internal constructor(text: String) : PathElement(text) {
 
         override val isTerminal = false
+
+        override val isResolved = false
 
         /**
          * The search expression, i.e. the text without leading "[" and trailing "]".
@@ -67,16 +75,22 @@ sealed class PathElement(val text: String) {
     class Parameter internal constructor(text: String) : PathElement(text) {
 
         override val isTerminal = true
+
+        override val isResolved = true
     }
 
     class Command internal constructor(text: String) : PathElement(text) {
 
         override val isTerminal = true
+
+        override val isResolved = true
     }
 
     class Event internal constructor(text: String) : PathElement(text) {
 
         override val isTerminal = true
+
+        override val isResolved = true
     }
 
     /**
@@ -85,15 +99,11 @@ sealed class PathElement(val text: String) {
     object Placeholder : PathElement("{i}.") {
 
         override val isTerminal = false
+
+        override val isResolved = false
     }
 }
 
 fun List<PathElement>.isResolved(): Boolean {
-    return all { element ->
-        when (element) {
-            is PathElement.Object -> element.isResolved
-            is PathElement.Expression, PathElement.Placeholder -> false
-            else -> true
-        }
-    }
+    return all { it.isResolved }
 }
