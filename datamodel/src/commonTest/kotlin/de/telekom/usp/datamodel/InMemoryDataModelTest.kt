@@ -87,6 +87,19 @@ class InMemoryDataModelTest {
     }
 
     @Test
+    fun `directChildren returns exactly the direct children`() = runTest {
+        val model = InMemoryDataModel()
+        model.set(
+            InstanceObject(IP + "Interface.1.", rows),
+            InstanceObject(IP + "Interface.2.", rows),
+            InstanceObject(IP + "Interface.1.IPv4Address.", rows),
+        )
+
+        val children = model.directChildren(IP + "Interface.")
+        assertEquals(listOf(IP + "Interface.1.", IP + "Interface.2."), children)
+    }
+
+    @Test
     fun `read traverses the tree properly`() = runTest {
         val model = InMemoryDataModel()
         model.set(

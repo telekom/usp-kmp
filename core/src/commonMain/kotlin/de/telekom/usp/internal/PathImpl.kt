@@ -4,7 +4,6 @@ import de.telekom.usp.Device
 import de.telekom.usp.Path
 import de.telekom.usp.PathElement
 import de.telekom.usp.ResolvedPath
-import de.telekom.usp.isResolved
 
 
 internal open class PathImpl(final override val elements: List<PathElement>) : Path {
@@ -15,13 +14,8 @@ internal open class PathImpl(final override val elements: List<PathElement>) : P
         require(elements.isNotEmpty()) { "Empty Path not allowed" }
     }
 
-    override val size = elements.size
-
-    override val isResolved = elements.isResolved()
-
     override fun asResolvedPath(): ResolvedPath {
         if (isResolved) {
-            // Should not happen as the PathParser creates a ResolvedPathImpl from a resolvable path
             return ResolvedPathImpl(elements)
         } else {
             throw IllegalArgumentException("Path not resolved: $this")
@@ -35,6 +29,10 @@ internal open class PathImpl(final override val elements: List<PathElement>) : P
         require(child.first() != Device.first()) { "Can only append relative paths: '$path'" }
         return PathImpl(elements = elements + child.elements)
     }
+
+    override fun mapIndexed(transform: (index: Int, PathElement) -> PathElement) =
+        PathImpl(elements.mapIndexed(transform))
+
 
     override fun subPath(fromIndex: Int, toIndex: Int): Path =
         PathImpl(elements.subList(fromIndex, toIndex))

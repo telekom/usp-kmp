@@ -25,6 +25,12 @@ open class InMemoryDataModel : DataModel {
         }
     }
 
+    override suspend fun directChildren(path: ResolvedPath): List<ResolvedPath> {
+        mutex.withLock {
+            return findNode(path)?.children?.map { it.path } ?: emptyList()
+        }
+    }
+
     override suspend fun set(vararg data: InstanceObject) {
         mutex.withLock {
             for (instance in data) {

@@ -1,5 +1,6 @@
 package de.telekom.usp.datamodel
 
+import de.telekom.usp.Path
 import de.telekom.usp.ResolvedPath
 
 /**
@@ -8,7 +9,7 @@ import de.telekom.usp.ResolvedPath
 interface DataModel {
 
     /**
-     * Returns the values stored in this data model for the specified path.
+     * Returns the values stored in this data model for the specified object path.
      *
      * @param path the path to retrieve its data from
      * @param maxDepth the maximum number of path elements to descend to, when returning the result.
@@ -17,6 +18,34 @@ interface DataModel {
      *        of `Device.IP.Interface.1.` and `Device.IP.Interface.2.` (when existing of course).
      */
     suspend fun read(path: ResolvedPath, maxDepth: Int = 0): List<InstanceObject>
+
+    /**
+     * Returns the direct children in this data model for the specified object path
+     *
+     * @param path the path to retrieve its children from
+     * @return a list of path elements, which are all direct children of the specified path, but not
+     *         the path itself. Hence for `Device.IP.Interface.` it will return for example
+     *         `Device.IP.Interface.1.` and `Device.IP.Interface.2.`
+     */
+    suspend fun directChildren(path: ResolvedPath): List<ResolvedPath>
+
+    /**
+     * Reads a single parameter from this data model.
+     *
+     * @param parameter a path for which [Path.isParameter] returns `true`
+     * @return the value of the specified parameter or `null` if it doesn't exist
+     * @throws IllegalArgumentException when [parameter] does not denote a parameter path
+     */
+    suspend fun readParameter(parameter: ResolvedPath): String? {
+        if (!parameter.isParameter) {
+            throw IllegalArgumentException("Expected a parameter path: '$parameter'")
+        }
+
+        val path = parameter.dropLast(1)
+        val param = parameter.last().toString()
+
+        return read(path).firstOrNull()?.rows?.get(param)
+    }
 
     /**
      * Defines the table data of the paths specified in `data` overwriting any existing values. If

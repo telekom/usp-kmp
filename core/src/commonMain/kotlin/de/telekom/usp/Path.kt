@@ -15,17 +15,18 @@ interface Path {
      */
     val elements: List<PathElement>
 
-    /**
-     * The number of path elements of this.
-     */
-    val size: Int
-
-    /**
-     * Returns `true` when this path does not contain any search expressions, `false` otherwise
-     */
-    val isResolved: Boolean
+    fun asResolvedPath(): ResolvedPath
 
     operator fun plus(path: String): Path
+
+    /**
+     * Returns a path containing the results of applying the given [transform] function
+     * to each path element and its index in the original path.
+     *
+     * @param [transform] function that takes the index of a path element and the path element
+     *        itself and returns the result of the transform applied to the path element.
+     */
+    fun mapIndexed(transform: (index: Int, PathElement) -> PathElement): Path
 
     /**
      * Returns a view of the portion of this `Path` between the specified [fromIndex] (inclusive)
@@ -38,16 +39,31 @@ interface Path {
      */
     fun dropLast(n: Int): Path
 
+    /**
+     * The number of path elements of this.
+     */
+    val size: Int
+        get() = elements.size
+
+    /**
+     * Returns `true` when this path does not contain any unresolved path elements
+     *
+     * @see [PathElement.isResolved]
+     */
+    val isResolved: Boolean
+        get() = elements.isResolved()
+
     val isTerminal: Boolean
         get() = last().isTerminal
+
+    val isParameter: Boolean
+        get() = last() is PathElement.Parameter
 
     val isCommand: Boolean
         get() = last() is PathElement.Command
 
     val isEvent: Boolean
         get() = last() is PathElement.Event
-
-    fun asResolvedPath(): ResolvedPath
 
     operator fun get(index: Int) = elements[index]
 

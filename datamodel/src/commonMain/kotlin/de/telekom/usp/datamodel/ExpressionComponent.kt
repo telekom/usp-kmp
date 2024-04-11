@@ -10,7 +10,11 @@ data class ExpressionComponent(
     private val value: Value
 ) {
 
-    private fun matches(left: String): Boolean {
+    private fun matches(left: String?): Boolean {
+        if (left == null) {
+            return false
+        }
+
         return try {
             val leftValue = Value.from(left)
             val result = operator.evaluate(leftValue, value)
@@ -25,7 +29,7 @@ data class ExpressionComponent(
 
     companion object {
 
-        infix fun String.matches(expression: ExpressionComponent) = expression.matches(this)
+        infix fun String?.matches(expression: ExpressionComponent) = expression.matches(this)
     }
 }
 

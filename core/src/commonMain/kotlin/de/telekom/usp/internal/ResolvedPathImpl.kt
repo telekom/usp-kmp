@@ -18,7 +18,8 @@ internal class ResolvedPathImpl(elements: List<PathElement>) : PathImpl(elements
 
         require(!isTerminal) { "Path '$this' is terminal, cannot append more to it" }
         require(child.first() != Device.first()) { "Can only append relative paths: '$path'" }
-        require(child.last() !is PathElement.Expression) { "Cannot append a search expression to a resolved path: '$path'" }
+        require(child.isResolved) { "'$path' is not resolved and cannot be appended to a resolved path: '$this'" }
+
         return ResolvedPathImpl(elements = elements + child.elements)
     }
 
