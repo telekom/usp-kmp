@@ -21,6 +21,7 @@ class PathResolver(private val model: DataModel) {
         return resolveAll(listOf(path))
     }
 
+    // Gets recursively called to resolved all path element in the unresolved paths
     private suspend fun resolveAll(unresolved: List<Path>): List<ResolvedPath> {
         return unresolved.flatMap { path ->
             val index = path.elements.indexOfFirst { !it.isResolved }
@@ -28,19 +29,22 @@ class PathResolver(private val model: DataModel) {
             if (index == -1) {
                 listOf(path.asResolvedPath())
             } else {
-                resolveAll(resolveAt(index, path))
+                resolveAll(path.resolveAt(index))
             }
         }
     }
 
-    private suspend fun resolveAt(index: Int, path: Path): List<Path> {
-        return when (val element = path.elements[index]) {
+    private suspend fun Path.resolveAt(index: Int): List<Path> {
+        return when (val element = elements[index]) {
             is PathElement.Object -> {
-                resolveWildcardAt(index, path)
+                if (element.refFollow != null) {
+                    throw UnsupportedOperationException("Resolving reference following is not yet supported ($this)")
+                }
+                resolveWildcardAt(index)
             }
 
             is PathElement.Expression -> {
-                resolveExpressionAt(index, path)
+                resolveExpressionAt(index)
             }
 
             else -> {
@@ -49,35 +53,38 @@ class PathResolver(private val model: DataModel) {
         }
     }
 
-    private suspend fun resolveWildcardAt(index: Int, path: Path): List<Path> {
-        // Index is the first non resolved path, hence subPath will be resolved!
-        val query = path.subPath(0, index).asResolvedPath()
+    private suspend fun Path.resolveWildcardAt(index: Int): List<Path> {
+        // The index points to the first non resolved path, hence subPath() will return a resolved path!
+        val basePath = subPath(0, index).asResolvedPath()
 
-        return model.directChildren(query).map { child ->
-            path.replace(index, child.last())
+        return model.directChildren(basePath).map { child ->
+            replace(index, child.last())
         }
     }
 
 
-    private suspend fun resolveExpressionAt(index: Int, path: Path): List<Path> {
+    private suspend fun Path.resolveExpressionAt(index: Int): List<Path> {
         return try {
-            val expressions = ExpressionParser(path[index] as PathElement.Expression).parse()
-            val basePath = path.subPath(0, index).asResolvedPath()
+            // The index points to the first non resolved path, hence subPath will be a resolved path!
+            val basePath = subPath(0, index).asResolvedPath()
+            val expressions = ExpressionParser(this[index] as PathElement.Expression).parse()
 
             return model.directChildren(basePath).mapNotNull { child ->
                 val matches = expressions.all { expression ->
                     val param = child + expression.relpath.toString()
                     val value = model.readParameter(param)
+
                     value matches expression
                 }
+
                 if (matches) {
-                    path.replace(index, child.last())
+                    replace(index, child.last())
                 } else {
                     null
                 }
             }
         } catch (ex: ExpressionParserException) {
-            Logger.e(throwable = ex) { "Error parsing expression in '$path' at position ${index + 1}" }
+            Logger.e(throwable = ex) { "Error parsing expression in '$this' at position ${index + 1}" }
             emptyList()
         }
     }
