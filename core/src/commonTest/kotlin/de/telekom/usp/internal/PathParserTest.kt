@@ -1,16 +1,23 @@
-package de.telekom.usp
+package de.telekom.usp.internal
 
+import de.telekom.usp.Device
+import de.telekom.usp.DeviceInfo
+import de.telekom.usp.IP
+import de.telekom.usp.Path
+import de.telekom.usp.PathElement
+import de.telekom.usp.ResolvedPath
 import kotlin.test.Test
 import kotlin.test.assertContains
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertFalse
+import kotlin.test.assertIs
 import kotlin.test.assertNotEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 
 
-class PathTest {
+class PathParserTest {
 
     @Test
     fun `parses correct paths without error`() {
@@ -20,7 +27,7 @@ class PathTest {
             "Device.IP.Interface.[Type==\"Normal\"&&Stats.ErrorsSent>0].IPv4Address.[AddressingType==\"Static\"].IPAddress",
             "Device.IP.Interface.*.",
             "Device.IP.Interface.*.Type",
-            "Device.WiFi.SSID.1.LowerLayers#1+.Name",
+            "Device.WiFi.SSID.1.LowerLayers+.Name",
             "RelativeParameter"
         ).forEach { path ->
             assertEquals(path, Path(path).toString())
@@ -55,6 +62,17 @@ class PathTest {
             Path("Device.NAT.PortMapping.[RemoteHost==\"\"&&ExternalPort==0&&Protocol==\"TCP\"].")
         val components = path.lastAs<PathElement.Expression>().components
         assertEquals(listOf("RemoteHost==\"\"", "ExternalPort==0", "Protocol==\"TCP\""), components)
+    }
+
+    @Test
+    fun `parses reference following correctly`() {
+        val path = Path("Device.NAT.PortMapping.1.Interface+.Name")
+        assertTrue(path.elements.size == 6)
+        val ref = path.elements[4]
+        assertIs<PathElement.Object>(ref)
+        assertNotNull(ref.refFollow)
+        assertEquals(1, ref.refFollow!!.itemNumber)
+        assertEquals("Interface", ref.refFollow!!.name)
     }
 
     @Test

@@ -39,14 +39,13 @@ sealed class PathElement(val text: String) {
      * @property text the text of this object for example 'Device.' or '*.'
      * @property instance if this is a wildcard object (i.e. '*.') instance is zero, if it is an
      *           instance object, it matches the instance number, i.e. 2 for '2.', otherwise it is
-     *           `null`.
-     * @property refFollow the complete reffollow string if there is any, otherwise `null`.
-     *           Valid examples are: `#*+` or `#2+` or just `+`
+     *           `null`
+     * @property refFollow the reference following directive if there is any, otherwise `null`
      */
     class Object internal constructor(
         text: String,
         val instance: Int? = null,
-        val refFollow: String? = null
+        val refFollow: ReferenceFollowing? = null
     ) : PathElement(text) {
 
         override val isTerminal = false

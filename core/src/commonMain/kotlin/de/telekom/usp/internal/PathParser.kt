@@ -3,6 +3,7 @@ package de.telekom.usp.internal
 import de.telekom.usp.Device
 import de.telekom.usp.Path
 import de.telekom.usp.PathElement
+import de.telekom.usp.ReferenceFollowing
 import de.telekom.usp.isResolved
 
 internal class PathParser(private val text: String) {
@@ -70,17 +71,13 @@ internal class PathParser(private val text: String) {
                 containsPlaceholder = true
                 add(PathElement.Placeholder)
             }
+
             else -> {
                 val instance = base.toIntOrNull()
                 val name = text.substring(start, current) // Includes the terminal dot
 
                 if (instance == null) {
-                    val ref = refRegex.find(base)
-                    if (ref != null) {
-                        add(PathElement.Object(name, null, ref.value))
-                    } else {
-                        add(PathElement.Object(name))
-                    }
+                    add(PathElement.Object(name, null, ReferenceFollowing.from(base)))
                 } else {
                     add(PathElement.Object(name, instance))
                 }
@@ -161,9 +158,6 @@ internal class PathParser(private val text: String) {
     companion object {
 
         private val Wildcard = PathElement.Object("*.", 0, null)
-
-        // Matches for example '#*+' or '#2+' or just '+'
-        private val refRegex = Regex("""(#(\*|\d+))?\+$""")
 
         private val validName = Regex("""[A-Za-z_][A-Za-z_0-9]*""")
     }
