@@ -14,7 +14,7 @@ data class ReferenceFollowing(val name: String, val itemNumber: Int) {
     companion object {
 
         fun from(text: String): ReferenceFollowing? {
-            val matcher = regex.find(text)
+            val matcher = Regex.find(text)
 
             return if (matcher == null) {
                 null
@@ -37,6 +37,6 @@ data class ReferenceFollowing(val name: String, val itemNumber: Int) {
             }
         }
 
-        private val regex = """^([^+#]+)(#(\*|\d+))?\+${'$'}""".toRegex()
+        private val Regex = """^([^+#]+)(#(\*|\d+))?\+$""".toRegex()
     }
 }
