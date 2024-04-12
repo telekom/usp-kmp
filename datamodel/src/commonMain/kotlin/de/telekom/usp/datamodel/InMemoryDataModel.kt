@@ -18,7 +18,6 @@ open class InMemoryDataModel : DataModel {
             return buildList {
                 val node = findNode(path)
                 if (node != null) {
-                    add(InstanceObject(node.path, node.rows))
                     collectChildData(this, node, maxDepth)
                 }
             }
@@ -92,9 +91,10 @@ open class InMemoryDataModel : DataModel {
     }
 
     private fun collectChildData(instances: MutableList<InstanceObject>, parent: Node, depth: Int) {
+        instances.add(InstanceObject(parent.path, parent.rows))
+
         if (depth > 0) {
             parent.children.forEach { child ->
-                instances.add(InstanceObject(child.path, child.rows))
                 collectChildData(instances, child, depth - 1)
             }
         }
