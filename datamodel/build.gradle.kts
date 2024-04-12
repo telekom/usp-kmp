@@ -1,5 +1,6 @@
 plugins {
     alias(libs.plugins.kotlinMultiplatform)
+    alias(libs.plugins.kotlinSerialization)
     alias(libs.plugins.androidLibrary)
     alias(libs.plugins.mockery)
 }
@@ -31,6 +32,8 @@ kotlin {
                 implementation(project(":core"))
                 implementation(libs.kotlinx.datetime)
                 implementation(libs.kotlinx.coroutines.core)
+                implementation(libs.kotlinx.serialization.json)
+                implementation(libs.kotlinx.serialization.json.okio)
                 implementation(libs.kermit)
             }
         }
@@ -38,6 +41,8 @@ kotlin {
             dependencies {
                 implementation(libs.kotlin.test)
                 implementation(libs.kotlinx.coroutines.test)
+                implementation(libs.okio)
+                implementation(libs.okio.fakefilesystem)
             }
         }
         val androidMain by getting {
