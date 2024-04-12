@@ -1,6 +1,7 @@
 package de.telekom.usp.datamodel
 
 import de.telekom.usp.IP
+import de.telekom.usp.NAT
 import de.telekom.usp.Path
 import de.telekom.usp.USB
 import dev.mokkery.answering.returns
@@ -45,7 +46,7 @@ class PathResolverTest {
     }
 
     @Test
-    fun `wildcard search`() = runTest {
+    fun `wildcard search with two instances`() = runTest {
         val query = Path("Device.IP.Interface.*.IPv6Address.ValidLifetime")
 
         everySuspend { dataModel.directChildren(IP + "Interface.") } returns listOf(
@@ -78,7 +79,7 @@ class PathResolverTest {
     }
 
     @Test
-    fun `basic expression search`() = runTest {
+    fun `basic expression search with single result`() = runTest {
         val query = Path("Device.IP.Interface.[Type==\"Normal\"].Status")
 
         everySuspend { dataModel.directChildren(IP + "Interface.") } returns listOf(
@@ -112,5 +113,28 @@ class PathResolverTest {
         val actual = resolver.resolve(query)
         assertTrue(actual.size == 1)
         assertEquals(USB + "USBHosts.Host.1.Device.2.", actual.first())
+    }
+
+    @Test
+    fun `search with first item reference following`() = runTest {
+        val query = Path("Device.NAT.PortMapping.1.Interface+.Name")
+
+        everySuspend { dataModel.readParameter(NAT + "PortMapping.1.Interface") } returns "Device.IP.Interface.1."
+
+        val actual = resolver.resolve(query)
+        assertTrue(actual.size == 1)
+        assertEquals(IP + "Interface.1.Name", actual.first())
+    }
+
+    @Test
+    fun `search with wildcard reference following`() = runTest {
+        val query = Path("Device.NAT.PortMapping.1.Interface#*+.Name")
+
+        everySuspend { dataModel.readParameter(NAT + "PortMapping.1.Interface") } returns
+                "Device.IP.Interface.1., Device.IP.Interface.2."
+
+        val actual = resolver.resolve(query)
+        assertTrue(actual.size == 2)
+        assertEquals(listOf(IP + "Interface.1.Name", IP + "Interface.2.Name"), actual)
     }
 }

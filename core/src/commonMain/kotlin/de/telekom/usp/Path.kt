@@ -112,4 +112,10 @@ fun Path(text: String): Path {
  */
 fun isValidPath(text: String): Boolean = runCatching { Path(text) }.isSuccess
 
-inline fun List<Path>.toStrings(): List<String> = this.map { it.toString() }
+inline fun List<Path>.toStrings(): List<String> {
+    return if (isEmpty()) emptyList() else map { it.toString() }
+}
+
+inline fun List<Path>.asResolvedList(): List<ResolvedPath> {
+    return if (isEmpty()) emptyList() else map { it.asResolvedPath() }
+}

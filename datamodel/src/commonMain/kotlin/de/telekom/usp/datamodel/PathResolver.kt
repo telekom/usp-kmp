@@ -22,8 +22,8 @@ class PathResolver(private val model: DataModel) {
     }
 
     // Gets recursively called to resolved all path element in the unresolved paths
-    private suspend fun resolveAll(unresolved: List<Path>): List<ResolvedPath> {
-        return unresolved.flatMap { path ->
+    private suspend fun resolveAll(paths: List<Path>): List<ResolvedPath> {
+        return paths.flatMap { path ->
             val index = path.elements.indexOfFirst { !it.isResolved }
 
             if (index == -1) {
@@ -38,9 +38,12 @@ class PathResolver(private val model: DataModel) {
         return when (val element = elements[index]) {
             is PathElement.Object -> {
                 if (element.refFollow != null) {
-                    throw UnsupportedOperationException("Resolving reference following is not yet supported ($this)")
+                    resolveReferenceFollowingAt(index)
+                } else if (element.instance == 0) {
+                    resolveWildcardAt(index)
+                } else {
+                    throw Error("Unexpected unresolved Object ($element) in '$this'")
                 }
-                resolveWildcardAt(index)
             }
 
             is PathElement.Expression -> {
@@ -48,7 +51,7 @@ class PathResolver(private val model: DataModel) {
             }
 
             else -> {
-                throw IllegalArgumentException("Unexpected path element: '$element' of type ${element::class.qualifiedName}")
+                throw Error("Unexpected unresolved path element: '$element' of type ${element::class.qualifiedName}")
             }
         }
     }
@@ -62,6 +65,20 @@ class PathResolver(private val model: DataModel) {
         }
     }
 
+    private suspend fun Path.resolveReferenceFollowingAt(index: Int): List<Path> {
+        val refFollow = (elements[index] as PathElement.Object).refFollow!!
+        val refPath = (subPath(0, index) + refFollow.name).asResolvedPath()
+        val remainder = subPath(index + 1, elements.size).toString()
+        val refValues = model.readParameter(refPath).toItems()
+
+        return refValues.mapIndexedNotNull { i, refValue ->
+            if (refFollow.followAll || i == refFollow.itemNumber - 1) {
+                ResolvedPath(refValue) + remainder
+            } else {
+                null
+            }
+        }
+    }
 
     private suspend fun Path.resolveExpressionAt(index: Int): List<Path> {
         return try {
@@ -91,5 +108,9 @@ class PathResolver(private val model: DataModel) {
 
     private fun Path.replace(index: Int, replacement: PathElement): Path {
         return mapIndexed { i, element -> if (index == i) replacement else element }
+    }
+
+    private fun String?.toItems(): List<String> {
+        return this?.split(",")?.map { it.trim() } ?: emptyList()
     }
 }
