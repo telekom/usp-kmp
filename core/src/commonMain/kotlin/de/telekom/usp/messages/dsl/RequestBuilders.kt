@@ -28,7 +28,7 @@ import de.telekom.usp.messages.proto.Set
  * ```kotlin
  * val msg = Get {
  *     maxDepth = 2
- *     path("Device.")
+ *     addPath("Device.")
  * }
  * ```
  */
@@ -40,7 +40,7 @@ fun Get(init: GetRequestBuilder.() -> Unit) = initBuilder(GetRequestBuilder(), i
  * ```kotlin
  * val msg = Set {
  *     allowPartial = false
- *     path("Device.") {
+ *     addPath("Device.") {
  *         params["param1"] = "value1" required true
  *     }
  * }
@@ -54,7 +54,7 @@ fun Set(init: SetRequestBuilder.() -> Unit) = initBuilder(SetRequestBuilder(), i
  * ```kotlin
  * val msg = Add {
  *     allowPartial = false
- *     path("Device.") {
+ *     addPath("Device.") {
  *         params["param1"] = "value1" required true
  *     }
  * }
@@ -68,7 +68,7 @@ fun Add(init: AddRequestBuilder.() -> Unit) = initBuilder(AddRequestBuilder(), i
  * ```kotlin
  * val msg = Delete {
  *     allowPartial = false
- *     path("Device.")
+ *     addPath("Device.")
  * }
  * ```
  */
@@ -80,7 +80,7 @@ fun Delete(init: DeleteRequestBuilder.() -> Unit) = initBuilder(DeleteRequestBui
  * ```kotlin
  * val msg = Register {
  *     allowPartial = false
- *     path("Device.")
+ *     addPath("Device.")
  * }
  * ```
  */
@@ -91,7 +91,7 @@ fun Register(init: RegisterBuilder.() -> Unit) = initBuilder(RegisterBuilder(), 
  *
  * ```kotlin
  * val msg = Deregister {
- *     path("Device.")
+ *     addPath("Device.")
  * }
  * ```
  */

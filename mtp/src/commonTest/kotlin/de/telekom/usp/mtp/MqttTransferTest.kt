@@ -1,24 +1,23 @@
 package de.telekom.usp.mtp
 
 import de.telekom.usp.EndpointIdentifier
-import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.delay
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.runTest
 import okio.ByteString.Companion.encodeUtf8
 import okio.FileSystem
 import okio.Path.Companion.toPath
 import okio.buffer
 import socket.tls.TLSClientSettings
 import kotlin.test.Test
-import kotlin.time.Duration.Companion.seconds
 
 // This is in jvmTest purely for reading the password file, as there is not FileSystem.SYSTEM in
 // the common source tree.
 class MqttTransferTest {
 
     @Test
-    fun `connection to server`() {
+    fun `connection to server`() = runTest {
         val passwd = readPassword()
         val from = EndpointIdentifier("proto::usp-demo")
         val transfer = MqttTransfer(
@@ -28,25 +27,26 @@ class MqttTransferTest {
             password = passwd,
             tls = TLSClientSettings(),
             from = from,
-            subscribeTopics = mutableListOf("usp-demo-topic"),
+            subscribeTopics = mutableListOf("usp-demo-topic2"),
             replyToTopic = "test"
         )
-        GlobalScope.launch {
+        val eventCollector = launch {
             transfer.events.collect {
                 println("MQTT event: $it")
+                cancel()
             }
         }
+
         runBlocking {
             println("Connecting...")
             transfer.connect()
             println("Connected, sending...")
             transfer.send("abc".encodeUtf8())
-            delay(2.seconds)
             println("Disconnecting...")
             transfer.disconnect()
             println("Disconnected")
-            delay(1.seconds)
         }
+        eventCollector.join()
     }
 
     private fun readPassword(): String {

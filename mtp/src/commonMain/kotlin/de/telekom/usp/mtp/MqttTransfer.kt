@@ -86,11 +86,11 @@ class MqttTransfer(
                 try {
                     subscribe()
                     while (client.running) {
-                        client.step()
                         delay(pollingInterval)
+                        client.step()
                     }
                 } catch (ex: SocketClosedException) {
-                    Logger.d { "MQTT socket closed, client no longer connected" }
+                    Logger.d(throwable = ex) { "MQTT socket closed, client no longer connected" }
                 } catch (ex: CancellationException) {
                     Logger.d { "MQTT polling session cancelled" }
                 } catch (ex: Exception) {
@@ -143,6 +143,7 @@ class MqttTransfer(
 
     private fun subscribe() {
         if (subscribeTopics.isNotEmpty()) {
+            Logger.d { "Sending subscribe request for: $subscribeTopics" }
             client.subscribe(subscribeTopics.map { Subscription(it, SubscriptionOptions(qos)) })
         }
     }

@@ -11,12 +11,13 @@ import com.github.ajalt.clikt.parameters.options.option
 import com.github.ajalt.clikt.parameters.options.required
 import com.github.ajalt.clikt.parameters.types.int
 import de.telekom.usp.isValidPath
-import de.telekom.usp.messages.proto.Add
-import de.telekom.usp.messages.proto.Get
-import de.telekom.usp.messages.proto.GetInstances
-import de.telekom.usp.messages.proto.GetSupportedDM
-import de.telekom.usp.messages.proto.Request
-import de.telekom.usp.messages.proto.Set
+import de.telekom.usp.messages.dsl.Add
+import de.telekom.usp.messages.dsl.Get
+import de.telekom.usp.messages.dsl.GetInstances
+import de.telekom.usp.messages.dsl.GetSupportedDm
+import de.telekom.usp.messages.dsl.Set
+import de.telekom.usp.messages.dsl.required
+import de.telekom.usp.messages.proto.Msg
 
 val commands = listOf(
     GetCommand(), GetSupportedDmCommand(), GetInstancesCommand(), SetCommand(), AddCommand()
@@ -31,14 +32,17 @@ class GetCommand : RequestCommand("get", "Send a get message") {
         paths.all { isValidPath(it) }
     }
 
-    private val maxDepth by option(
+    private val depth by option(
         "-m",
         "--max",
         help = "Max depth for GET message (default is 1)"
     ).int().default(1)
 
-    override fun createRequest(): Request {
-        return Request(get_ = Get(param_paths = paths, max_depth = maxDepth))
+    override fun createMsg(): Msg {
+        return Get {
+            addPath(*this@GetCommand.paths.toTypedArray())
+            maxDepth = depth
+        }
     }
 }
 
@@ -53,37 +57,35 @@ class GetSupportedDmCommand :
         paths.all { isValidPath(it) }
     }
 
-    private val firstLevelOnly by option(
+    private val isFirstLevelOnly by option(
         "-f",
         "--first-level-only",
         help = "Request first level only"
     ).flag(default = false)
 
-    private val skipCommands by option(
+    private val isSkipCommands by option(
         "--skip-commands",
         help = "Do not return commands"
     ).flag(default = false)
 
-    private val skipEvents by option(
+    private val isSkipEvents by option(
         "--skip-events",
         help = "Do not return events"
     ).flag(default = false)
 
-    private val skipParams by option(
+    private val isSkipParams by option(
         "--skip-params",
         help = "Do not return params"
     ).flag(default = false)
 
-    override fun createRequest(): Request {
-        return Request(
-            get_supported_dm = GetSupportedDM(
-                obj_paths = paths,
-                first_level_only = firstLevelOnly,
-                return_commands = !skipCommands,
-                return_events = !skipEvents,
-                return_params = !skipParams
-            )
-        )
+    override fun createMsg(): Msg {
+        return GetSupportedDm {
+            addPath(*this@GetSupportedDmCommand.paths.toTypedArray())
+            firstLevelOnly = isFirstLevelOnly
+            returnCommands = !isSkipCommands
+            returnEvents = !isSkipEvents
+            returnParams = !isSkipParams
+        }
     }
 }
 
@@ -97,19 +99,17 @@ class GetInstancesCommand : RequestCommand("get_instances", "Send a get instance
         paths.all { isValidPath(it) }
     }
 
-    private val firstLevelOnly by option(
+    private val isFirstLevelOnly by option(
         "-f",
         "--first-level-only",
         help = "Request first level only"
     ).flag(default = false)
 
-    override fun createRequest(): Request {
-        return Request(
-            get_instances = GetInstances(
-                obj_paths = paths,
-                first_level_only = firstLevelOnly,
-            )
-        )
+    override fun createMsg(): Msg {
+        return GetInstances {
+            addPath(*this@GetInstancesCommand.paths.toTypedArray())
+            this.firstLevelOnly = isFirstLevelOnly
+        }
     }
 }
 
@@ -128,25 +128,28 @@ class SetCommand : RequestCommand("set", "Send a set message") {
         help = "Specify required parameter as key=value"
     ).associate()
 
-    private val allowPartial by option(
+    private val isAllowPartial by option(
         "-a",
         "--allow-partial",
         help = "Allow partial updates"
     ).flag(default = false)
 
-    override fun createRequest(): Request {
+    override fun createMsg(): Msg {
         if (values.isEmpty() && required.isEmpty()) {
             throw PrintMessage("At least one parameter must be specified (using -p or -r)")
         }
-        val params1 = values.map { v -> Set.UpdateParamSetting(v.key, v.value, false) }
-        val params2 = required.map { v -> Set.UpdateParamSetting(v.key, v.value, true) }
 
-        return Request(
-            set_ = Set(
-                update_objs = listOf(Set.UpdateObject(path, params1 + params2)),
-                allow_partial = allowPartial
-            )
-        )
+        return Set {
+            allowPartial = isAllowPartial
+            addPath(path) {
+                required.forEach { param ->
+                    params[param.key] = param.value required true
+                }
+                values.forEach { param ->
+                    params[param.key] = param.value required false
+                }
+            }
+        }
     }
 }
 
@@ -165,36 +168,39 @@ class AddCommand : RequestCommand("add", "Send an add message") {
         help = "Specify required parameter as key=value"
     ).associate()
 
-    private val allowPartial by option(
+    private val isAllowPartial by option(
         "-a",
         "--allow-partial",
         help = "Allow partial adding"
     ).flag(default = false)
 
-    override fun createRequest(): Request {
+    override fun createMsg(): Msg {
         if (values.isEmpty() && required.isEmpty()) {
             throw PrintMessage("At least one parameter must be specified (using -p or -r)")
         }
-        val params1 = values.map { v -> Add.CreateParamSetting(v.key, v.value, false) }
-        val params2 = required.map { v -> Add.CreateParamSetting(v.key, v.value, true) }
 
-        return Request(
-            add = Add(
-                create_objs = listOf(Add.CreateObject(path, params1 + params2)),
-                allow_partial = allowPartial
-            )
-        )
+        return Add {
+            allowPartial = isAllowPartial
+            addPath(path) {
+                required.forEach { param ->
+                    params[param.key] = param.value required true
+                }
+                values.forEach { param ->
+                    params[param.key] = param.value required false
+                }
+            }
+        }
     }
 }
 
 abstract class RequestCommand(name: String, help: String) : CliktCommand(name = name, help = help) {
 
-    var requestExecutor: ((Request) -> Unit)? = null
+    var requestExecutor: ((Msg) -> Unit)? = null
 
     override fun run() {
-        val request = createRequest()
+        val request = createMsg()
         requestExecutor?.let { it(request) }
     }
 
-    abstract fun createRequest(): Request
+    abstract fun createMsg(): Msg
 }

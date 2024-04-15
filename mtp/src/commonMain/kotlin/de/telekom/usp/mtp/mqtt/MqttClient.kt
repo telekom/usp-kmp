@@ -4,6 +4,8 @@ import okio.ByteString
 
 /**
  * Generic interface for handling USP connections to a MQTT server.
+ *
+ * THIS IS FOR FUTURE USE, NOT COMPLETE AND NOT CURRENTLY USED!
  */
 interface MqttClient {
 

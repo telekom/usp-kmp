@@ -25,5 +25,9 @@ distributions {
 dependencies {
     implementation(project(":core"))
     implementation(project(":records"))
+    implementation(project(":mtp"))
     implementation(libs.clikt)
+    implementation(libs.kermit)
+    implementation(libs.kotlinx.serialization.json)
+    implementation(libs.kotlinx.serialization.json.okio)
 }

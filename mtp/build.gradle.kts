@@ -1,6 +1,7 @@
 plugins {
     alias(libs.plugins.kotlinMultiplatform)
     alias(libs.plugins.androidLibrary)
+    alias(libs.plugins.kotlinSerialization)
 }
 
 kotlin {
@@ -29,6 +30,7 @@ kotlin {
             implementation(project(":core"))
             implementation(project(":records"))
             implementation(libs.kotlinx.datetime)
+            implementation(libs.kotlinx.serialization.json)
             implementation(libs.kermit)
             implementation(libs.kmqtt.common)
             implementation(libs.kmqtt.client)
@@ -42,6 +44,8 @@ kotlin {
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)
+            implementation(libs.kotlinx.coroutines.test)
+            implementation(libs.kotlinx.serialization.json)
             implementation(libs.ktor.client.mock)
             implementation(libs.okio)
         }
