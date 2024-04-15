@@ -9,8 +9,8 @@ import okio.ByteString.Companion.encodeUtf8
 import okio.FileSystem
 import okio.Path.Companion.toPath
 import okio.buffer
-import org.junit.Test
 import socket.tls.TLSClientSettings
+import kotlin.test.Test
 import kotlin.time.Duration.Companion.seconds
 
 // This is in jvmTest purely for reading the password file, as there is not FileSystem.SYSTEM in
@@ -28,7 +28,7 @@ class MqttTransferTest {
             password = passwd,
             tls = TLSClientSettings(),
             from = from,
-            subscribeTopics = mutableSetOf("usp/controllers/proto::usp-demo"),
+            subscribeTopics = mutableListOf("usp-demo-topic"),
             replyToTopic = "test"
         )
         GlobalScope.launch {
