@@ -15,12 +15,9 @@ import com.github.ajalt.clikt.parameters.types.path
 import de.telekom.usp.MessageExchange
 import de.telekom.usp.messages.MessageConverter
 import de.telekom.usp.messages.MessageConverterImpl
-import de.telekom.usp.mtp.MessageTransfer
 import de.telekom.usp.mtp.MessageTransferConfig
-import de.telekom.usp.mtp.MessageTransferEvent
 import de.telekom.usp.mtp.MessageTransferFactory
-import kotlinx.coroutines.cancel
-import kotlinx.coroutines.coroutineScope
+import kotlinx.datetime.Clock
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.okio.decodeFromBufferedSource
@@ -29,6 +26,7 @@ import okio.Path.Companion.toOkioPath
 import okio.Path.Companion.toPath
 import okio.buffer
 import okio.use
+import java.util.concurrent.atomic.AtomicLong
 
 
 class Main : CliktCommand(invokeWithoutSubcommand = true) {
@@ -54,13 +52,18 @@ class Main : CliktCommand(invokeWithoutSubcommand = true) {
 
     private val logWriter = object : LogWriter() {
 
-        private val started by lazy { System.currentTimeMillis() }
+        private val timestamp by lazy { Clock.System.now().toEpochMilliseconds() }
 
         override fun log(severity: Severity, message: String, tag: String, throwable: Throwable?) {
-            val time = (System.currentTimeMillis() - started).coerceAtLeast(0L)
+            val time = (Clock.System.now().toEpochMilliseconds() - timestamp).coerceAtLeast(0L)
+            val prefix = "%06d".format(time)
+
             // Omit the severity and the tag for brevity
-            println("%06d".format(time) + " " + message)
-            throwable?.printStackTrace()
+            println("$prefix $message")
+
+            if (throwable != null) {
+                println("$prefix ${throwable.stackTraceToString()}")
+            }
         }
     }
 
@@ -96,32 +99,6 @@ class Main : CliktCommand(invokeWithoutSubcommand = true) {
         }
     }
 
-    private suspend fun messageTransferEventCollector(transfer: MessageTransfer) {
-        coroutineScope {
-            transfer.events.collect { event ->
-                when (event) {
-                    is MessageTransferEvent.Connected -> {
-                        Logger.i("Connected via ${event.to}")
-                    }
-
-                    is MessageTransferEvent.Disconnected -> {
-                        Logger.d { "Disconnected from ${event.from}" }
-                        cancel()
-                    }
-
-                    is MessageTransferEvent.BytesReceived -> {
-                        Logger.d { "Message of size ${event.bytes.size} received" }
-                    }
-
-                    is MessageTransferEvent.ConnectionFailed -> {
-                        Logger.e { "Cannot connect to ${event.from}" }
-                        cancel()
-                    }
-                }
-            }
-        }
-    }
-
     override fun run() {
         configureLogging()
         val config = readConfig()
@@ -134,6 +111,7 @@ class Main : CliktCommand(invokeWithoutSubcommand = true) {
 
         when (val subcommand = currentContext.invokedSubcommand) {
             is UspCommand -> {
+                subcommand.timeout = AtomicLong(timeout * 1000L)
                 subcommand.exchange = exchange
             }
 

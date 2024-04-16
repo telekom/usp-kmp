@@ -27,8 +27,11 @@ import de.telekom.usp.messages.proto.GetSupportedDMResp
 import de.telekom.usp.messages.proto.Msg
 import de.telekom.usp.messages.proto.SetResp
 import de.telekom.usp.messages.proto.debugMessage
-import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withTimeoutOrNull
+import java.util.concurrent.atomic.AtomicLong
 
 val commands = listOf(
     GetCommand(), GetSupportedDmCommand(), GetInstancesCommand(), SetCommand(), AddCommand()
@@ -59,6 +62,7 @@ class GetCommand : UspCommand("get", "Send a get message") {
     override suspend fun MessageExchange.sendRequest() {
         sendRequest(createRequest(), onError) { response: GetResp ->
             Logger.i { response.debugMessage() }
+            onFinished()
         }
     }
 }
@@ -108,6 +112,7 @@ class GetSupportedDmCommand :
     override suspend fun MessageExchange.sendRequest() {
         sendRequest(createRequest(), onError) { response: GetSupportedDMResp ->
             Logger.i { response.toString() }
+            onFinished()
         }
     }
 }
@@ -138,6 +143,7 @@ class GetInstancesCommand : UspCommand("get_instances", "Send a get instances me
     override suspend fun MessageExchange.sendRequest() {
         sendRequest(createRequest(), onError) { response: GetInstancesResp ->
             Logger.i { response.toString() }
+            onFinished()
         }
     }
 }
@@ -184,6 +190,7 @@ class SetCommand : UspCommand("set", "Send a set message") {
     override suspend fun MessageExchange.sendRequest() {
         sendRequest(createRequest(), onError) { response: SetResp ->
             Logger.i { response.toString() }
+            onFinished()
         }
     }
 }
@@ -230,6 +237,7 @@ class AddCommand : UspCommand("add", "Send an add message") {
     override suspend fun MessageExchange.sendRequest() {
         sendRequest(createRequest(), onError) { response: AddResp ->
             Logger.i { response.toString() }
+            onFinished()
         }
     }
 }
@@ -238,6 +246,11 @@ abstract class UspCommand(name: String, help: String) : CliktCommand(name = name
 
     // Will get initialized by the Main command!
     lateinit var exchange: MessageExchange
+
+    // Will get initialized by the Main command!
+    lateinit var timeout: AtomicLong
+
+    private val waitUntil = MutableSharedFlow<Unit>()
 
     open val onError: (MessageExchangeFailure) -> Unit = { failure ->
         when (failure) {
@@ -251,19 +264,35 @@ abstract class UspCommand(name: String, help: String) : CliktCommand(name = name
             }
         }
 
-        runBlocking {
-            exchange.stop()
-        }
+        //onFinished()
     }
 
     override fun run() {
         runBlocking {
             exchange.start()
             exchange.sendRequest()
-            delay(2000)
+            println(timeout.get())
+            val success = withTimeoutOrNull(timeout.get()) {
+                waitUntil.first() // Waits for onFinished to be called
+                true
+            }
+
             exchange.stop()
+            if (success != true) {
+                Logger.w { "Timeout occurred while waiting for response" }
+            }
         }
     }
 
+    protected fun onFinished() {
+        runBlocking {
+            waitUntil.emit(Unit)
+        }
+    }
+
+    /**
+     * Sends the actual request message via one of the `sendRequest` methods of this and prints the
+     * results. Must call [onFinished] when a result has been received
+     */
     abstract suspend fun MessageExchange.sendRequest()
 }

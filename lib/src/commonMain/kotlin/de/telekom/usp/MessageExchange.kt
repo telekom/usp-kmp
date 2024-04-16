@@ -252,14 +252,18 @@ class MessageExchange(
 
         if (msg.isResponse) {
             if (request != null) {
-                request.onResponse(request.responseFor(msg))
+                scope.launch {
+                    request.onResponse(request.responseFor(msg))
+                }
                 removePendingRequest(msg)
             } else {
                 Logger.e { "Received response with unknown message id: $msg" }
             }
         } else if (msg.isError) {
             if (request != null) {
-                request.onError(MessageExchangeFailure.ResponseError(msg.error))
+                scope.launch {
+                    request.onError(MessageExchangeFailure.ResponseError(msg.error))
+                }
                 removePendingRequest(msg)
             } else {
                 Logger.e { "Received error with unknown message id: $msg" }
@@ -320,7 +324,7 @@ class MessageExchange(
                 val iterator = pendingRequests.iterator()
                 while (iterator.hasNext()) {
                     val entry = iterator.next()
-                    if (entry.value.expirationTime > now) {
+                    if (now > entry.value.expirationTime) {
                         entry.value.onError(MessageExchangeFailure.TimeoutOccurred(entry.key))
                         iterator.remove()
                     }
