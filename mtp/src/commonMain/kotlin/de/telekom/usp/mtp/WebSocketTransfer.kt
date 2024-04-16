@@ -118,6 +118,8 @@ class WebSocketTransfer(
                     }
                 }
             }
+            Logger.d { "${this@WebSocketTransfer} frames terminated, cancelling incoming message queue" }
+
             // When we come here, the connection has been terminated, hence do some cleanup
             disconnect()
 
@@ -146,6 +148,6 @@ class WebSocketTransfer(
     }
 
     override fun toString(): String {
-        return "WebSocketTransfer [from: '$from', to: $host:$port]"
+        return "WebSocket transfer [from: '$from', to: $host:$port]"
     }
 }

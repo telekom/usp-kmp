@@ -1,29 +1,40 @@
 package de.telekom.usp.mtp
 
+import de.telekom.usp.EndpointIdentifier
+import de.telekom.usp.toEndpoint
 import kotlinx.serialization.Serializable
+import kotlin.time.Duration
+import kotlin.time.Duration.Companion.seconds
 
 @Serializable
 data class MessageTransferConfig(
-    var mtp: MessageTransferProtocol,
-    var mqttConfig: MqttConfig? = null,
-    var webSocketConfig: WebSocketConfig? = null
-)
+    val mtp: MessageTransferProtocol,
+    val fromEndpointId: String,
+    val toEndpointId: String,
+    val mqttConfig: MqttConfig? = null,
+    val webSocketConfig: WebSocketConfig? = null
+) {
+    val localEndpoint: EndpointIdentifier
+        get() = fromEndpointId.toEndpoint()
+
+    val remoteEndpoint: EndpointIdentifier
+        get() = toEndpointId.toEndpoint()
+}
 
 @Serializable
 data class MqttConfig(
-    var host: String,
-    var port: Int = 8883,
-    var user: String,
-    var password: String,
-    var useTls: Boolean = true,
-    var fromEndpointId: String,
-    var topic: String,
-    var replyToTopic: String,
+    val host: String,
+    val port: Int = 8883,
+    val user: String,
+    val password: String,
+    val useTls: Boolean = true,
+    val topic: String,
+    val replyToTopic: String,
 )
 
 @Serializable
 data class WebSocketConfig(
-    var host: String,
-    var port: Int = 8883,
-    var fromEndpointId: String,
+    val host: String,
+    val port: Int = 8883,
+    val pingDuration: Duration = 20.seconds
 )

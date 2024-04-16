@@ -1,5 +1,6 @@
 package de.telekom.usp.cli
 
+import co.touchlab.kermit.Logger
 import com.github.ajalt.clikt.core.CliktCommand
 import com.github.ajalt.clikt.core.PrintMessage
 import com.github.ajalt.clikt.parameters.options.associate
@@ -10,6 +11,8 @@ import com.github.ajalt.clikt.parameters.options.multiple
 import com.github.ajalt.clikt.parameters.options.option
 import com.github.ajalt.clikt.parameters.options.required
 import com.github.ajalt.clikt.parameters.types.int
+import de.telekom.usp.MessageExchange
+import de.telekom.usp.MessageExchangeFailure
 import de.telekom.usp.isValidPath
 import de.telekom.usp.messages.dsl.Add
 import de.telekom.usp.messages.dsl.Get
@@ -17,13 +20,21 @@ import de.telekom.usp.messages.dsl.GetInstances
 import de.telekom.usp.messages.dsl.GetSupportedDm
 import de.telekom.usp.messages.dsl.Set
 import de.telekom.usp.messages.dsl.required
+import de.telekom.usp.messages.proto.AddResp
+import de.telekom.usp.messages.proto.GetInstancesResp
+import de.telekom.usp.messages.proto.GetResp
+import de.telekom.usp.messages.proto.GetSupportedDMResp
 import de.telekom.usp.messages.proto.Msg
+import de.telekom.usp.messages.proto.SetResp
+import de.telekom.usp.messages.proto.debugMessage
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.runBlocking
 
 val commands = listOf(
     GetCommand(), GetSupportedDmCommand(), GetInstancesCommand(), SetCommand(), AddCommand()
 )
 
-class GetCommand : RequestCommand("get", "Send a get message") {
+class GetCommand : UspCommand("get", "Send a get message") {
     private val paths by option(
         "-p",
         "--path",
@@ -38,16 +49,22 @@ class GetCommand : RequestCommand("get", "Send a get message") {
         help = "Max depth for GET message (default is 1)"
     ).int().default(1)
 
-    override fun createMsg(): Msg {
+    private fun createRequest(): Msg {
         return Get {
             addPath(*this@GetCommand.paths.toTypedArray())
             maxDepth = depth
         }
     }
+
+    override suspend fun MessageExchange.sendRequest() {
+        sendRequest(createRequest(), onError) { response: GetResp ->
+            Logger.i { response.debugMessage() }
+        }
+    }
 }
 
 class GetSupportedDmCommand :
-    RequestCommand("get_supported_dm", "Send a get supported data model message") {
+    UspCommand("get_supported_dm", "Send a get supported data model message") {
 
     private val paths by option(
         "-p",
@@ -78,7 +95,7 @@ class GetSupportedDmCommand :
         help = "Do not return params"
     ).flag(default = false)
 
-    override fun createMsg(): Msg {
+    private fun createRequest(): Msg {
         return GetSupportedDm {
             addPath(*this@GetSupportedDmCommand.paths.toTypedArray())
             firstLevelOnly = isFirstLevelOnly
@@ -87,9 +104,15 @@ class GetSupportedDmCommand :
             returnParams = !isSkipParams
         }
     }
+
+    override suspend fun MessageExchange.sendRequest() {
+        sendRequest(createRequest(), onError) { response: GetSupportedDMResp ->
+            Logger.i { response.toString() }
+        }
+    }
 }
 
-class GetInstancesCommand : RequestCommand("get_instances", "Send a get instances message") {
+class GetInstancesCommand : UspCommand("get_instances", "Send a get instances message") {
 
     private val paths by option(
         "-p",
@@ -105,15 +128,21 @@ class GetInstancesCommand : RequestCommand("get_instances", "Send a get instance
         help = "Request first level only"
     ).flag(default = false)
 
-    override fun createMsg(): Msg {
+    private fun createRequest(): Msg {
         return GetInstances {
             addPath(*this@GetInstancesCommand.paths.toTypedArray())
             this.firstLevelOnly = isFirstLevelOnly
         }
     }
+
+    override suspend fun MessageExchange.sendRequest() {
+        sendRequest(createRequest(), onError) { response: GetInstancesResp ->
+            Logger.i { response.toString() }
+        }
+    }
 }
 
-class SetCommand : RequestCommand("set", "Send a set message") {
+class SetCommand : UspCommand("set", "Send a set message") {
     private val path by option("-p", "--path", help = "Path to SET values for").required()
 
     private val values by option(
@@ -134,7 +163,7 @@ class SetCommand : RequestCommand("set", "Send a set message") {
         help = "Allow partial updates"
     ).flag(default = false)
 
-    override fun createMsg(): Msg {
+    private fun createRequest(): Msg {
         if (values.isEmpty() && required.isEmpty()) {
             throw PrintMessage("At least one parameter must be specified (using -p or -r)")
         }
@@ -151,9 +180,15 @@ class SetCommand : RequestCommand("set", "Send a set message") {
             }
         }
     }
+
+    override suspend fun MessageExchange.sendRequest() {
+        sendRequest(createRequest(), onError) { response: SetResp ->
+            Logger.i { response.toString() }
+        }
+    }
 }
 
-class AddCommand : RequestCommand("add", "Send an add message") {
+class AddCommand : UspCommand("add", "Send an add message") {
     private val path by option("-p", "--path", help = "Path to ADD values for").required()
 
     private val values by option(
@@ -174,7 +209,7 @@ class AddCommand : RequestCommand("add", "Send an add message") {
         help = "Allow partial adding"
     ).flag(default = false)
 
-    override fun createMsg(): Msg {
+    private fun createRequest(): Msg {
         if (values.isEmpty() && required.isEmpty()) {
             throw PrintMessage("At least one parameter must be specified (using -p or -r)")
         }
@@ -191,16 +226,44 @@ class AddCommand : RequestCommand("add", "Send an add message") {
             }
         }
     }
+
+    override suspend fun MessageExchange.sendRequest() {
+        sendRequest(createRequest(), onError) { response: AddResp ->
+            Logger.i { response.toString() }
+        }
+    }
 }
 
-abstract class RequestCommand(name: String, help: String) : CliktCommand(name = name, help = help) {
+abstract class UspCommand(name: String, help: String) : CliktCommand(name = name, help = help) {
 
-    var requestExecutor: ((Msg) -> Unit)? = null
+    // Will get initialized by the Main command!
+    lateinit var exchange: MessageExchange
 
-    override fun run() {
-        val request = createMsg()
-        requestExecutor?.let { it(request) }
+    open val onError: (MessageExchangeFailure) -> Unit = { failure ->
+        when (failure) {
+            is MessageExchangeFailure.ResponseError -> {
+                val err = failure.error
+                Logger.e { "Received a USP error message: ${err.err_msg} (${err.err_code})" }
+            }
+
+            is MessageExchangeFailure.TimeoutOccurred -> {
+                Logger.e("Timeout occurred while waiting for a response")
+            }
+        }
+
+        runBlocking {
+            exchange.stop()
+        }
     }
 
-    abstract fun createMsg(): Msg
+    override fun run() {
+        runBlocking {
+            exchange.start()
+            exchange.sendRequest()
+            delay(2000)
+            exchange.stop()
+        }
+    }
+
+    abstract suspend fun MessageExchange.sendRequest()
 }

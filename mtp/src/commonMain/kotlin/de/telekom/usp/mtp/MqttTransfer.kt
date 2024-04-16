@@ -196,7 +196,7 @@ class MqttTransfer(
     }
 
     override fun toString(): String {
-        return "MqttTransfer [from: '$from', to: '$replyToTopic', server: $host:$port]"
+        return "MQTT transfer [from: '$from', to: '$replyToTopic', server: $host:$port]"
     }
 
     companion object {

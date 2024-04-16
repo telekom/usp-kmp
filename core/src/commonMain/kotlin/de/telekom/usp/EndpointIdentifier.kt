@@ -44,3 +44,5 @@ fun EndpointIdentifier(text: String): EndpointIdentifier {
 
     return EndpointIdentifier(authorityScheme, AuthorityId(authority), InstanceId(instance))
 }
+
+fun String.toEndpoint(): EndpointIdentifier = EndpointIdentifier(this)

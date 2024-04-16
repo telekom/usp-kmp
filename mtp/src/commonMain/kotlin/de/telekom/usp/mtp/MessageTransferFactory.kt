@@ -5,32 +5,43 @@ import socket.tls.TLSClientSettings
 
 class MessageTransferFactory {
 
-    fun create(config: MessageTransferConfig): MessageTransfer {
+    fun create(config: MessageTransferConfig, debugMode: Boolean = false): MessageTransfer {
         return when (config.mtp) {
-            MessageTransferProtocol.WEB_SOCKET -> createWebSocket(config.webSocketConfig!!)
-            MessageTransferProtocol.MQTT -> createMqtt(config.mqttConfig!!)
+            MessageTransferProtocol.WEB_SOCKET -> {
+                config.createWebSocket(config.webSocketConfig!!, debugMode)
+            }
+
+            MessageTransferProtocol.MQTT -> {
+                config.createMqtt(config.mqttConfig!!)
+            }
+
             else -> throw MessageTransferFactoryException("MTP ${config.mtp} not supported")
         }
     }
 
-    private fun createMqtt(config: MqttConfig): MessageTransfer {
+    private fun MessageTransferConfig.createMqtt(config: MqttConfig): MessageTransfer {
         return MqttTransfer(
             host = config.host,
             port = config.port,
             user = config.user,
             password = config.password,
             tls = if (config.useTls) TLSClientSettings() else null,
-            from = EndpointIdentifier(config.fromEndpointId),
+            from = EndpointIdentifier(fromEndpointId),
             subscribeTopics = mutableListOf(config.topic),
             replyToTopic = config.replyToTopic
         )
     }
 
-    private fun createWebSocket(config: WebSocketConfig): MessageTransfer {
+    private fun MessageTransferConfig.createWebSocket(
+        config: WebSocketConfig,
+        debugMode: Boolean = false
+    ): MessageTransfer {
         return WebSocketTransfer(
             host = config.host,
             port = config.port,
-            from = EndpointIdentifier(config.fromEndpointId)
+            from = EndpointIdentifier(fromEndpointId),
+            pingDuration = config.pingDuration,
+            debugMode = debugMode
         )
     }
 }

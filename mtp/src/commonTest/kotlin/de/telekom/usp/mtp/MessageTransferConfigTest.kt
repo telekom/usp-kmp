@@ -15,7 +15,7 @@ class MessageTransferConfigTest {
             webSocketConfig = WebSocketConfig(
                 host = "localhost",
                 port = 443,
-                fromEndpointId = "proto::usp-demo"
+                fromEndpointId = "proto::usp-demo",
             ),
             mqttConfig = MqttConfig(
                 host = "localhost",

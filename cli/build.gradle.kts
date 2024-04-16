@@ -26,8 +26,10 @@ dependencies {
     implementation(project(":core"))
     implementation(project(":records"))
     implementation(project(":mtp"))
+    implementation(project(":lib"))
     implementation(libs.clikt)
     implementation(libs.kermit)
+    implementation(libs.kotlinx.datetime)
     implementation(libs.kotlinx.serialization.json)
     implementation(libs.kotlinx.serialization.json.okio)
 }
