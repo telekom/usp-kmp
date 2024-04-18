@@ -17,7 +17,6 @@ import de.telekom.usp.messages.MessageConverter
 import de.telekom.usp.messages.MessageConverterImpl
 import de.telekom.usp.mtp.MessageTransferConfig
 import de.telekom.usp.mtp.MessageTransferFactory
-import kotlinx.datetime.Clock
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.okio.decodeFromBufferedSource
@@ -26,8 +25,17 @@ import okio.Path.Companion.toOkioPath
 import okio.Path.Companion.toPath
 import okio.buffer
 import okio.use
-import java.util.concurrent.atomic.AtomicLong
+import kotlin.time.Duration.Companion.seconds
 
+val Commands = listOf(
+    GetCommand(),
+    GetSupportedDmCommand(),
+    GetInstancesCommand(),
+    GetSupportedProtocolCommand(),
+    SetCommand(),
+    AddCommand(),
+    OperateCommand()
+)
 
 class Main : CliktCommand(invokeWithoutSubcommand = true) {
 
@@ -52,17 +60,10 @@ class Main : CliktCommand(invokeWithoutSubcommand = true) {
 
     private val logWriter = object : LogWriter() {
 
-        private val timestamp by lazy { Clock.System.now().toEpochMilliseconds() }
-
         override fun log(severity: Severity, message: String, tag: String, throwable: Throwable?) {
-            val time = (Clock.System.now().toEpochMilliseconds() - timestamp).coerceAtLeast(0L)
-            val prefix = "%06d".format(time)
-
-            // Omit the severity and the tag for brevity
-            println("$prefix $message")
-
+            println(message)
             if (throwable != null) {
-                println("$prefix ${throwable.stackTraceToString()}")
+                println(throwable.stackTraceToString())
             }
         }
     }
@@ -109,20 +110,12 @@ class Main : CliktCommand(invokeWithoutSubcommand = true) {
 
         Logger.d { "Created $transfer" }
 
-        when (val subcommand = currentContext.invokedSubcommand) {
-            is UspCommand -> {
-                subcommand.timeout = AtomicLong(timeout * 1000L)
-                subcommand.exchange = exchange
-            }
-
-            else -> Logger.e { "Unexpected subcommand: $subcommand" }
-        }
-
-        // Next the subcommand's run() method is called by clikt
+        // Pass the its runtime to the subcommand:
+        currentContext.findOrSetObject { CommandContext(exchange, timeout.seconds) }
     }
 }
 
-fun main(args: Array<String>) = Main().subcommands(commands).main(args)
+fun main(args: Array<String>) = Main().subcommands(Commands).main(args)
 
 
 

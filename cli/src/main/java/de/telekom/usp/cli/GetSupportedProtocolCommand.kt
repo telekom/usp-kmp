@@ -1,0 +1,30 @@
+package de.telekom.usp.cli
+
+import co.touchlab.kermit.Logger
+import com.github.ajalt.clikt.parameters.options.option
+import de.telekom.usp.MessageExchange
+import de.telekom.usp.messages.dsl.GetSupportedProtocol
+import de.telekom.usp.messages.proto.GetSupportedProtocolResp
+import de.telekom.usp.messages.proto.Msg
+
+class GetSupportedProtocolCommand :
+    AbstractCommand("get_supported_protocol", "Request the supported protocol versions") {
+
+    private val versions by option(
+        "-v",
+        "--versions",
+        help = "The versions supported by this controller (comma separated list)"
+    )
+
+    private fun createRequest(): Msg {
+        return GetSupportedProtocol(versions ?: "")
+    }
+
+    override suspend fun sendRequest(exchange: MessageExchange) {
+        exchange.sendRequest(createRequest(), onError) { response: GetSupportedProtocolResp ->
+            Logger.i { "Result of get supported protocols message for controller supported versions: '${versions ?: ""}'" }
+            Logger.i { "Agent supported protocol versions: '${response.agent_supported_protocol_versions}'" }
+            onFinished()
+        }
+    }
+}
