@@ -9,10 +9,9 @@ java {
     targetCompatibility = JavaVersion.VERSION_17
 }
 
-tasks.withType<Jar> {
-    manifest {
-        attributes["Main-Class"] = "de.telekom.usp.cli.MainKt"
-    }
+application {
+    mainClass = "de.telekom.usp.cli.MainKt"
+    applicationName = "uspctl"
 }
 
 distributions {
