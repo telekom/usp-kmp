@@ -12,10 +12,11 @@ class MessageTransferConfigTest {
     fun test() {
         val config = MessageTransferConfig(
             mtp = MessageTransferProtocol.MQTT,
+            fromEndpointId = "proto::usp-demo",
+            toEndpointId = "proto::AXACT",
             webSocketConfig = WebSocketConfig(
                 host = "localhost",
                 port = 443,
-                fromEndpointId = "proto::usp-demo",
             ),
             mqttConfig = MqttConfig(
                 host = "localhost",
@@ -23,7 +24,6 @@ class MessageTransferConfigTest {
                 user = "demo-user",
                 password = "secret",
                 useTls = true,
-                fromEndpointId = "proto::usp-demo",
                 topic = "usp-demo-topic",
                 replyToTopic = "reply-to"
             )
