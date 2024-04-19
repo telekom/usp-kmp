@@ -28,11 +28,15 @@ abstract class AbstractCommand(name: String, help: String) :
         when (failure) {
             is MessageExchangeFailure.ResponseError -> {
                 val err = failure.error
-                Logger.e { "Command \"$this\" received error message: ${err.err_msg} (${err.err_code})" }
+                Logger.e { "Command \"$this\" received error message from agent: ${err.err_msg} (${err.err_code})" }
             }
 
             is MessageExchangeFailure.TimeoutOccurred -> {
                 Logger.e("Command \"$this\" received timeout while waiting for a response")
+            }
+
+            is MessageExchangeFailure.ConnectionFailed -> {
+                Logger.e("Command \"$this\" cannot connect to remote")
             }
         }
 

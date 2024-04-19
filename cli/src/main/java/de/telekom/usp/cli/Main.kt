@@ -111,7 +111,7 @@ class Main : CliktCommand(invokeWithoutSubcommand = true, printHelpOnEmptyArgs =
 
         Logger.d { "Created $transfer" }
 
-        // Pass the its runtime to the subcommand:
+        // Pass the required data to the subcommand:
         currentContext.findOrSetObject { CommandContext(exchange, timeout.seconds) }
     }
 }

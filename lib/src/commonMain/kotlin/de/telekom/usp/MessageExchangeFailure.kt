@@ -7,4 +7,6 @@ sealed class MessageExchangeFailure {
     data class ResponseError(val error: Error) : MessageExchangeFailure()
 
     data class TimeoutOccurred(val messageId: String) : MessageExchangeFailure()
+
+    data object ConnectionFailed : MessageExchangeFailure()
 }

@@ -44,6 +44,8 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
@@ -64,6 +66,9 @@ class MessageExchange(
 
     private var remoteAllowsSessionContext = true
 
+    /** Allows waiting for a connection, see [waitForConnecting] */
+    private var connectionState = MutableStateFlow(ConnectionState.DISCONNECTED)
+
     fun start() {
         jobs.add(scope.launch {
             converter.results.collect { result ->
@@ -78,6 +83,11 @@ class MessageExchange(
         jobs.add(scope.launch {
             watchdog()
         })
+
+        scope.launch {
+            connectionState.emit(ConnectionState.CONNECTING)
+            transfer.connect()
+        }
     }
 
     suspend fun stop() {
@@ -201,23 +211,36 @@ class MessageExchange(
         sendRequest(msg, onError, onResponse, Msg::deregisterResponse)
     }
 
+    // --- Helper methods --------------------------------------------------------------------------
+
     private suspend fun <T> sendRequest(
         msg: Msg,
         onError: ((MessageExchangeFailure) -> Unit),
         onResponse: ((T) -> Unit)?,
         retrieveResponse: (Msg) -> T
     ) {
-        transfer.connect()
+        waitForConnecting()
 
-        if (converter.allowSessionContext && remoteAllowsSessionContext) {
-            converter.sessionContextMessage(msg = msg).forEach { transfer.send(it) }
+        if (connectionState.value == ConnectionState.CONNECTED) {
+            if (converter.allowSessionContext && remoteAllowsSessionContext) {
+                converter.sessionContextMessage(msg = msg).forEach { transfer.send(it) }
+            } else {
+                transfer.send(converter.noSessionContextMessage(msg))
+            }
+
+            if (onResponse != null) {
+                pendingRequests[msg.id] =
+                    PendingRequest(
+                        onResponse,
+                        onError,
+                        retrieveResponse,
+                        clock.now() + requestTimeout
+                    )
+            }
         } else {
-            transfer.send(converter.noSessionContextMessage(msg))
-        }
-
-        if (onResponse != null) {
-            pendingRequests[msg.id] =
-                PendingRequest(onResponse, onError, retrieveResponse, clock.now() + requestTimeout)
+            scope.launch {
+                onError(MessageExchangeFailure.ConnectionFailed)
+            }
         }
     }
 
@@ -227,10 +250,25 @@ class MessageExchange(
                 converter.next(event.bytes)
             }
 
-            else -> {
-                Logger.d { "Ignoring connection event $event for now..." }
+            is MessageTransferEvent.Connected -> {
+                connectionState.emit(ConnectionState.CONNECTED)
+            }
+
+            is MessageTransferEvent.ConnectionFailed -> {
+                connectionState.emit(ConnectionState.DISCONNECTED)
+            }
+
+            is MessageTransferEvent.Disconnected -> {
+                connectionState.emit(ConnectionState.DISCONNECTED)
             }
         }
+    }
+
+    /**
+     * Suspends execution until the connection state is not `CONNECTING`
+     */
+    private suspend fun waitForConnecting() {
+        connectionState.first { it != ConnectionState.CONNECTING }
     }
 
     private suspend fun handleDecoderResult(result: MessageConversionResult) {
@@ -345,4 +383,10 @@ class MessageExchange(
             return "PendingRequest($onResponse, )"
         }
     }
+}
+
+private enum class ConnectionState {
+    DISCONNECTED,
+    CONNECTING,
+    CONNECTED;
 }
