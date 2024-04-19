@@ -9,6 +9,7 @@ moshi = "1.14.0"
 ktor = "2.3.8"
 kmqtt = "0.4.6"
 mockery = "1.9.23-1.6.1" # First part of version name MUST be the Kotlin version!
+slf4j = "2.0.13"         # Used only in cli subproject
 
 [libraries]
 kotlin-test = { module = "org.jetbrains.kotlin:kotlin-test", version.ref = "kotlin" }
@@ -31,6 +32,8 @@ okio = { module = "com.squareup.okio:okio", version.ref = "okio" }
 okio-fakefilesystem = { module = "com.squareup.okio:okio-fakefilesystem", version.ref = "okio" }
 kmqtt-common = { module = "io.github.davidepianca98:kmqtt-common", version.ref = "kmqtt" }
 kmqtt-client = { module = "io.github.davidepianca98:kmqtt-client", version.ref = "kmqtt" }
+slj4j-api = { module = "org.slf4j:slf4j-api", version.ref = "slf4j" }
+slj4j-simple = { module = "org.slf4j:slf4j-simple", version.ref = "slf4j" }
 
 [plugins]
 androidApplication = { id = "com.android.application", version.ref = "agp" }

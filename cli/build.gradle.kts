@@ -18,7 +18,6 @@ tasks.withType<Jar> {
 distributions {
     main {
         distributionBaseName = "usp-cli"
-
     }
 }
 
@@ -32,4 +31,6 @@ dependencies {
     implementation(libs.kotlinx.datetime)
     implementation(libs.kotlinx.serialization.json)
     implementation(libs.kotlinx.serialization.json.okio)
+    implementation(libs.slj4j.api)
+    implementation(libs.slj4j.simple)
 }
