@@ -1,6 +1,7 @@
 plugins {
     alias(libs.plugins.kotlinMultiplatform)
     alias(libs.plugins.androidLibrary)
+    `maven-publish`
 }
 
 kotlin {
@@ -45,5 +46,25 @@ android {
     compileSdk = 34
     defaultConfig {
         minSdk = 24
+    }
+}
+
+publishing {
+    publications {
+        register<MavenPublication>("release") {
+            groupId = "de.telekom.usp"
+            artifactId = "usp-core"
+            version = "1.0.0"
+
+//            afterEvaluate {
+//                from(components["release"])
+//            }
+        }
+    }
+    repositories {
+        maven {
+            name = "local-repo"
+            url = uri("${project.rootDir}/repo")
+        }
     }
 }
