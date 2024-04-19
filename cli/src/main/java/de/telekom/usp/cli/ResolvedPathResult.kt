@@ -32,7 +32,6 @@ data class ResolvedPathResult(
                 if (result.errorCode != 0) {
                     appendLine("Error message: '${result.errorMessage}' (${result.errorCode})")
                 }
-                appendLine()
             }
 
             if (errorCode != 0) {

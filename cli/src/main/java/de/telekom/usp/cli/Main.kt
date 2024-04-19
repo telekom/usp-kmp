@@ -27,19 +27,20 @@ import okio.buffer
 import okio.use
 import kotlin.time.Duration.Companion.seconds
 
-val Commands = listOf(
+private val Commands = listOf(
     GetCommand(),
+    AddCommand(),
+    SetCommand(),
+    DeleteCommand(),
+    GetSupportedProtocolCommand(),
     GetSupportedDmCommand(),
     GetInstancesCommand(),
-    GetSupportedProtocolCommand(),
-    SetCommand(),
-    AddCommand(),
     OperateCommand()
 )
 
-class Main : CliktCommand(invokeWithoutSubcommand = true) {
+class Main : CliktCommand(invokeWithoutSubcommand = true, printHelpOnEmptyArgs = true) {
 
-    private val configFile by option("-c").path(
+    private val configFile by option("-c", help = "Agent config file (default config.json)").path(
         mustExist = false,
         canBeFile = true,
         canBeDir = false,
@@ -47,15 +48,15 @@ class Main : CliktCommand(invokeWithoutSubcommand = true) {
     )
 
     private val timeout by option(
-        "-t", "--timeout", help = "Timeout in seconds to wait for a response"
-    ).int().default(5)
+        "-t", "--timeout", help = "Timeout in seconds to wait (default 10 seconds)"
+    ).int().default(10)
 
     private val isDebugLevel by option(
-        "-v", "--debug", help = "Print more verbose log messages"
+        "-v", "--debug", help = "Print verbose log messages"
     ).flag()
 
     private val isVerboseLevel by option(
-        "-vv", "--verbose", help = "Print even more verbose log messages"
+        "-vv", "--verbose", help = "Print more verbose log messages"
     ).flag()
 
     private val logWriter = object : LogWriter() {

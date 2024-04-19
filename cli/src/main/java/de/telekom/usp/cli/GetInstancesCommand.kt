@@ -35,7 +35,7 @@ class GetInstancesCommand : AbstractCommand("get_instances", "Send a get instanc
     }
 
     private fun printResponse(response: GetInstancesResp) {
-        Logger.i { "Result of get instances message for: ${paths.joinToString()} (firstLevelOnly=$isFirstLevelOnly)" }
+        Logger.i { "Result of \"$this\"" }
         response.req_path_results.toGetInstancesResult().forEach {
             Logger.i(it.toString())
         }
@@ -46,5 +46,10 @@ class GetInstancesCommand : AbstractCommand("get_instances", "Send a get instanc
             printResponse(response)
             onFinished()
         }
+    }
+
+    override fun toString(): String {
+        return "get_instances ${paths.joinToString(" ") { "-p $it" }}" +
+                if (isFirstLevelOnly) " --first-level-only" else ""
     }
 }

@@ -12,7 +12,7 @@ import de.telekom.usp.messages.proto.GetSupportedDMResp
 import de.telekom.usp.messages.proto.Msg
 
 class GetSupportedDmCommand :
-    AbstractCommand("get_supported_dm", "Send a get supported data model message") {
+    AbstractCommand("get_supported_dm", "Send a message to get supported data model") {
 
     private val paths by option(
         "-p",
@@ -54,7 +54,7 @@ class GetSupportedDmCommand :
     }
 
     private fun printResponse(response: GetSupportedDMResp) {
-        Logger.i { "Result of get message for: ${paths.joinToString()} (firstLevelOnly=$isFirstLevelOnly)" }
+        Logger.i { "Result of \"$this\"" }
         response.req_obj_results.forEach { requestedObject ->
             Logger.i("Supported objects for:'${requestedObject.req_obj_path}'")
             requestedObject.supported_objs.forEach { supportedObject ->
@@ -83,5 +83,13 @@ class GetSupportedDmCommand :
             printResponse(response)
             onFinished()
         }
+    }
+
+    override fun toString(): String {
+        return "get_supported_dm ${paths.joinToString(" ") { "-p $it" }}" +
+                if (isFirstLevelOnly) " --first-level-only" else "" +
+                        if (isSkipCommands) " --skip-commands" else "" +
+                                if (isSkipEvents) " --skip-events" else "" +
+                                        if (isSkipParams) " --skip-params" else ""
     }
 }

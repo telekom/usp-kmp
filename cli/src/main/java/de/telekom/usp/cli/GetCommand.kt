@@ -13,6 +13,7 @@ import de.telekom.usp.messages.proto.GetResp
 import de.telekom.usp.messages.proto.Msg
 
 class GetCommand : AbstractCommand("get", "Send a get message") {
+
     private val paths by option(
         "-p",
         "--path",
@@ -29,13 +30,13 @@ class GetCommand : AbstractCommand("get", "Send a get message") {
 
     private fun createRequest(): Msg {
         return Get {
-            addPath(*this@GetCommand.paths.toTypedArray())
             maxDepth = depth
+            addPath(*this@GetCommand.paths.toTypedArray())
         }
     }
 
     private fun printResponse(response: GetResp) {
-        Logger.i { "Result of get message for: ${paths.joinToString()} (depth=$depth)" }
+        Logger.i { "Result of \"$this\"" }
         response.req_path_results.toGetResult().forEach {
             Logger.i(it.toString())
         }
@@ -46,5 +47,10 @@ class GetCommand : AbstractCommand("get", "Send a get message") {
             printResponse(response)
             onFinished()
         }
+    }
+
+    override fun toString(): String {
+        return "get ${paths.joinToString(" ") { "-p $it" }}" +
+                " --max $depth"
     }
 }

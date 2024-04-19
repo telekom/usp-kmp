@@ -28,7 +28,6 @@ class SetCommand : AbstractCommand("set", "Send a set message") {
     ).associate()
 
     private val isAllowPartial by option(
-        "-a",
         "--allow-partial",
         help = "Allow partial updates"
     ).flag(default = false)
@@ -52,7 +51,7 @@ class SetCommand : AbstractCommand("set", "Send a set message") {
     }
 
     private fun printResponse(response: SetResp) {
-        Logger.i { "Result of set message for: $path (allowPartial=$isAllowPartial)" }
+        Logger.i { "Result of \"$this\"" }
         response.updated_obj_results.toSetResult().forEach {
             Logger.i(it.toString())
         }
@@ -64,5 +63,12 @@ class SetCommand : AbstractCommand("set", "Send a set message") {
             printResponse(response)
             onFinished()
         }
+    }
+
+    override fun toString(): String {
+        return "set -p $path" +
+                values.entries.joinToString(" ", " ") { "-v ${it.key}=${it.value}" } +
+                required.entries.joinToString(" ", " ") { "-r ${it.key}=${it.value}" } +
+                if (isAllowPartial) " --allow-partial" else ""
     }
 }

@@ -8,7 +8,7 @@ import de.telekom.usp.messages.proto.GetSupportedProtocolResp
 import de.telekom.usp.messages.proto.Msg
 
 class GetSupportedProtocolCommand :
-    AbstractCommand("get_supported_protocol", "Request the supported protocol versions") {
+    AbstractCommand("get_supported_protocol", "Send a message to retrieve the supported protocol") {
 
     private val versions by option(
         "-v",
@@ -22,9 +22,13 @@ class GetSupportedProtocolCommand :
 
     override suspend fun sendRequest(exchange: MessageExchange) {
         exchange.sendRequest(createRequest(), onError) { response: GetSupportedProtocolResp ->
-            Logger.i { "Result of get supported protocols message for controller supported versions: '${versions ?: ""}'" }
+            Logger.i { "Result of \"this\"" }
             Logger.i { "Agent supported protocol versions: '${response.agent_supported_protocol_versions}'" }
             onFinished()
         }
+    }
+
+    override fun toString(): String {
+        return "get_supported_protocol" + if (versions != null) " -v $versions" else ""
     }
 }

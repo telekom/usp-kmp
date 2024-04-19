@@ -32,7 +32,7 @@ class OperateCommand : AbstractCommand("operate", "Send an operate message") {
     }
 
     private fun printResponse(resp: OperateResp) {
-        Logger.i { "Result of operate message for: $command with key '$commandKey' (params=$params)" }
+        Logger.i { "Result of \"$this\"" }
         resp.operation_results.forEach { result ->
             Logger.i { "Command executed: ${result.executed_command} for path: '${result.req_obj_path ?: ""}'" }
             if ((result.req_output_args?.output_args?.size ?: 0) > 0) {
@@ -50,5 +50,10 @@ class OperateCommand : AbstractCommand("operate", "Send an operate message") {
             printResponse(response)
             onFinished()
         }
+    }
+
+    override fun toString(): String {
+        return "operate -c $command" + if (commandKey != null) " -k $commandKey" else "" +
+                params.entries.joinToString(" ", " ") { "-p ${it.key}=${it.value}" }
     }
 }

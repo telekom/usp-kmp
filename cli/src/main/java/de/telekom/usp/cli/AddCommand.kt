@@ -28,7 +28,6 @@ class AddCommand : AbstractCommand("add", "Send an add message") {
     ).associate()
 
     private val isAllowPartial by option(
-        "-a",
         "--allow-partial",
         help = "Allow partial adding"
     ).flag(default = false)
@@ -52,7 +51,7 @@ class AddCommand : AbstractCommand("add", "Send an add message") {
     }
 
     private fun printResponse(response: AddResp) {
-        Logger.i { "Result of add message for: $path (allowPartial=$isAllowPartial)" }
+        Logger.i { "Result of \"$this\"" }
         response.created_obj_results.toAddResult().forEach {
             Logger.i(it.toString())
         }
@@ -63,5 +62,12 @@ class AddCommand : AbstractCommand("add", "Send an add message") {
             printResponse(response)
             onFinished()
         }
+    }
+
+    override fun toString(): String {
+        return "add -p $path" +
+                values.entries.joinToString(" ", " ") { "-v ${it.key}=${it.value}" } +
+                required.entries.joinToString(" ", " ") { "-r ${it.key}=${it.value}" } +
+                if (isAllowPartial) " --allow-partial" else ""
     }
 }
