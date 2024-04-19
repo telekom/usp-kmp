@@ -12,6 +12,7 @@ kotlin {
                 jvmTarget = "1.8"
             }
         }
+        publishLibraryVariants("release", "debug")
     }
 
     listOf(
@@ -43,28 +44,21 @@ kotlin {
 
 android {
     namespace = "de.telekom.usp"
-    compileSdk = 34
+    compileSdk = libs.versions.compileSdk.get().toInt()
     defaultConfig {
-        minSdk = 24
+        minSdk = libs.versions.minSdk.get().toInt()
     }
 }
 
-publishing {
-    publications {
-        register<MavenPublication>("release") {
-            groupId = "de.telekom.usp"
-            artifactId = "usp-core"
-            version = "1.0.0"
+group = "de.telekom.usp"
+version = libs.versions.usp.get()
 
-//            afterEvaluate {
-//                from(components["release"])
-//            }
-        }
-    }
+publishing {
+    val repoDirectory: String by rootProject.extra
     repositories {
         maven {
             name = "local-repo"
-            url = uri("${project.rootDir}/repo")
+            url = uri(repoDirectory)
         }
     }
 }

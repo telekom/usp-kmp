@@ -2,6 +2,7 @@ plugins {
     alias(libs.plugins.kotlinMultiplatform)
     alias(libs.plugins.androidLibrary)
     alias(libs.plugins.kotlinSerialization)
+    `maven-publish`
 }
 
 kotlin {
@@ -12,6 +13,7 @@ kotlin {
                 jvmTarget = "1.8"
             }
         }
+        publishLibraryVariants("release", "debug")
     }
 
     listOf(
@@ -54,8 +56,21 @@ kotlin {
 
 android {
     namespace = "de.telekom.usp"
-    compileSdk = 34
+    compileSdk = libs.versions.compileSdk.get().toInt()
     defaultConfig {
-        minSdk = 24
+        minSdk = libs.versions.minSdk.get().toInt()
+    }
+}
+
+group = "de.telekom.usp"
+version = libs.versions.usp.get()
+
+publishing {
+    val repoDirectory: String by rootProject.extra
+    repositories {
+        maven {
+            name = "local-repo"
+            url = uri(repoDirectory)
+        }
     }
 }
