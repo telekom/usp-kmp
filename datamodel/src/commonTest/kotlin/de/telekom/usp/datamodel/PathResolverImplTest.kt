@@ -15,11 +15,11 @@ import kotlin.test.assertEquals
 import kotlin.test.assertSame
 import kotlin.test.assertTrue
 
-class PathResolverTest {
+class PathResolverImplTest {
 
     private val dataModel = mock<DataModel>()
 
-    private val resolver = PathResolver(dataModel)
+    private val resolver = PathResolverImpl(dataModel)
 
     @BeforeTest
     fun setup() {

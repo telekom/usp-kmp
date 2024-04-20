@@ -2,7 +2,7 @@ package de.telekom.usp.datamodel
 
 import de.telekom.usp.PathElement
 
-class ExpressionParserException(
+internal class ExpressionParserException(
     expression: PathElement.Expression,
     expressionIndex: Int,
     message: String

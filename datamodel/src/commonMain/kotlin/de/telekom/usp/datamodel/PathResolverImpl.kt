@@ -6,7 +6,7 @@ import de.telekom.usp.PathElement
 import de.telekom.usp.ResolvedPath
 import de.telekom.usp.datamodel.ExpressionComponent.Companion.matches
 
-class PathResolver(private val model: DataModel) {
+class PathResolverImpl(private val model: DataModel) : PathResolver {
 
     /**
      * Return all resolved paths matching the specified path for the data model of this.
@@ -14,7 +14,7 @@ class PathResolver(private val model: DataModel) {
      * @return a list of resolved paths. The list will be empty, if no paths matched the specified
      *         path name
      */
-    suspend fun resolve(path: Path): List<ResolvedPath> {
+    override suspend fun resolve(path: Path): List<ResolvedPath> {
         if (path.isResolved) {
             return listOf(path.asResolvedPath())
         }
