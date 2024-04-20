@@ -2,7 +2,7 @@ package de.telekom.usp.cli
 
 import co.touchlab.kermit.Logger
 import com.github.ajalt.clikt.parameters.options.option
-import de.telekom.usp.MessageExchange
+import de.telekom.usp.e2e.MessageExchange
 import de.telekom.usp.messages.dsl.GetSupportedProtocol
 import de.telekom.usp.messages.proto.GetSupportedProtocolResp
 import de.telekom.usp.messages.proto.Msg

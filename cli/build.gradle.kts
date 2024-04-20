@@ -24,7 +24,6 @@ dependencies {
     implementation(project(":core"))
     implementation(project(":records"))
     implementation(project(":mtp"))
-    implementation(project(":lib"))
     implementation(libs.clikt)
     implementation(libs.kermit)
     implementation(libs.kotlinx.datetime)

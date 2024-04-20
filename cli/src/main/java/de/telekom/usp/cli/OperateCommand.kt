@@ -4,7 +4,7 @@ import co.touchlab.kermit.Logger
 import com.github.ajalt.clikt.parameters.options.associate
 import com.github.ajalt.clikt.parameters.options.option
 import com.github.ajalt.clikt.parameters.options.required
-import de.telekom.usp.MessageExchange
+import de.telekom.usp.e2e.MessageExchange
 import de.telekom.usp.messages.dsl.Operate
 import de.telekom.usp.messages.proto.Msg
 import de.telekom.usp.messages.proto.OperateResp

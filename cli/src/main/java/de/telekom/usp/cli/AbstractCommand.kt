@@ -3,8 +3,8 @@ package de.telekom.usp.cli
 import co.touchlab.kermit.Logger
 import com.github.ajalt.clikt.core.CliktCommand
 import com.github.ajalt.clikt.core.requireObject
-import de.telekom.usp.MessageExchange
-import de.telekom.usp.MessageExchangeFailure
+import de.telekom.usp.e2e.MessageExchange
+import de.telekom.usp.e2e.MessageExchangeFailure
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking

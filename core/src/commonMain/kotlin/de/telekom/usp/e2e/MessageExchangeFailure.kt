@@ -1,4 +1,4 @@
-package de.telekom.usp
+package de.telekom.usp.e2e
 
 import de.telekom.usp.messages.proto.Error
 

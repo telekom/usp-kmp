@@ -1,6 +1,8 @@
-package de.telekom.usp
+package de.telekom.usp.e2e
 
 import co.touchlab.kermit.Logger
+import de.telekom.usp.NoError
+import de.telekom.usp.SessionContextNotAllowed
 import de.telekom.usp.messages.MessageConversionResult
 import de.telekom.usp.messages.MessageConverter
 import de.telekom.usp.messages.proto.AddResp
@@ -60,6 +62,9 @@ class MessageExchange(
     private val scope: CoroutineScope = CoroutineScope(Dispatchers.IO + SupervisorJob()),
     private val requestTimeout: Duration = 20.seconds
 ) {
+    // TODO: refactor constructor parameter MessageTransfer into MessageTransferFactory to not allow
+    //       access to the MessageTransfer instance from other classes.
+
     private val pendingRequests = mutableMapOf<String, PendingRequest<*>>()
 
     private val jobs = mutableListOf<Job>()

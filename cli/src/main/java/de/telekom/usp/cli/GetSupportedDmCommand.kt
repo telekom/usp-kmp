@@ -5,7 +5,7 @@ import com.github.ajalt.clikt.parameters.options.check
 import com.github.ajalt.clikt.parameters.options.flag
 import com.github.ajalt.clikt.parameters.options.multiple
 import com.github.ajalt.clikt.parameters.options.option
-import de.telekom.usp.MessageExchange
+import de.telekom.usp.e2e.MessageExchange
 import de.telekom.usp.isValidPath
 import de.telekom.usp.messages.dsl.GetSupportedDm
 import de.telekom.usp.messages.proto.GetSupportedDMResp

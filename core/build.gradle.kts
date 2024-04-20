@@ -32,6 +32,7 @@ kotlin {
             dependencies {
                 implementation(libs.kotlinx.datetime)
                 implementation(libs.kotlinx.coroutines.core)
+                implementation(libs.kermit)
             }
         }
         commonTest {
