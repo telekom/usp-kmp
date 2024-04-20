@@ -2,11 +2,22 @@ package de.telekom.usp.datamodel
 
 import de.telekom.usp.Path
 import de.telekom.usp.ResolvedPath
+import kotlinx.coroutines.flow.SharedFlow
 
 /**
  * Allows storage and retrieval of USP data model parameters.
  */
 interface DataModel {
+
+    /**
+     * A flow receiving events whenever data in this [DataModel] has been added and changed.
+     */
+    val updates: SharedFlow<InstanceObject>
+
+    /**
+     * A flow receiving events whenever data in this [DataModel] has been deleted.
+     */
+    val deletes: SharedFlow<ResolvedPath>
 
     /**
      * Returns the values stored in this data model for the specified object path.

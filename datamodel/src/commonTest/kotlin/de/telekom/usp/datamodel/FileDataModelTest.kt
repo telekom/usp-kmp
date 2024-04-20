@@ -4,6 +4,10 @@ import de.telekom.usp.Device
 import de.telekom.usp.DeviceInfo
 import de.telekom.usp.IP
 import de.telekom.usp.WiFi
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.async
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.json.Json
@@ -19,7 +23,9 @@ import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
+import kotlin.test.assertSame
 import kotlin.test.assertTrue
+import kotlin.time.Duration.Companion.seconds
 
 class FileDataModelTest {
 
@@ -124,6 +130,49 @@ class FileDataModelTest {
     @Test
     fun `deleting non existing directory returns false`() = runTest {
         assertFalse(model.delete(WiFi))
+    }
+
+    @Test
+    fun `set triggers update event`() {
+        val instance = InstanceObject(IP, rows)
+        checkForUpdateEventsOn(instance) { model.set(instance) }
+    }
+
+    @Test
+    fun `add triggers update event`() {
+        val instance = InstanceObject(IP, rows)
+        checkForUpdateEventsOn(instance) { model.add(instance) }
+    }
+
+    @Test
+    fun `delete triggers deletion event`() = runTest(timeout = 2.seconds) {
+        val deferred = async {
+            model.deletes.first()
+        }
+        launch {
+            model.add(InstanceObject(DeviceInfo, rows))
+            model.delete(DeviceInfo)
+        }
+
+        val actual = deferred.await()
+        assertSame(DeviceInfo, actual)
+
+    }
+
+    private fun checkForUpdateEventsOn(
+        expected: InstanceObject,
+        action: suspend CoroutineScope.() -> Unit
+    ) = runTest(timeout = 2.seconds) {
+
+        val deferred = async {
+            model.updates.first()
+        }
+        launch {
+            action()
+        }
+
+        val actual = deferred.await()
+        assertSame(expected, actual)
     }
 
     @OptIn(ExperimentalSerializationApi::class)

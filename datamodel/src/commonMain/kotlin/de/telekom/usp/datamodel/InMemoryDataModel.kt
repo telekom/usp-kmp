@@ -4,12 +4,22 @@ import co.touchlab.kermit.Logger
 import de.telekom.usp.Device
 import de.telekom.usp.PathElement
 import de.telekom.usp.ResolvedPath
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 
 open class InMemoryDataModel : DataModel {
 
-    protected val root = Node(Device)
+    private val _updates = MutableSharedFlow<InstanceObject>()
+    override val updates: SharedFlow<InstanceObject>
+        get() = _updates
+
+    private val _deletes = MutableSharedFlow<ResolvedPath>()
+    override val deletes: SharedFlow<ResolvedPath>
+        get() = _deletes
+
+    private val root = Node(Device)
 
     private val mutex = Mutex()
 
@@ -34,6 +44,7 @@ open class InMemoryDataModel : DataModel {
         mutex.withLock {
             for (instance in data) {
                 findOrCreateNode(instance.path).setRows(instance.rows)
+                _updates.emit(instance)
             }
         }
     }
@@ -42,6 +53,7 @@ open class InMemoryDataModel : DataModel {
         mutex.withLock {
             for (instance in data) {
                 findOrCreateNode(instance.path).addRows(instance.rows)
+                _updates.emit(instance)
             }
         }
     }
@@ -55,7 +67,11 @@ open class InMemoryDataModel : DataModel {
             }
             val parent = findNode(path.dropLast(1))
 
-            parent?.removeChild(path.last() as PathElement.Object) ?: false
+            val success = parent?.removeChild(path.last() as PathElement.Object) ?: false
+            if (success) {
+                _deletes.emit(path)
+            }
+            success
         }
     }
 

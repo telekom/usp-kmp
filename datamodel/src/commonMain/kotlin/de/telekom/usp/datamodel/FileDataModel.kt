@@ -3,6 +3,8 @@ package de.telekom.usp.datamodel
 import co.touchlab.kermit.Logger
 import de.telekom.usp.Device
 import de.telekom.usp.ResolvedPath
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.serialization.ExperimentalSerializationApi
@@ -16,6 +18,14 @@ import okio.buffer
 import okio.use
 
 class FileDataModel(private val fileSystem: FileSystem, private val directory: Path) : DataModel {
+
+    private val _updates = MutableSharedFlow<InstanceObject>()
+    override val updates: SharedFlow<InstanceObject>
+        get() = _updates
+
+    private val _deletes = MutableSharedFlow<ResolvedPath>()
+    override val deletes: SharedFlow<ResolvedPath>
+        get() = _deletes
 
     private val mutex = Mutex()
 
@@ -46,6 +56,7 @@ class FileDataModel(private val fileSystem: FileSystem, private val directory: P
                 instance.path.toPath().let { path ->
                     writeTo(path, instance.rows)
                 }
+                _updates.emit(instance)
             }
         }
     }
@@ -56,6 +67,7 @@ class FileDataModel(private val fileSystem: FileSystem, private val directory: P
                 instance.path.toPath().let { path ->
                     writeTo(path, readFrom(path) + instance.rows)
                 }
+                _updates.emit(instance)
             }
         }
     }
@@ -65,6 +77,7 @@ class FileDataModel(private val fileSystem: FileSystem, private val directory: P
             return path.toPath().let { dir ->
                 if (fileSystem.exists(dir)) {
                     fileSystem.deleteRecursively(dir)
+                    _deletes.emit(path)
                     true
                 } else {
                     false
