@@ -1,3 +1,4 @@
+
 plugins {
     alias(libs.plugins.kotlinMultiplatform)
     alias(libs.plugins.androidLibrary)
@@ -22,7 +23,7 @@ kotlin {
         iosSimulatorArm64()
     ).forEach {
         it.binaries.framework {
-            baseName = "base"
+            baseName = "proto"
             isStatic = true
         }
     }
@@ -30,6 +31,7 @@ kotlin {
     sourceSets {
         commonMain {
             dependencies {
+                implementation(project(":usp-core"))
                 implementation(libs.kotlinx.datetime)
                 implementation(libs.kotlinx.coroutines.core)
                 implementation(libs.kermit)
@@ -38,6 +40,19 @@ kotlin {
         commonTest {
             dependencies {
                 implementation(libs.kotlin.test)
+                implementation(libs.kotlinx.coroutines.test)
+            }
+        }
+        val androidMain by getting {
+            dependencies {
+                implementation(libs.moshi.kotlin)
+                implementation(libs.wire.moshi)
+            }
+        }
+        val jvmMain by getting {
+            dependencies {
+                implementation(libs.moshi.kotlin)
+                implementation(libs.wire.moshi)
             }
         }
     }
@@ -66,7 +81,7 @@ publishing {
     val repoDirectory: String by rootProject.extra
     repositories {
         maven {
-            name = "local-repo"
+            name = "usp"
             url = uri(repoDirectory)
         }
     }

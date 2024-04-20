@@ -31,7 +31,7 @@ kotlin {
     sourceSets {
         commonMain {
             dependencies {
-                implementation(project(":core"))
+                implementation(project(":usp-core"))
                 implementation(libs.kotlinx.datetime)
                 implementation(libs.kotlinx.coroutines.core)
                 implementation(libs.kotlinx.serialization.json)
@@ -77,7 +77,7 @@ publishing {
     val repoDirectory: String by rootProject.extra
     repositories {
         maven {
-            name = "local-repo"
+            name = "usp"
             url = uri(repoDirectory)
         }
     }
