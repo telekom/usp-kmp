@@ -1,28 +1,42 @@
 #!/bin/sh
 # Script to create a local AXACT controller with the dmtest tool
 
+rm ./prefix/var/lib/axact/db.xml
+PASSWD=`cat ../usp-library/mqtt-passwd`
+
+# Send a test message to the server (read from stdin)
+# mosquitto_pub -h home.kempmobil.de -p 8883 -u usp-demo -P $PASSWD -t test.topic -s
+
 # ------- WEB SOCKET CONFIGURATION -----------------------------------------------------------------
-./dmtest oa Device.LocalAgent.Controller.
-INSTANCE=1
+INSTANCE=`./dmtest oa Device.LocalAgent.Controller. | grep 'Instance .* was created for object' | egrep -o '[0-9]{1,4}' | head -1`
 ./dmtest sv Device.LocalAgent.Controller.${INSTANCE}.Alias usp-demo
 ./dmtest sv Device.LocalAgent.Controller.${INSTANCE}.EndpointID proto::usp-demo
 ./dmtest sv Device.LocalAgent.Controller.${INSTANCE}.Enable 1
+# Disable also encryption for testing purposes:
+./dmtest sv Device.LocalAgent.MTP.${INSTANCE}.WebSocket.EnableEncryption 0
 
 
 # ------- MQTT CONFIGURATION -----------------------------------------------------------------------
-./dmtest oa Device.LocalAgent.Controller.
-INSTANCE=3
-./dmtest oa Device.LocalAgent.Controller.${INSTANCE}.MTP.
-./dmtest sv Device.LocalAgent.Controller.${INSTANCE}.MTP.1.Protocol MQTT
-./dmtest sv Device.LocalAgent.Controller.${INSTANCE}.MTP.1.MQTT.Topic axact-agent-topic
-./dmtest sv Device.LocalAgent.Controller.${INSTANCE}.MTP.1.Enable 1
-./dmtest sv Device.LocalAgent.Controller.${INSTANCE}.Enable 1
+CLIENT=`./dmtest oa Device.MQTT.Client. | grep 'Instance .* was created for object' | egrep -o '[0-9]{1,4}' | head -1`
+./dmtest sv Device.MQTT.Client.${CLIENT}.BrokerAddress home.kempmobil.de
+./dmtest sv Device.MQTT.Client.${CLIENT}.BrokerPort 8883
+./dmtest sv Device.MQTT.Client.${CLIENT}.Username usp-demo
+./dmtest sv Device.MQTT.Client.${CLIENT}.Password ${PASSWD}
+./dmtest sv Device.MQTT.Client.${CLIENT}.ProtocolVersion 5.0
+./dmtest sv Device.MQTT.Client.${CLIENT}.ClientID axact-demo
+./dmtest sv Device.MQTT.Client.${CLIENT}.Enable 1
+SUBS=`./dmtest oa Device.MQTT.Client.${CLIENT}.Subscription. | grep 'Instance .* was created for object' | egrep -o '[0-9]{1,4}' | head -1`
+./dmtest sv Device.MQTT.Client.${CLIENT}.Subscription.${SUBS}.Topic axact-agent-topic
+./dmtest sv Device.MQTT.Client.${CLIENT}.Subscription.${SUBS}.Enable 1
 
-./dmtest oa Device.MQTT.Client.
-INSTANCE=1
-./dmtest sv Device.MQTT.Client.${INSTANCE}.BrokerAddress home.kempmobil.de
-./dmtest sv Device.MQTT.Client.${INSTANCE}.BrokerPort 8883
-./dmtest sv Device.MQTT.Client.${INSTANCE}.Username usp-demo
-./dmtest sv Device.MQTT.Client.${INSTANCE}.Password secret
-./dmtest sv Device.MQTT.Client.${INSTANCE}.Enable 1
+# Make sure to NOT append a '.' at the end of the reference (i.e. after ${CLIENT})!
+./dmtest sv Device.LocalAgent.MTP.2.MQTT.Reference Device.MQTT.Client.${CLIENT}
+./dmtest sv Device.LocalAgent.MTP.2.MQTT.ResponseTopicConfigured axact-response-topic
+
+CTRL=`./dmtest oa Device.LocalAgent.Controller. | grep 'Instance .* was created for object' | egrep -o '[0-9]{1,4}' | head -1`
+./dmtest sv Device.LocalAgent.Controller.${CTRL}.Enable 1
+MTP=`./dmtest oa Device.LocalAgent.Controller.${CTRL}.MTP. | grep 'Instance .* was created for object' | egrep -o '[0-9]{1,4}' | head -1`
+./dmtest sv Device.LocalAgent.Controller.${CTRL}.MTP.${MTP}.Protocol MQTT
+./dmtest sv Device.LocalAgent.Controller.${CTRL}.MTP.${MTP}.Enable 1
+./dmtest sv Device.LocalAgent.Controller.${CTRL}.MTP.${MTP}.MQTT.Reference Device.MQTT.Client.${CLIENT}
 
