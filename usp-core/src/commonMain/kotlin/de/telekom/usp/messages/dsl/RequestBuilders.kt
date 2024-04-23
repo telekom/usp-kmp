@@ -207,12 +207,12 @@ abstract class PathRequestBuilder internal constructor(type: Header.MsgType) :
     /**
      * Adds the specified path o this request
      */
-    fun addPath(vararg paths: String) = paths.forEach { _paths.add(Path(it)) }
+    fun paths(vararg paths: String) = paths.forEach { _paths.add(Path(it)) }
 
     /**
      * Adds the specified path o this request
      */
-    fun addPath(vararg paths: Path) = paths.forEach { _paths.add(it) }
+    fun paths(vararg paths: Path) = paths.forEach { _paths.add(it) }
 }
 
 class GetRequestBuilder internal constructor() : PathRequestBuilder(Header.MsgType.GET) {
@@ -264,7 +264,7 @@ class SetRequestBuilder internal constructor() : RequestMessageBuilder(Header.Ms
 
     var allowPartial = true
 
-    fun addPath(path: String, init: ParamSettingsBuilder.() -> Unit) {
+    fun path(path: String, init: ParamSettingsBuilder.() -> Unit) {
         addBuilder(ParamSettingsBuilder(path), paramSettingsBuilder, init)
     }
 
@@ -284,11 +284,11 @@ class AddRequestBuilder internal constructor() : RequestMessageBuilder(Header.Ms
 
     var allowPartial = true
 
-    fun addPath(path: Path, init: ParamSettingsBuilder.() -> Unit) {
+    fun path(path: Path, init: ParamSettingsBuilder.() -> Unit) {
         addBuilder(ParamSettingsBuilder(path.toString()), paramSettingsBuilder, init)
     }
 
-    fun addPath(path: String, init: ParamSettingsBuilder.() -> Unit) {
+    fun path(path: String, init: ParamSettingsBuilder.() -> Unit) {
         addBuilder(ParamSettingsBuilder(path), paramSettingsBuilder, init)
     }
 

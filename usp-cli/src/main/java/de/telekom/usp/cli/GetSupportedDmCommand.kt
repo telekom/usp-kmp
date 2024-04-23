@@ -45,7 +45,7 @@ class GetSupportedDmCommand :
 
     private fun createRequest(): Msg {
         return GetSupportedDm {
-            addPath(*this@GetSupportedDmCommand.paths.toTypedArray())
+            paths(*this@GetSupportedDmCommand.paths.toTypedArray())
             firstLevelOnly = isFirstLevelOnly
             returnCommands = !isSkipCommands
             returnEvents = !isSkipEvents

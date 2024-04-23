@@ -26,7 +26,7 @@ class RequestBuildersTest {
     fun `create Get message`() {
         val get = Get {
             maxDepth = 42
-            addPath(*samplePaths)
+            paths(*samplePaths)
         }
 
         assertMessageType(Header.MsgType.GET, get)
@@ -39,7 +39,7 @@ class RequestBuildersTest {
     fun `create Set message`() {
         val set = Set {
             allowPartial = false
-            addPath(samplePaths[0]) {
+            path(samplePaths[0]) {
                 params["param1"] = "value1" required true
             }
         }
@@ -56,7 +56,7 @@ class RequestBuildersTest {
     fun `create Add message`() {
         val add = Add {
             allowPartial = false
-            addPath(samplePaths[0]) {
+            path(samplePaths[0]) {
                 params["param1"] = "value1" required true
             }
         }
@@ -73,7 +73,7 @@ class RequestBuildersTest {
     fun `create Delete message`() {
         val delete = Delete {
             allowPartial = false
-            addPath(samplePaths[0])
+            paths(samplePaths[0])
         }
 
         assertMessageType(Header.MsgType.DELETE, delete)
@@ -86,7 +86,7 @@ class RequestBuildersTest {
     fun `create Register message`() {
         val register = Register {
             allowPartial = false
-            addPath(samplePaths[0])
+            paths(samplePaths[0])
         }
 
         assertMessageType(Header.MsgType.REGISTER, register)
@@ -98,7 +98,7 @@ class RequestBuildersTest {
     @Test
     fun `create Deregister message`() {
         val deregister = Deregister {
-            addPath(samplePaths[0])
+            paths(samplePaths[0])
         }
 
         assertMessageType(Header.MsgType.DEREGISTER, deregister)
@@ -287,7 +287,7 @@ class RequestBuildersTest {
     fun `create GetInstances message`() {
         val getInstances = GetInstances {
             firstLevelOnly = false
-            addPath(*samplePaths)
+            paths(*samplePaths)
         }
 
         assertMessageType(Header.MsgType.GET_INSTANCES, getInstances)

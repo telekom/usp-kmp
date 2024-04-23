@@ -31,7 +31,7 @@ class GetCommand : AbstractCommand("get", "Send a get message") {
     private fun createRequest(): Msg {
         return Get {
             maxDepth = depth
-            addPath(*this@GetCommand.paths.toTypedArray())
+            paths(*this@GetCommand.paths.toTypedArray())
         }
     }
 

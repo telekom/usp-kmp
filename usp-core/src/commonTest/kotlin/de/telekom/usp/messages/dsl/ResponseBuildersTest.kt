@@ -23,7 +23,7 @@ class ResponseBuildersTest {
     @Test
     fun `create GetResp message`() {
         val resp = GetResp("id-1") {
-            addResult("Device.") {
+            result("Device.") {
                 addResolvedPath("Device.WiFi.") {
                     params["abc"] = "123"
                     params["def"] = "456"
@@ -54,7 +54,7 @@ class ResponseBuildersTest {
     @Test
     fun `create GetSupportedDMResp message`() {
         val resp = GetSupportedDMResp("msg-1") {
-            addResult("Device.Wifi.", "urn:broadband-forum-org:tr-181-2-12-0") {
+            result("Device.Wifi.", "urn:broadband-forum-org:tr-181-2-12-0") {
                 addObject("Device.Wifi.ResetCounter", ObjAccessType.OBJ_ADD_ONLY, true) {
                     addCommand("cmd-1", CmdType.CMD_SYNC) {
                         inputArgs.add("cmd-input")
@@ -112,7 +112,7 @@ class ResponseBuildersTest {
     @Test
     fun `create GetInstancesResp message`() {
         val resp = GetInstancesResp("42") {
-            addResult("Device.Wifi.") {
+            result("Device.Wifi.") {
                 addCurrInstance("Relative.") {
                     uniqueKeys["key-1"] = "value-1"
                 }
@@ -139,7 +139,7 @@ class ResponseBuildersTest {
     @Test
     fun `create SetResp message`() {
         val resp = SetResp("set-1") {
-            addResult("Device.") {
+            result("Device.") {
                 success {
                     addInstance("Device.Wifi.") {
                         params["param1"] = "value1"
@@ -147,7 +147,7 @@ class ResponseBuildersTest {
                     }
                 }
             }
-            addResult("Device.NAT.") {
+            result("Device.NAT.") {
                 failure(MessageNotSupported) {
                     addInstance("Device.Wifi.") {
                         addError("param-1", RequestDenied)
@@ -187,13 +187,13 @@ class ResponseBuildersTest {
     @Test
     fun `create AddResp message`() {
         val resp = AddResp("add-1") {
-            addResult("Device.") {
+            result("Device.") {
                 success("Device.WiFi.") {
                     uniqueKeys["created"] = "yes"
                     addError("error-1", RequestDenied)
                 }
             }
-            addResult("Device.NAT.") {
+            result("Device.NAT.") {
                 failure(MessageNotSupported)
             }
         }
@@ -223,13 +223,13 @@ class ResponseBuildersTest {
     @Test
     fun `create DeleteResp message`() {
         val resp = DeleteResp("del-1") {
-            addResult("Device.") {
+            result("Device.") {
                 success("Device.Wifi.") {
                     addPath("Device.Wifi.1.")
                     addError("Device.Wifi.1.", ParameterActionFailed)
                 }
             }
-            addResult("Device.NAT.") {
+            result("Device.NAT.") {
                 failure(InvalidType)
             }
         }
@@ -257,13 +257,13 @@ class ResponseBuildersTest {
     @Test
     fun `create OperateResp message`() {
         val resp = OperateResp("oper-1") {
-            addResult("Device.SelfTestDiagnostics()") {
+            result("Device.SelfTestDiagnostics()") {
                 requestObjectPath("Device.LocalAgent.Request.1.")
             }
-            addResult("Device.WiFi.") {
+            result("Device.WiFi.") {
                 commandFailure(ParameterActionFailed)
             }
-            addResult("Device.Network.") {
+            result("Device.Network.") {
                 requestedOutputArgs["test"] = "123"
             }
         }
@@ -308,10 +308,10 @@ class ResponseBuildersTest {
     @Test
     fun `create RegisterResp message`() {
         val resp = RegisterResp("resp-1") {
-            addResult("Device.") {
+            result("Device.") {
                 registeredPath("Device.Network.")
             }
-            addResult("Device.WiFi.") {
+            result("Device.WiFi.") {
                 failure(ParameterActionFailed)
             }
         }
@@ -337,11 +337,11 @@ class ResponseBuildersTest {
     @Test
     fun `create DeregisterResp message`() {
         val resp = DeregisterResp("de-1") {
-            addResult("Device.") {
+            result("Device.") {
                 addDeregisteredPath("Device.Network.")
                 addDeregisteredPath("Device.WiFi.")
             }
-            addResult("Device.NAT.") {
+            result("Device.NAT.") {
                 failure(ParameterActionFailed)
             }
         }

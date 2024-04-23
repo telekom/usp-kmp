@@ -29,7 +29,7 @@ class DeleteCommand : AbstractCommand("delete", "Send a delete message") {
     private fun createRequest(): Msg {
         return Delete {
             allowPartial = isAllowPartial
-            addPath(*this@DeleteCommand.paths.toTypedArray())
+            paths(*this@DeleteCommand.paths.toTypedArray())
         }
     }
 

@@ -29,7 +29,7 @@ class GetInstancesCommand : AbstractCommand("get_instances", "Send a get instanc
 
     private fun createRequest(): Msg {
         return GetInstances {
-            addPath(*this@GetInstancesCommand.paths.toTypedArray())
+            paths(*this@GetInstancesCommand.paths.toTypedArray())
             this.firstLevelOnly = isFirstLevelOnly
         }
     }

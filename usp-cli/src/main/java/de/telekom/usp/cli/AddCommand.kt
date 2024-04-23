@@ -39,13 +39,9 @@ class AddCommand : AbstractCommand("add", "Send an add message") {
 
         return Add {
             allowPartial = isAllowPartial
-            addPath(path) {
-                required.forEach { param ->
-                    params[param.key] = param.value required true
-                }
-                values.forEach { param ->
-                    params[param.key] = param.value required false
-                }
+            path(path) {
+                params.putAll(required.map { it.key to (it.value required true) })
+                params.putAll(values.map { it.key to (it.value required false) })
             }
         }
     }

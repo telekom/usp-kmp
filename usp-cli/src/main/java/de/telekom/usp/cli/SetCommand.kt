@@ -39,13 +39,9 @@ class SetCommand : AbstractCommand("set", "Send a set message") {
 
         return Set {
             allowPartial = isAllowPartial
-            addPath(path) {
-                required.forEach { param ->
-                    params[param.key] = param.value required true
-                }
-                values.forEach { param ->
-                    params[param.key] = param.value required false
-                }
+            path(path) {
+                params.putAll(required.map { it.key to (it.value required true) })
+                params.putAll(values.map { it.key to (it.value required false) })
             }
         }
     }
