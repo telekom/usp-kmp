@@ -19,7 +19,7 @@ INSTANCE=`./dmtest oa Device.LocalAgent.Controller. | grep 'Instance .* was crea
 # ------- MQTT CONFIGURATION -----------------------------------------------------------------------
 CLIENT=`./dmtest oa Device.MQTT.Client. | grep 'Instance .* was created for object' | egrep -o '[0-9]{1,4}' | head -1`
 ./dmtest sv Device.MQTT.Client.${CLIENT}.BrokerAddress home.kempmobil.de
-./dmtest sv Device.MQTT.Client.${CLIENT}.BrokerPort 8883
+./dmtest sv Device.MQTT.Client.${CLIENT}.BrokerPort 1883
 ./dmtest sv Device.MQTT.Client.${CLIENT}.Username usp-demo
 ./dmtest sv Device.MQTT.Client.${CLIENT}.Password ${PASSWD}
 ./dmtest sv Device.MQTT.Client.${CLIENT}.ProtocolVersion 5.0
