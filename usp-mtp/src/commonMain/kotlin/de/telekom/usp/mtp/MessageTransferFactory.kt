@@ -1,34 +1,44 @@
 package de.telekom.usp.mtp
 
 import de.telekom.usp.EndpointIdentifier
+import de.telekom.usp.mtp.MessageTransferProtocol.MQTT
+import de.telekom.usp.mtp.MessageTransferProtocol.WEB_SOCKET
+import de.telekom.usp.mtp.mqtt.SimpleTopicProvider
+import de.telekom.usp.toEndpoint
+import mqtt.MQTTVersion
 import socket.tls.TLSClientSettings
 
 class MessageTransferFactory {
 
     fun create(config: MessageTransferConfig, debugMode: Boolean = false): MessageTransfer {
         return when (config.mtp) {
-            MessageTransferProtocol.WEB_SOCKET -> {
+            WEB_SOCKET -> {
                 config.createWebSocket(config.webSocketConfig!!, debugMode)
             }
 
-            MessageTransferProtocol.MQTT -> {
+            MQTT -> {
                 config.createMqtt(config.mqttConfig!!)
             }
 
-            else -> throw MessageTransferFactoryException("MTP ${config.mtp} not supported")
+            else -> throw MessageTransferFactoryException(
+                "MTP ${config.mtp} not supported, " +
+                        "possible values: $WEB_SOCKET or $MQTT"
+            )
         }
     }
 
     private fun MessageTransferConfig.createMqtt(config: MqttConfig): MessageTransfer {
+        val from = fromEndpointId.toEndpoint()
+
         return MqttTransfer(
             host = config.host,
             port = config.port,
             user = config.user,
             password = config.password,
             tls = if (config.useTls) TLSClientSettings() else null,
-            from = EndpointIdentifier(fromEndpointId),
-            subscribeTopics = mutableListOf(config.topic),
-            replyToTopic = config.replyToTopic
+            from = from,
+            topicProvider = SimpleTopicProvider(from, toEndpointId.toEndpoint()),
+            mqttVersion = MQTTVersion.MQTT5
         )
     }
 

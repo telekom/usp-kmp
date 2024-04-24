@@ -24,8 +24,6 @@ class MessageTransferConfigTest {
                 user = "demo-user",
                 password = "secret",
                 useTls = true,
-                topic = "usp-demo-topic",
-                replyToTopic = "reply-to"
             )
         )
         val json = Json {

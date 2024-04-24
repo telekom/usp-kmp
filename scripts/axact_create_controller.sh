@@ -26,12 +26,12 @@ CLIENT=`./dmtest oa Device.MQTT.Client. | grep 'Instance .* was created for obje
 ./dmtest sv Device.MQTT.Client.${CLIENT}.ClientID axact-demo
 ./dmtest sv Device.MQTT.Client.${CLIENT}.Enable 1
 SUBS=`./dmtest oa Device.MQTT.Client.${CLIENT}.Subscription. | grep 'Instance .* was created for object' | egrep -o '[0-9]{1,4}' | head -1`
-./dmtest sv Device.MQTT.Client.${CLIENT}.Subscription.${SUBS}.Topic axact-agent-topic
+./dmtest sv Device.MQTT.Client.${CLIENT}.Subscription.${SUBS}.Topic usp/agents/proto::AXACT
 ./dmtest sv Device.MQTT.Client.${CLIENT}.Subscription.${SUBS}.Enable 1
 
 # Make sure to NOT append a '.' at the end of the reference (i.e. after ${CLIENT})!
 ./dmtest sv Device.LocalAgent.MTP.2.MQTT.Reference Device.MQTT.Client.${CLIENT}
-./dmtest sv Device.LocalAgent.MTP.2.MQTT.ResponseTopicConfigured axact-response-topic
+./dmtest sv Device.LocalAgent.MTP.2.MQTT.ResponseTopicConfigured usp/agents/proto::AXACT
 
 CTRL=`./dmtest oa Device.LocalAgent.Controller. | grep 'Instance .* was created for object' | egrep -o '[0-9]{1,4}' | head -1`
 ./dmtest sv Device.LocalAgent.Controller.${CTRL}.Enable 1

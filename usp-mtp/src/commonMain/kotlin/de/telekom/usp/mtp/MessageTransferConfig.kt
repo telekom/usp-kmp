@@ -28,8 +28,6 @@ data class MqttConfig(
     val user: String,
     val password: String,
     val useTls: Boolean = true,
-    val topic: String,
-    val replyToTopic: String,
 )
 
 @Serializable

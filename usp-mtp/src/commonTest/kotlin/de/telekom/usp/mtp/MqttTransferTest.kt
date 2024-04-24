@@ -1,6 +1,7 @@
 package de.telekom.usp.mtp
 
 import de.telekom.usp.EndpointIdentifier
+import de.telekom.usp.mtp.mqtt.SimpleTopicProvider
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
@@ -20,6 +21,7 @@ class MqttTransferTest {
     fun `connection to server`() = runTest {
         val passwd = readPassword()
         val from = EndpointIdentifier("proto::usp-demo")
+        val to = EndpointIdentifier("proto::AXACT")
         val transfer = MqttTransfer(
             host = "home.kempmobil.de",
             port = 8883,
@@ -27,8 +29,7 @@ class MqttTransferTest {
             password = passwd,
             tls = TLSClientSettings(),
             from = from,
-            subscribeTopics = mutableListOf("usp-demo-topic2"),
-            replyToTopic = "test"
+            topicProvider = SimpleTopicProvider(from, to)
         )
         val eventCollector = launch {
             transfer.events.collect {
