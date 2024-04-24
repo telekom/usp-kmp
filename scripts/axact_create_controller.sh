@@ -10,7 +10,7 @@ PASSWD=`cat ../usp-library/mqtt-passwd`
 # ------- WEB SOCKET CONFIGURATION -----------------------------------------------------------------
 INSTANCE=`./dmtest oa Device.LocalAgent.Controller. | grep 'Instance .* was created for object' | egrep -o '[0-9]{1,4}' | head -1`
 ./dmtest sv Device.LocalAgent.Controller.${INSTANCE}.Alias usp-demo
-./dmtest sv Device.LocalAgent.Controller.${INSTANCE}.EndpointID proto::usp-demo
+./dmtest sv Device.LocalAgent.Controller.${INSTANCE}.EndpointID proto::usp-ws-demo
 ./dmtest sv Device.LocalAgent.Controller.${INSTANCE}.Enable 1
 # Disable also encryption for testing purposes:
 ./dmtest sv Device.LocalAgent.MTP.${INSTANCE}.WebSocket.EnableEncryption 0
@@ -35,6 +35,7 @@ SUBS=`./dmtest oa Device.MQTT.Client.${CLIENT}.Subscription. | grep 'Instance .*
 
 CTRL=`./dmtest oa Device.LocalAgent.Controller. | grep 'Instance .* was created for object' | egrep -o '[0-9]{1,4}' | head -1`
 ./dmtest sv Device.LocalAgent.Controller.${CTRL}.Enable 1
+./dmtest sv Device.LocalAgent.Controller.${CTRL}.EndpointID proto::usp-mqtt-demo
 MTP=`./dmtest oa Device.LocalAgent.Controller.${CTRL}.MTP. | grep 'Instance .* was created for object' | egrep -o '[0-9]{1,4}' | head -1`
 ./dmtest sv Device.LocalAgent.Controller.${CTRL}.MTP.${MTP}.Protocol MQTT
 ./dmtest sv Device.LocalAgent.Controller.${CTRL}.MTP.${MTP}.Enable 1
