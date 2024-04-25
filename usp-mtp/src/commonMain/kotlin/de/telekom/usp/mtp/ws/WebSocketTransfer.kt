@@ -1,8 +1,9 @@
-package de.telekom.usp.mtp
+package de.telekom.usp.mtp.ws
 
 import co.touchlab.kermit.Logger
 import de.telekom.usp.EndpointIdentifier
-import de.telekom.usp.mtp.util.KtorKermitBridge
+import de.telekom.usp.mtp.AbstractMessageTransfer
+import de.telekom.usp.mtp.MessageTransferEvent
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.HttpClientEngine
 import io.ktor.client.engine.cio.CIO

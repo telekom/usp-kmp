@@ -1,4 +1,4 @@
-package de.telekom.usp.mtp.util
+package de.telekom.usp.mtp.ws
 
 import co.touchlab.kermit.Logger
 import io.ktor.client.plugins.logging.LogLevel

@@ -3,10 +3,10 @@ package de.telekom.usp.mtp
 import de.telekom.usp.EndpointIdentifier
 import de.telekom.usp.mtp.MessageTransferProtocol.MQTT
 import de.telekom.usp.mtp.MessageTransferProtocol.WEB_SOCKET
-import de.telekom.usp.mtp.mqtt.SimpleTopicProvider
+import de.telekom.usp.mtp.mqtt.MqttTransfer
+import de.telekom.usp.mtp.mqtt.SimpleNameProvider
+import de.telekom.usp.mtp.ws.WebSocketTransfer
 import de.telekom.usp.toEndpoint
-import mqtt.MQTTVersion
-import socket.tls.TLSClientSettings
 
 class MessageTransferFactory {
 
@@ -35,10 +35,8 @@ class MessageTransferFactory {
             port = config.port,
             user = config.user,
             password = config.password,
-            tls = if (config.useTls) TLSClientSettings() else null,
-            from = from,
-            topicProvider = SimpleTopicProvider(from, toEndpointId.toEndpoint()),
-            mqttVersion = MQTTVersion.MQTT5
+            useTls = config.useTls,
+            nameProvider = SimpleNameProvider(from, toEndpointId.toEndpoint())
         )
     }
 

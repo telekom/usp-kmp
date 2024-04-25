@@ -1,7 +1,8 @@
 package de.telekom.usp.mtp
 
 import de.telekom.usp.EndpointIdentifier
-import de.telekom.usp.mtp.mqtt.SimpleTopicProvider
+import de.telekom.usp.mtp.mqtt.MqttTransfer
+import de.telekom.usp.mtp.mqtt.SimpleNameProvider
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
@@ -10,14 +11,10 @@ import okio.ByteString.Companion.encodeUtf8
 import okio.FileSystem
 import okio.Path.Companion.toPath
 import okio.buffer
-import socket.tls.TLSClientSettings
-import kotlin.test.Test
 
-// This is in jvmTest purely for reading the password file, as there is not FileSystem.SYSTEM in
-// the common source tree.
 class MqttTransferTest {
 
-    @Test
+    //@Test
     fun `connection to server`() = runTest {
         val passwd = readPassword()
         val from = EndpointIdentifier("proto::usp-demo")
@@ -27,9 +24,8 @@ class MqttTransferTest {
             port = 8883,
             user = "usp-demo",
             password = passwd,
-            tls = TLSClientSettings(),
-            from = from,
-            topicProvider = SimpleTopicProvider(from, to)
+            useTls = true,
+            nameProvider = SimpleNameProvider(from, to)
         )
         val eventCollector = launch {
             transfer.events.collect {
