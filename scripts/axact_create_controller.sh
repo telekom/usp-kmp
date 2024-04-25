@@ -40,4 +40,8 @@ MTP=`./dmtest oa Device.LocalAgent.Controller.${CTRL}.MTP. | grep 'Instance .* w
 ./dmtest sv Device.LocalAgent.Controller.${CTRL}.MTP.${MTP}.Protocol MQTT
 ./dmtest sv Device.LocalAgent.Controller.${CTRL}.MTP.${MTP}.Enable 1
 ./dmtest sv Device.LocalAgent.Controller.${CTRL}.MTP.${MTP}.MQTT.Reference Device.MQTT.Client.${CLIENT}
+# Important: this defines the topic the agent will reply to as the responseInfo value of the MQTT publish
+# paket is ignored by this agent!
+./dmtest sv Device.LocalAgent.Controller.${CTRL}.MTP.${MTP}.MQTT.Topic usp/controllers/proto::usp-mqtt-demo
+
 

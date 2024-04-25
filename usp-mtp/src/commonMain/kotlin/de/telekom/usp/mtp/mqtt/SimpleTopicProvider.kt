@@ -15,9 +15,7 @@ class SimpleTopicProvider(
 ) : MqttTopicProvider {
 
     override val ownTopic: String
-        // TODO: how to configure the response topic in AXACT client so that we can use this value here?
-//        get() = "usp/controllers/${localEndpoint.toShortString()}"
-        get() = localEndpoint.toShortString()
+        get() = "usp/controllers/${localEndpoint.toShortString()}"
 
     override val remoteTopic: String
         get() {
