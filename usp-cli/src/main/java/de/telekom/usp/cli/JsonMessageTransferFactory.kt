@@ -1,16 +1,41 @@
-package de.telekom.usp.mtp
+package de.telekom.usp.cli
 
+import com.github.ajalt.clikt.core.FileNotFound
+import com.github.ajalt.clikt.core.InvalidFileFormat
 import de.telekom.usp.EndpointIdentifier
+import de.telekom.usp.mtp.MessageTransfer
+import de.telekom.usp.mtp.MessageTransferFactory
 import de.telekom.usp.mtp.MessageTransferProtocol.MQTT
 import de.telekom.usp.mtp.MessageTransferProtocol.WEB_SOCKET
 import de.telekom.usp.mtp.mqtt.MqttTransfer
 import de.telekom.usp.mtp.mqtt.SimpleNameProvider
 import de.telekom.usp.mtp.ws.WebSocketTransfer
 import de.telekom.usp.toEndpoint
+import kotlinx.serialization.ExperimentalSerializationApi
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.okio.decodeFromBufferedSource
+import okio.FileSystem
+import okio.Path
+import okio.buffer
+import okio.use
 
-class MessageTransferFactory {
+class JsonMessageTransferFactory(
+    private val configPath: Path,
+    private val debugMode: Boolean = false
+) :
+    MessageTransferFactory {
 
-    fun create(config: MessageTransferConfig, debugMode: Boolean = false): MessageTransfer {
+    val localEndpoint
+        get() = config.localEndpoint
+
+    val remoteEndpoint
+        get() = config.remoteEndpoint
+
+    private lateinit var config: MessageTransferConfig
+
+    override fun create(): MessageTransfer {
+        readConfig()
+
         return when (config.mtp) {
             WEB_SOCKET -> {
                 config.createWebSocket(config.webSocketConfig!!, debugMode)
@@ -24,6 +49,21 @@ class MessageTransferFactory {
                 "MTP ${config.mtp} not supported, " +
                         "possible values: $WEB_SOCKET or $MQTT"
             )
+        }
+    }
+
+    @OptIn(ExperimentalSerializationApi::class)
+    private fun readConfig() {
+        if (!FileSystem.SYSTEM.exists(configPath)) {
+            throw FileNotFound("Missing configuration file: '$configPath'")
+        }
+
+        try {
+            FileSystem.SYSTEM.source(configPath).buffer().use { source ->
+                config = Json.decodeFromBufferedSource<MessageTransferConfig>(source)
+            }
+        } catch (ex: Exception) {
+            throw InvalidFileFormat(configPath.toString(), "${ex.message}")
         }
     }
 

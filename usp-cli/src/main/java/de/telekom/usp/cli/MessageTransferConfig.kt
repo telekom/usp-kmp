@@ -1,6 +1,7 @@
-package de.telekom.usp.mtp
+package de.telekom.usp.cli
 
 import de.telekom.usp.EndpointIdentifier
+import de.telekom.usp.mtp.MessageTransferProtocol
 import de.telekom.usp.toEndpoint
 import kotlinx.serialization.Serializable
 import kotlin.time.Duration

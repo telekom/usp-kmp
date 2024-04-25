@@ -4,8 +4,6 @@ import co.touchlab.kermit.LogWriter
 import co.touchlab.kermit.Logger
 import co.touchlab.kermit.Severity
 import com.github.ajalt.clikt.core.CliktCommand
-import com.github.ajalt.clikt.core.FileNotFound
-import com.github.ajalt.clikt.core.InvalidFileFormat
 import com.github.ajalt.clikt.core.subcommands
 import com.github.ajalt.clikt.parameters.options.default
 import com.github.ajalt.clikt.parameters.options.flag
@@ -15,16 +13,9 @@ import com.github.ajalt.clikt.parameters.types.path
 import de.telekom.usp.e2e.MessageExchange
 import de.telekom.usp.messages.MessageConverter
 import de.telekom.usp.messages.MessageConverterImpl
-import de.telekom.usp.mtp.MessageTransferConfig
-import de.telekom.usp.mtp.MessageTransferFactory
-import kotlinx.serialization.ExperimentalSerializationApi
-import kotlinx.serialization.json.Json
-import kotlinx.serialization.json.okio.decodeFromBufferedSource
-import okio.FileSystem
+import okio.Path
 import okio.Path.Companion.toOkioPath
 import okio.Path.Companion.toPath
-import okio.buffer
-import okio.use
 import kotlin.time.Duration.Companion.seconds
 
 private val Commands = listOf(
@@ -46,6 +37,9 @@ class Main : CliktCommand(invokeWithoutSubcommand = true, printHelpOnEmptyArgs =
         canBeDir = false,
         mustBeReadable = true
     )
+
+    private val configPath: Path
+        get() = configFile?.toOkioPath() ?: "config.json".toPath()
 
     private val timeout by option(
         "-t", "--timeout", help = "Timeout in seconds to wait (default 10 seconds)"
@@ -81,32 +75,12 @@ class Main : CliktCommand(invokeWithoutSubcommand = true, printHelpOnEmptyArgs =
         Logger.setLogWriters(logWriter)
     }
 
-    @OptIn(ExperimentalSerializationApi::class)
-    private fun readConfig(): MessageTransferConfig {
-        val config = if (configFile != null) {
-            configFile!!.toOkioPath()
-        } else {
-            "config.json".toPath()
-        }
-        if (!FileSystem.SYSTEM.exists(config)) {
-            throw FileNotFound("Missing configuration file: '$config'")
-        }
-
-        try {
-            FileSystem.SYSTEM.source(config).buffer().use { source ->
-                return Json.decodeFromBufferedSource<MessageTransferConfig>(source)
-            }
-        } catch (ex: Exception) {
-            throw InvalidFileFormat(config.toString(), "${ex.message}")
-        }
-    }
-
     override fun run() {
         configureLogging()
-        val config = readConfig()
-        val transfer = MessageTransferFactory().create(config, isDebugLevel || isVerboseLevel)
+        val factory = JsonMessageTransferFactory(configPath, isDebugLevel || isVerboseLevel)
+        val transfer = factory.create()
         val converter: MessageConverter =
-            MessageConverterImpl(config.localEndpoint, config.remoteEndpoint)
+            MessageConverterImpl(factory.localEndpoint, factory.remoteEndpoint)
         val exchange = MessageExchange(converter = converter, transfer = transfer)
 
         Logger.d { "Created $transfer" }

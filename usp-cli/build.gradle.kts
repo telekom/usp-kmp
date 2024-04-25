@@ -2,6 +2,7 @@
 plugins {
     id("application")
     alias(libs.plugins.org.jetbrains.kotlin.jvm)
+    alias(libs.plugins.kotlinSerialization)
 }
 
 java {
