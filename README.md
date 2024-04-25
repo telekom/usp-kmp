@@ -66,7 +66,13 @@ It also contains the auto-generated proto buffer classes for message exchange in
 `de.telekom.usp.messages.proto`. Additionally `de.telekom.usp.messages.dsl` provides a Kotlin DSL
 for creation of USP `Msg` instances.
 
+### Command Line Interface
+
+The project **usp-cli** contains a simple command line interface, mainly aimed at testing and basic
+agent manipulation.
+
 ## References
+
 - [The User Services Platform Specification](https://usp.technology/specification/index.htm)
 - [TR-369.org](https://tr369.org/)
 - [Understanding TR-369 USP Message Types](https://tr369.org/tr-369-usp-message-types/)
