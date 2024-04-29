@@ -30,12 +30,12 @@ kotlin {
         commonMain.dependencies {
             implementation(project(":usp-core"))
             implementation(project(":usp-records"))
-            implementation(libs.kotlinx.datetime)
             implementation(libs.kotlinx.serialization.json)
             implementation(libs.kermit)
             implementation(libs.kmqtt.common)
             implementation(libs.kmqtt.client)
             implementation(libs.okio)
+            api(libs.kotlinx.datetime)
             api(libs.wire.runtime)
             api(libs.kotlinx.coroutines.core)
             api(libs.ktor.client.core)

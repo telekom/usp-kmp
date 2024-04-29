@@ -32,7 +32,7 @@ kotlin {
         commonMain {
             dependencies {
                 implementation(project(":usp-core"))
-                implementation(libs.kotlinx.datetime)
+                api(libs.kotlinx.datetime)
                 implementation(libs.kotlinx.coroutines.core)
                 implementation(libs.kotlinx.serialization.json)
                 implementation(libs.kotlinx.serialization.json.okio)
