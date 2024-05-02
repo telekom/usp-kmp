@@ -74,7 +74,10 @@ class MessageExchange(
     /** Allows waiting for a connection, see [waitForConnecting] */
     private var connectionState = MutableStateFlow(ConnectionState.DISCONNECTED)
 
+    private var isStarted = false
+
     fun start() {
+        isStarted = true
         jobs.add(scope.launch {
             converter.results.collect { result ->
                 handleDecoderResult(result)
@@ -91,6 +94,7 @@ class MessageExchange(
 
         scope.launch {
             connectionState.emit(ConnectionState.CONNECTING)
+            Logger.e { "Connecting to $transfer" }
             transfer.connect()
         }
     }
@@ -224,6 +228,9 @@ class MessageExchange(
         onResponse: ((T) -> Unit)?,
         retrieveResponse: (Msg) -> T
     ) {
+        if (!isStarted) {
+            Logger.e("You called sendRequest() before start(); this should not happen and will probably not work for MessageExchange!")
+        }
         waitForConnecting()
 
         if (connectionState.value == ConnectionState.CONNECTED) {
@@ -252,18 +259,22 @@ class MessageExchange(
     private suspend fun handleTransferEvent(event: MessageTransferEvent) {
         when (event) {
             is MessageTransferEvent.BytesReceived -> {
+                Logger.d { "Received ${event.bytes.size} bytes from $transfer" }
                 converter.next(event.bytes)
             }
 
             is MessageTransferEvent.Connected -> {
+                Logger.d { "Received connection event from $transfer" }
                 connectionState.emit(ConnectionState.CONNECTED)
             }
 
             is MessageTransferEvent.ConnectionFailed -> {
+                Logger.d { "Received connection failed from $transfer" }
                 connectionState.emit(ConnectionState.DISCONNECTED)
             }
 
             is MessageTransferEvent.Disconnected -> {
+                Logger.d { "Received disconnected from $transfer" }
                 connectionState.emit(ConnectionState.DISCONNECTED)
             }
         }
@@ -273,10 +284,12 @@ class MessageExchange(
      * Suspends execution until the connection state is not `CONNECTING`
      */
     private suspend fun waitForConnecting() {
+        Logger.d("Waiting for transfer connection to be established...")
         connectionState.first { it != ConnectionState.CONNECTING }
     }
 
     private suspend fun handleDecoderResult(result: MessageConversionResult) {
+        Logger.d { "Received message conversion result: $result" }
         when (result) {
             is MessageConversionResult.Message -> handleMessage(result)
             is MessageConversionResult.UspError -> handleUspError(result)
@@ -284,7 +297,7 @@ class MessageExchange(
             is MessageConversionResult.DecoderError -> handleDecoderError(result)
             is MessageConversionResult.SessionEstablished -> handleSessionEstablished(result)
             else -> {
-                Logger.d { "Ignoring decoder result $result for now..." }
+                Logger.w { "Ignoring decoder result $result for now..." }
             }
         }
     }

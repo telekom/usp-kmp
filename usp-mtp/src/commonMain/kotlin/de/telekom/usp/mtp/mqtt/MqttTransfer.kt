@@ -96,7 +96,8 @@ class MqttTransfer(
         if (!isConnected()) {
             receiverJob = scope.launch {
                 try {
-                    subscribe()
+                    subscribe()  // This will create the server connection!
+                    notifyConnect()
                     while (client.running) {
                         delay(pollingInterval)
                         client.step()
@@ -109,7 +110,7 @@ class MqttTransfer(
                     Logger.e(throwable = ex) { "Error handling MQTT socket connection" }
                 }
 
-                launchEmit(MessageTransferEvent.Disconnected(from = this@MqttTransfer))
+                notifyDisconnect()
             }
             senderJob = scope.launch {
                 inputBuffer.collect {
@@ -147,6 +148,18 @@ class MqttTransfer(
         }
     }
 
+    private suspend fun notifyConnect() {
+        Logger.d { "$this is connected to $host, notifying observers..." }
+        setConnected(true)
+        emit(MessageTransferEvent.Connected(to = this@MqttTransfer))
+    }
+
+    private suspend fun notifyDisconnect() {
+        Logger.d { "$this is disconnected from $host, notifying observers..." }
+        setConnected(false)
+        emit(MessageTransferEvent.Disconnected(from = this@MqttTransfer))
+    }
+
     private fun launchEmit(event: MessageTransferEvent) {
         scope.launch {
             emit(event)
@@ -171,13 +184,13 @@ class MqttTransfer(
         }
         // Subscribe to own topic and to the ones collected above:
         subscribe()
-
-        launchEmit(MessageTransferEvent.Connected(to = this@MqttTransfer))
     }
 
     private fun onDisconnected(disconnect: MQTTDisconnect?) {
         Logger.d { "Mqtt transfer disconnected: $disconnect" }
-        launchEmit(MessageTransferEvent.Disconnected(from = this@MqttTransfer))
+        scope.launch {
+            notifyDisconnect()
+        }
     }
 
     private fun publishReceived(publish: MQTTPublish) {
