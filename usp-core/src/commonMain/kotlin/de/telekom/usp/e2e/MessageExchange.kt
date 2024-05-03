@@ -49,6 +49,8 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
 import kotlin.jvm.JvmName
@@ -76,32 +78,48 @@ class MessageExchange(
 
     private var isStarted = false
 
-    fun start() {
-        isStarted = true
-        jobs.add(scope.launch {
-            converter.results.collect { result ->
-                handleDecoderResult(result)
-            }
-        })
-        jobs.add(scope.launch {
-            transfer.events.collect { event ->
-                handleTransferEvent(event)
-            }
-        })
-        jobs.add(scope.launch {
-            watchdog()
-        })
+    private val statusMutex = Mutex()
 
-        scope.launch {
-            connectionState.emit(ConnectionState.CONNECTING)
-            Logger.e { "Connecting to $transfer" }
-            transfer.connect()
+    suspend fun start() {
+        statusMutex.withLock {
+            if (isStarted) {
+                Logger.i("MessageExchange start() called on a started MessageExchange, ignoring request")
+                return
+            }
+
+            jobs.add(scope.launch {
+                converter.results.collect { result ->
+                    handleDecoderResult(result)
+                }
+            })
+            jobs.add(scope.launch {
+                transfer.events.collect { event ->
+                    handleTransferEvent(event)
+                }
+            })
+            jobs.add(scope.launch {
+                watchdog()
+            })
+
+            scope.launch {
+                connectionState.emit(ConnectionState.CONNECTING)
+                Logger.e { "Connecting to $transfer" }
+                transfer.connect()
+            }
+            isStarted = true
         }
     }
 
     suspend fun stop() {
-        jobs.forEach { it.cancelAndJoin() }
-        jobs.clear()
+        statusMutex.withLock {
+            jobs.forEach { it.cancelAndJoin() }
+            jobs.clear()
+            isStarted = false
+        }
+    }
+
+    suspend fun isStarted(): Boolean {
+        return statusMutex.withLock { isStarted }
     }
 
     @JvmName("sendGetRequest")
@@ -228,8 +246,8 @@ class MessageExchange(
         onResponse: ((T) -> Unit)?,
         retrieveResponse: (Msg) -> T
     ) {
-        if (!isStarted) {
-            Logger.e("You called sendRequest() before start(); this should not happen and will probably not work for MessageExchange!")
+        if (!isStarted()) {
+            throw IllegalStateException("MessageExchange not started, call start() before sending requests")
         }
         waitForConnecting()
 
