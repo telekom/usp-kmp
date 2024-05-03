@@ -5,7 +5,7 @@ data class Error(val code: Int, val name: String) {
     fun toPair() = code to name
 
     override fun toString(): String {
-        return "USP error $code ($name)"
+        return "$name ($code)"
     }
 
     companion object {
