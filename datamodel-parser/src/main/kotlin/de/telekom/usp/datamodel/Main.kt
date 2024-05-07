@@ -14,7 +14,7 @@ val DataTypeClassName = ClassName(PACKAGE_NAME, "DataType")
 
 fun main() {
     val parser = DataModelParser().parse()
-    val root = File(".", "../core/src/commonMain/kotlin")
+    val root = File(".", "../usp-core/src/commonMain/kotlin")
 
     createBaseClassesIn(root)
 
