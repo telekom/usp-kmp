@@ -13,7 +13,7 @@ public fun SELTPAttenuationCharacteristicsIndexAndTFlog(text: String):
 
 /**
  * # The paired frequency spacing index in the range [0:8191], and  # The transfer function log
- * value, i.e. [i, TFlog(i *   {{param|TFlogGroupSize}} * Df)], where the reference frequency spacing
+ * value, i.e. [i, TFlog(i *   {{param|TFlogGroupSize}} * Df)], where the reference frequency spacing  
  * Df = 4.3125 kHz, the index i valid range is 0 to 8191, and TFlog(i *   {{param|TFlogGroupSize}} *
  * Df) spans a range from +6.0 dB down to -96.2   dB with units of 0.1 dB.  Both values are represented
  * as unsignedInt.

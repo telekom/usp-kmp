@@ -17,27 +17,22 @@ public enum class RangingState(
      * indicates any state not described below
      */
     OTHER("Other", 1),
-
     /**
      * indicates that the CMTS has sent a ranging abort
      */
     ABORTED("Aborted", 2),
-
     /**
      * indicates that the CM ranging retry limit has exceeded
      */
     RETRIES_EXCEEDED("RetriesExceeded", 3),
-
     /**
      * indicates that the CMTS has sent a ranging success in the ranging response
      */
     SUCCESS("Success", 4),
-
     /**
      * indicates that the CMTS has sent a ranging continue in the ranging response
      */
     CONTINUE("Continue", 5),
-
     /**
      * indicates that the T4 timer expired on the CM
      */

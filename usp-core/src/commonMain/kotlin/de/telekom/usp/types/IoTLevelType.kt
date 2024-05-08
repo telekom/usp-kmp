@@ -31,7 +31,6 @@ public enum class IoTLevelType(
     RADIATION("Radiation"),
     SPEED("Speed"),
     TEMPERATURE("Temperature"),
-
     /**
      * Amount of space that an object or substance occupies
      */

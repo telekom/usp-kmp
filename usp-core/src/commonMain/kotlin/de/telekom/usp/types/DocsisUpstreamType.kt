@@ -15,22 +15,18 @@ public enum class DocsisUpstreamType(
      * Information not available
      */
     UNKNOWN("Unknown", 0),
-
     /**
      * Time Division Multiple Access
      */
     TDMA("TDMA", 1),
-
     /**
      * Advanced Time Division Multiple Access
      */
     ATDMA("ATDMA", 2),
-
     /**
      * Synchronous Code Division Multiple Access
      */
     SCDMA("SCDMA", 3),
-
     /**
      * Simultaneous support of TDMA and A-TDMA modes
      */

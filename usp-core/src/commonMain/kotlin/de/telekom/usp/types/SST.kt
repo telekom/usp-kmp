@@ -14,17 +14,14 @@ public enum class SST(
      * 5G Enhanced Mobile Broadband
      */
     E_MBB("eMBB"),
-
     /**
      * Ultra-Reliable Low Latency Communications
      */
     URLLC("URLLC"),
-
     /**
      * Massive IoT
      */
     MIO_T("MIoT"),
-
     /**
      * Vehicle to Everything
      */
