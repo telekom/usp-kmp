@@ -28,3 +28,5 @@ interface ResolvedPath : Path {
 fun ResolvedPath(text: String): ResolvedPath {
     return Path(text).asResolvedPath()
 }
+
+fun String.toResolvedPath() = ResolvedPath(this)

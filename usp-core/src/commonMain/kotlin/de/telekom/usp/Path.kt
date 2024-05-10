@@ -53,17 +53,36 @@ interface Path {
     val isResolved: Boolean
         get() = elements.isResolved()
 
+    /**
+     * Returns `true` if no path element can be appended to this path, i.e. when it is a parameter,
+     * a command or an event.
+     */
     val isTerminal: Boolean
         get() = last().isTerminal
 
+    /**
+     * Returns `true` when this path represents is a parameter
+     */
     val isParameter: Boolean
         get() = last() is PathElement.Parameter
 
+    /**
+     * Returns `true` when this path represents is a command
+     */
     val isCommand: Boolean
         get() = last() is PathElement.Command
 
+    /**
+     * Returns `true` when this path represents is an event
+     */
     val isEvent: Boolean
         get() = last() is PathElement.Event
+
+    /**
+     * Returns `true` when the last path element is an instance number, i.e. `Device.WiFi.AccessPoint.2.`
+     */
+    val isInstance: Boolean
+        get() = last().let { it is PathElement.Object && it.instance != null && it.instance > 0 }
 
     operator fun get(index: Int) = elements[index]
 
@@ -85,6 +104,16 @@ interface Path {
     }
 
     /**
+     * Determines whether the specified path is a direct instance object of the this. For example
+     * if this is `Device.WiFi.AccessPoint.` then this method returns `true`, if `child` is
+     * `Device.WiFi.AccessPoint.2.` and `false` for `Device.WiFi.AccessPoint.2.AssociatedDevice.1.`
+     * (because the later is not a direct child of `parent`).
+     */
+    fun isChildInstance(child: Path): Boolean {
+        return child.size == size + 1 && child.isInstance && child.startsWith(this)
+    }
+
+    /**
      * Determines whether this path starts with 'Device.', that is: if it is an absolute path.
      */
     fun startsWithDevice() = startsWith(Device)
@@ -103,6 +132,16 @@ fun Path(text: String): Path {
         throw IllegalArgumentException("Use SupportedDataModelPath(String) to create supported data model paths")
     }
     return path
+}
+
+fun String.toPath() = Path(this)
+
+fun String.toPathOrNull(): Path? {
+    return try {
+        Path(this)
+    } catch (ex: Exception) {
+        null
+    }
 }
 
 /**

@@ -6,6 +6,7 @@ import de.telekom.usp.IP
 import de.telekom.usp.Path
 import de.telekom.usp.PathElement
 import de.telekom.usp.ResolvedPath
+import de.telekom.usp.WiFi
 import kotlin.test.Test
 import kotlin.test.assertContains
 import kotlin.test.assertEquals
@@ -182,5 +183,15 @@ class PathParserTest {
         assertFailsWith<IllegalArgumentException> {
             Path("Device.WiFi.SSID.{i}.")
         }
+    }
+
+    @Test
+    fun `isInstanceOf returns correct results`() {
+        val parent = WiFi + "AccessPoint."
+        assertTrue(parent.isChildInstance(WiFi + "AccessPoint.2."))
+
+        assertFalse(parent.isChildInstance(Path("Device.Wifi.AccessPoint.*.")))
+        assertFalse(parent.isChildInstance(WiFi + "AccessPoint.1.AssociatedDevice.1."))
+        assertFalse(parent.isChildInstance(WiFi + "AccessPoint."))
     }
 }
