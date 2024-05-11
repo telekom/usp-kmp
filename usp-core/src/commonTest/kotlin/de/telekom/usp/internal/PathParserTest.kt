@@ -188,10 +188,11 @@ class PathParserTest {
     @Test
     fun `isInstanceOf returns correct results`() {
         val parent = WiFi + "AccessPoint."
-        assertTrue(parent.isChildInstance(WiFi + "AccessPoint.2."))
+        assertTrue((parent + "2.").isInstanceOf(parent))
 
-        assertFalse(parent.isChildInstance(Path("Device.Wifi.AccessPoint.*.")))
-        assertFalse(parent.isChildInstance(WiFi + "AccessPoint.1.AssociatedDevice.1."))
-        assertFalse(parent.isChildInstance(WiFi + "AccessPoint."))
+        assertFalse(parent.isInstanceOf(parent))
+        assertFalse((WiFi + "1.").isInstanceOf(parent))
+        assertFalse((parent + "1.AssociatedDevice.").isInstanceOf(parent))
+        assertFalse((parent + "1.AssociatedDevice.1.").isInstanceOf(parent))
     }
 }

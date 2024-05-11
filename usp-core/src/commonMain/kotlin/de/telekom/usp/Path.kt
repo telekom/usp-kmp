@@ -79,7 +79,8 @@ interface Path {
         get() = last() is PathElement.Event
 
     /**
-     * Returns `true` when the last path element is an instance number, i.e. `Device.WiFi.AccessPoint.2.`
+     * Returns `true` when the last path element is an instance number, i.e.
+     * `Device.WiFi.AccessPoint.2.`. Returns `false` for wildcard instances and all other paths.
      */
     val isInstance: Boolean
         get() = last().let { it is PathElement.Object && it.instance != null && it.instance > 0 }
@@ -104,13 +105,12 @@ interface Path {
     }
 
     /**
-     * Determines whether the specified path is a direct instance object of the this. For example
-     * if this is `Device.WiFi.AccessPoint.` then this method returns `true`, if `child` is
-     * `Device.WiFi.AccessPoint.2.` and `false` for `Device.WiFi.AccessPoint.2.AssociatedDevice.1.`
-     * (because the later is not a direct child of `parent`).
+     * Determines whether this path is an instantiated object of the specified path. For example
+     * if this is `Device.WiFi.AccessPoint.2.` then this method returns `true`, if `path` is
+     * `Device.WiFi.AccessPoint.` and `false` for all other paths.
      */
-    fun isChildInstance(child: Path): Boolean {
-        return child.size == size + 1 && child.isInstance && child.startsWith(this)
+    fun isInstanceOf(path: Path): Boolean {
+        return path.size == size - 1 && isInstance && startsWith(path)
     }
 
     /**
