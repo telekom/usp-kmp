@@ -14,12 +14,18 @@ fun MQTTPublish.replyTo(): String {
     }
 }
 
-fun MQTTPublish.isUspContentType(): Boolean {
-    val contentType = if (this is MQTT5Publish) {
+val MQTTPublish.contentType: String?
+    get() = if (this is MQTT5Publish) {
         properties.contentType
     } else {
         null
     }
-    return contentType == null || contentType == MqttTransfer.USP_CONTENT_TYPE || contentType == MqttTransfer.USP_MIME_TYPE
+
+fun MQTTPublish.isUspContentType(): Boolean {
+    val localContentType = contentType
+    return localContentType == null
+            || localContentType == MqttTransfer.USP_CONTENT_TYPE
+            || localContentType == MqttTransfer.USP_MIME_TYPE_1
+            || localContentType == MqttTransfer.USP_MIME_TYPE_2
 }
 

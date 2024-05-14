@@ -103,7 +103,7 @@ class MessageExchange(
 
             scope.launch {
                 connectionState.emit(ConnectionState.CONNECTING)
-                Logger.e { "Connecting to $transfer" }
+                Logger.i { "Connecting to $transfer" }
                 transfer.connect()
             }
             isStarted = true

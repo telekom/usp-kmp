@@ -2,9 +2,9 @@ package de.telekom.usp
 
 object Versions {
 
-    const val mostRecent = "1.3"
+    const val MOST_RECENT = "1.3"
 
-    private val supported = listOf("1.2", mostRecent)
+    private val supported = listOf("1.0", "1.1", "1.2", MOST_RECENT)
 
     fun isSupported(version: String) = supported.contains(version)
 

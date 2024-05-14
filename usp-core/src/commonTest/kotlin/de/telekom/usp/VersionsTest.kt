@@ -15,7 +15,7 @@ class VersionsTest {
 
     @Test
     fun `most recent version is supported`() {
-        assertTrue(Versions.isSupported(Versions.mostRecent))
+        assertTrue(Versions.isSupported(Versions.MOST_RECENT))
     }
 
     @Test

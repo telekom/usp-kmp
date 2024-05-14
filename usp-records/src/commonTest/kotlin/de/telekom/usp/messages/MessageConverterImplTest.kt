@@ -78,7 +78,7 @@ class MessageConverterImplTest {
 
     @Test
     fun `ignore record with unknown endpoint`() = runDecoderTest {
-        val invalid = Record(version = Versions.mostRecent, to_id = "self::unknown")
+        val invalid = Record(version = Versions.MOST_RECENT, to_id = "self::unknown")
         withResultOf(invalid, expectResultCount = 0) { }
     }
 
@@ -86,7 +86,7 @@ class MessageConverterImplTest {
     fun `decode no session context record`() = runDecoderTest {
         val payload = Msg.ADAPTER.encodeByteString(Msg(header_ = Header(msg_id = "test-hdr")))
         val noSession = Record(
-            version = Versions.mostRecent,
+            version = Versions.MOST_RECENT,
             to_id = local,
             no_session_context = NoSessionContextRecord(payload)
         )
@@ -101,7 +101,7 @@ class MessageConverterImplTest {
     @Test
     fun `decode disconnect record`() = runDecoderTest {
         val disconnect = Record(
-            version = Versions.mostRecent,
+            version = Versions.MOST_RECENT,
             to_id = local,
             disconnect = DisconnectRecord(CommandCanceled.name, CommandCanceled.code)
         )
@@ -116,7 +116,7 @@ class MessageConverterImplTest {
     @Test
     fun `decode web socket record`() = runDecoderTest {
         val webSocket = Record(
-            version = Versions.mostRecent,
+            version = Versions.MOST_RECENT,
             to_id = local,
             websocket_connect = WebSocketConnectRecord()
         )
@@ -129,7 +129,7 @@ class MessageConverterImplTest {
     @Test
     fun `decode MQTT record`() = runDecoderTest {
         val mqtt = Record(
-            version = Versions.mostRecent,
+            version = Versions.MOST_RECENT,
             to_id = local,
             mqtt_connect = MQTTConnectRecord(MQTTConnectRecord.MQTTVersion.V3_1_1, "mqtt-topic")
         )
@@ -144,7 +144,7 @@ class MessageConverterImplTest {
     @Test
     fun `decode Stomp record`() = runDecoderTest {
         val stomp = Record(
-            version = Versions.mostRecent,
+            version = Versions.MOST_RECENT,
             to_id = local,
             stomp_connect = STOMPConnectRecord(STOMPConnectRecord.STOMPVersion.V1_2, "stomp-dest")
         )
@@ -159,7 +159,7 @@ class MessageConverterImplTest {
     @Test
     fun `decode unix domain socket record`() = runDecoderTest {
         val udsSocket = Record(
-            version = Versions.mostRecent,
+            version = Versions.MOST_RECENT,
             to_id = local,
             uds_connect = UDSConnectRecord()
         )
@@ -387,7 +387,7 @@ class MessageConverterImplTest {
 
     private fun asRecord(sessionContext: SessionContextRecord): Record {
         return Record(
-            version = Versions.mostRecent,
+            version = Versions.MOST_RECENT,
             to_id = local,
             from_id = local,
             session_context = sessionContext

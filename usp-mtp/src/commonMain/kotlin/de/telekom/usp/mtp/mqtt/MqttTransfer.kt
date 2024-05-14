@@ -4,6 +4,7 @@ import MQTTClient
 import co.touchlab.kermit.Logger
 import de.telekom.usp.mtp.AbstractMessageTransfer
 import de.telekom.usp.mtp.MessageTransferEvent
+import de.telekom.usp.mtp.mqtt.kmqtt.contentType
 import de.telekom.usp.mtp.mqtt.kmqtt.isUspContentType
 import de.telekom.usp.mtp.mqtt.kmqtt.replyTo
 import de.telekom.usp.mtp.mqtt.kmqtt.subscriptionTopics
@@ -207,7 +208,7 @@ class MqttTransfer(
                 Logger.w { "Received MQTT publish record with empty payload" }
             }
         } else {
-            Logger.w { "Received MQTT record with unknown content type: '$publish'" }
+            Logger.w { "Received MQTT record with unknown content type: '${publish.contentType}'" }
         }
     }
 
@@ -218,6 +219,7 @@ class MqttTransfer(
     companion object {
         // R-MQTT.27a
         const val USP_CONTENT_TYPE = "usp.msg"
-        const val USP_MIME_TYPE = "application/vnd.bbf.usp.msg"
+        const val USP_MIME_TYPE_1 = "application/vnd.bbf.usp.msg"
+        const val USP_MIME_TYPE_2 = "application/vnd.usp.msg"     // Not specified, but used
     }
 }

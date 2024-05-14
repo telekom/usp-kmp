@@ -13,9 +13,10 @@ class ByteStringDecoder {
         val bytes =
             "0a03312e30121f7573702f6167656e74732f70726f746f3a3a667269747a626f782d6b656d701a176f733a3a3030303430452d42304632303834304644324320003a4412420a0e0a0a32363538333938383731100312300a2e422c0a00100142260a063030303430451209465249545a21426f781a0c4230463230383430464432432203312e31"
         val rec = Record.ADAPTER.decode(bytes.hexToByteArray())
+        println("Parsed USP record:          $rec")
         assertNotNull(rec.no_session_context)
 
         val msg = Msg.ADAPTER.decode(rec.no_session_context!!.payload)
-        println("No session context message=$msg")
+        println("No session context message: $msg")
     }
 }

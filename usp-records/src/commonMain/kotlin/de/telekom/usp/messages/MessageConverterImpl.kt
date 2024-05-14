@@ -41,7 +41,7 @@ import okio.ByteString
 class MessageConverterImpl(
     private val local: EndpointIdentifier,
     private val remote: EndpointIdentifier,
-    private val version: String = Versions.mostRecent,
+    private val version: String = Versions.MOST_RECENT,
     private val cache: RecordBuffer = InMemoryRecordBuffer(),
     override val allowSessionContext: Boolean = true,
 ) : MessageConverter {
