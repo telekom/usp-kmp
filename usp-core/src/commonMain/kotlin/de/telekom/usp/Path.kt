@@ -105,6 +105,16 @@ interface Path {
     }
 
     /**
+     * Determines whether the last elements of this path match exactly the specified path
+     */
+    fun endsWith(path: Path): Boolean {
+        if (path.size > this.size) {
+            return false
+        }
+        return this.elements.subList(size - path.size, size) == path.elements
+    }
+
+    /**
      * Determines whether this path is an instantiated object of the specified path. For example
      * if this is `Device.WiFi.AccessPoint.2.` then this method returns `true`, if `path` is
      * `Device.WiFi.AccessPoint.` and `false` for all other paths.

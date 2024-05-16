@@ -147,6 +147,16 @@ class PathParserTest {
     }
 
     @Test
+    fun `matches endsWith correctly`() {
+        val path = Path("Device.IP.Interface.")
+        assertTrue(path.endsWith(Path("Interface.")))
+        assertTrue(path.endsWith(Path("IP.Interface.")))
+        assertTrue(path.endsWith(Path("Device.IP.Interface.")))
+
+        assertFalse(path.endsWith(WiFi))
+    }
+
+    @Test
     fun `auto-detect resolved paths`() {
         listOf(
             "Device.IP.Interface.",
