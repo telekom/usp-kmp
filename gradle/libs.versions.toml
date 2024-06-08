@@ -11,6 +11,7 @@ moshi = "1.14.0"
 ktor = "2.3.8"
 kmqtt = "0.4.6"
 mockery = "1.9.23-1.6.1" # First part of version name MUST be the Kotlin version!
+kover = "0.8.0"
 slf4j = "2.0.13"         # Used only in cli subproject
 
 # Android specifics:
@@ -52,3 +53,4 @@ wire = { id = "com.squareup.wire", version.ref = "wire" }
 org-jetbrains-kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
 mockery = { id = "dev.mokkery", version.ref = "mockery" }
 allOpen = { id = "org.jetbrains.kotlin.plugin.allopen", version.ref = "kotlin" } # Used to mock final classes
+kover = { id = "org.jetbrains.kotlinx.kover", version.ref = "kover" }

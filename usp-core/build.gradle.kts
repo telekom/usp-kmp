@@ -2,6 +2,7 @@ plugins {
     alias(libs.plugins.kotlinMultiplatform)
     alias(libs.plugins.androidLibrary)
     alias(libs.plugins.wire)
+    alias(libs.plugins.kover)
     `maven-publish`
 }
 
@@ -68,6 +69,25 @@ publishing {
         maven {
             name = "usp"
             url = uri(repoDirectory)
+        }
+    }
+}
+
+/*
+ * Kover configuration (see https://kotlin.github.io/kotlinx-kover/gradle-plugin/)
+ */
+dependencies {
+    kover(project(":usp-datamodel"))
+    kover(project(":usp-mtp"))
+    kover(project(":usp-records"))
+}
+
+kover {
+    reports {
+        filters {
+            excludes {
+                annotatedBy("de.telekom.usp.types.Generated")
+            }
         }
     }
 }

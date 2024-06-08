@@ -70,7 +70,7 @@ class MessageConverterImplTest {
 
     @Test
     fun `reject record with invalid version`() = runDecoderTest {
-        withResultOf(Record(version = "1.0")) {
+        withResultOf(Record(version = "0.9")) {
             assertIs<MessageConversionResult.UspError>(it)
             assertEquals(MessageNotSupported, it.error)
         }

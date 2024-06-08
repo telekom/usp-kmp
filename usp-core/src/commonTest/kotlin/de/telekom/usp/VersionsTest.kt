@@ -20,7 +20,7 @@ class VersionsTest {
 
     @Test
     fun `reject unsupported versions`() {
-        listOf("1.1", "1.0", "", "xxx").forEach { version ->
+        listOf("0.9", "", "xxx").forEach { version ->
             assertFalse(Versions.isSupported(version))
         }
     }

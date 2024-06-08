@@ -3,6 +3,7 @@ plugins {
     alias(libs.plugins.kotlinSerialization)
     alias(libs.plugins.androidLibrary)
     alias(libs.plugins.mockery)
+    alias(libs.plugins.kover)
     `maven-publish`
 }
 
