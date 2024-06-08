@@ -2,6 +2,7 @@ package de.telekom.usp
 
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 import kotlin.test.assertNotEquals
 
 class EndpointIdentifierTest {
@@ -28,6 +29,15 @@ class EndpointIdentifierTest {
     }
 
     @Test
+    fun `parses correct endpoint identifiers with namespace`() {
+        endpoints.forEach { text ->
+            val endpoint = EndpointIdentifier("urn:bbf:usp:id:$text")
+            assertEquals(text, endpoint.toShortString())
+            assertEquals("urn:bbf:usp:id:$text", endpoint.toLongString())
+        }
+    }
+
+    @Test
     fun `equals identifies same endpoints`() {
         endpoints.forEach { text ->
             assertEquals(EndpointIdentifier(text), EndpointIdentifier(text))
@@ -45,5 +55,23 @@ class EndpointIdentifierTest {
             EndpointIdentifier("cid:3AA3F8:my-unique-usp-id-42"),
             EndpointIdentifier("cid:3AA3F8:my-unique-usp-id-43")
         )
+    }
+
+    @Test
+    fun `reject invalid endpoint identifiers`() {
+        listOf(
+            "",
+            "  ",
+            "os",
+            "cid:twoparts",
+            "cid:twoparts:",
+            "illegal::test",
+            "os:illegal:123",
+            "os::illegal$$$"
+        ).forEach {
+            assertFailsWith<IllegalArgumentException> {
+                EndpointIdentifier(it)
+            }
+        }
     }
 }
