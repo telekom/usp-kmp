@@ -87,6 +87,7 @@ kover {
         filters {
             excludes {
                 annotatedBy("de.telekom.usp.types.Generated")
+                classes("de.telekom.usp.CommandsKt", "de.telekom.usp.ObjectsKt")
             }
         }
     }
