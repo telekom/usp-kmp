@@ -13,7 +13,7 @@ sealed class PathElement(val text: String) {
     abstract val isTerminal: Boolean
 
     /**
-     * Determines whether this element has resolved (like a fixed object path) or not resolved, like
+     * Determines whether this element is resolved (like a fixed object path) or not resolved, like
      * a wildcard or a search expression.
      */
     abstract val isResolved: Boolean

@@ -1,6 +1,7 @@
 package de.telekom.usp
 
 import kotlin.test.Test
+import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
@@ -36,5 +37,11 @@ class InstanceIdTest {
         invalid.forEach { instanceId ->
             assertFalse(InstanceId.isValidId(instanceId))
         }
+    }
+
+    @Test
+    fun `toString returns the original value`() {
+        val instanceId = InstanceId("f81d4fae-7dec-11d0-a765-00a0c91e6bf6")
+        assertEquals("f81d4fae-7dec-11d0-a765-00a0c91e6bf6", instanceId.toString())
     }
 }
