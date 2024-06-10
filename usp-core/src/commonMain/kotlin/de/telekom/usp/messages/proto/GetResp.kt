@@ -4,6 +4,7 @@ import de.telekom.usp.Error
 import de.telekom.usp.Path
 import de.telekom.usp.ResolvedPath
 import de.telekom.usp.datamodel.InstanceObject
+import de.telekom.usp.isInstanceOf
 import de.telekom.usp.toResolvedPath
 
 fun GetResp.allResolvedPaths(): List<InstanceObject> {

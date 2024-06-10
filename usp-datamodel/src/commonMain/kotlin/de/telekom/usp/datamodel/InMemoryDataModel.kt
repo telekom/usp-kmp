@@ -4,6 +4,11 @@ import co.touchlab.kermit.Logger
 import de.telekom.usp.Device
 import de.telekom.usp.PathElement
 import de.telekom.usp.ResolvedPath
+import de.telekom.usp.first
+import de.telekom.usp.get
+import de.telekom.usp.last
+import de.telekom.usp.size
+import de.telekom.usp.startsWithDevice
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.sync.Mutex

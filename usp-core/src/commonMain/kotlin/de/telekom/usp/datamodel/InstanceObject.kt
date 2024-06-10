@@ -1,6 +1,7 @@
 package de.telekom.usp.datamodel
 
 import de.telekom.usp.ResolvedPath
+import de.telekom.usp.isTerminal
 
 /**
  * Representation of a USP data model parameter with its table data.

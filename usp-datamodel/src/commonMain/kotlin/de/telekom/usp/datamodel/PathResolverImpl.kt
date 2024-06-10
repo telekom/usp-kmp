@@ -5,6 +5,8 @@ import de.telekom.usp.Path
 import de.telekom.usp.PathElement
 import de.telekom.usp.ResolvedPath
 import de.telekom.usp.datamodel.ExpressionComponent.Companion.matches
+import de.telekom.usp.get
+import de.telekom.usp.last
 
 class PathResolverImpl(private val model: DataModel) : PathResolver {
 
@@ -104,10 +106,6 @@ class PathResolverImpl(private val model: DataModel) : PathResolver {
             Logger.e(throwable = ex) { "Error parsing expression in '$this' at position ${index + 1}" }
             emptyList()
         }
-    }
-
-    private fun Path.replace(index: Int, replacement: PathElement): Path {
-        return mapIndexed { i, element -> if (index == i) replacement else element }
     }
 
     private fun String?.toItems(): List<String> {

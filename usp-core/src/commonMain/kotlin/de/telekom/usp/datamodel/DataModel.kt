@@ -2,6 +2,8 @@ package de.telekom.usp.datamodel
 
 import de.telekom.usp.Path
 import de.telekom.usp.ResolvedPath
+import de.telekom.usp.isParameter
+import de.telekom.usp.last
 import kotlinx.coroutines.flow.SharedFlow
 
 /**

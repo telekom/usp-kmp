@@ -4,6 +4,9 @@ import de.telekom.usp.Device
 import de.telekom.usp.Path
 import de.telekom.usp.PathElement
 import de.telekom.usp.ResolvedPath
+import de.telekom.usp.first
+import de.telekom.usp.isResolved
+import de.telekom.usp.isTerminal
 
 
 internal open class PathImpl(final override val elements: List<PathElement>) : Path {
@@ -13,6 +16,9 @@ internal open class PathImpl(final override val elements: List<PathElement>) : P
     init {
         require(elements.isNotEmpty()) { "Empty Path not allowed" }
     }
+
+    override val isResolved: Boolean
+        get() = elements.isResolved()
 
     override fun asResolvedPath(): ResolvedPath {
         if (isResolved) {
@@ -28,6 +34,12 @@ internal open class PathImpl(final override val elements: List<PathElement>) : P
         require(!isTerminal) { "Path '$this' is terminal, cannot append more to it" }
         require(child.first() != Device.first()) { "Can only append relative paths: '$path'" }
         return PathImpl(elements = elements + child.elements)
+    }
+
+    override fun replace(index: Int, replacement: PathElement): Path {
+        return PathImpl(elements.toMutableList().also { newList ->
+            newList[index] = replacement
+        })
     }
 
     override fun mapIndexed(transform: (index: Int, PathElement) -> PathElement) =

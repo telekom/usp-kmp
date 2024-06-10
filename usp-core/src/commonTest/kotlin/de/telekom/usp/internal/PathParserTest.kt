@@ -7,6 +7,13 @@ import de.telekom.usp.Path
 import de.telekom.usp.PathElement
 import de.telekom.usp.ResolvedPath
 import de.telekom.usp.WiFi
+import de.telekom.usp.endsWith
+import de.telekom.usp.isInstanceOf
+import de.telekom.usp.isTerminal
+import de.telekom.usp.last
+import de.telekom.usp.lastAs
+import de.telekom.usp.startsWith
+import de.telekom.usp.startsWithDevice
 import kotlin.test.Test
 import kotlin.test.assertContains
 import kotlin.test.assertEquals

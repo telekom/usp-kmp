@@ -4,6 +4,7 @@ import de.telekom.usp.Device
 import de.telekom.usp.Path
 import de.telekom.usp.PathElement
 import de.telekom.usp.ReferenceFollowing
+import de.telekom.usp.first
 import de.telekom.usp.isResolved
 
 internal class PathParser(private val text: String) {

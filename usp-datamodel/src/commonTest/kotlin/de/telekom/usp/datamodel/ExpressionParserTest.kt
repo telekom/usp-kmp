@@ -6,6 +6,7 @@ import de.telekom.usp.datamodel.Operator.CONTAINS
 import de.telekom.usp.datamodel.Operator.EQUALS
 import de.telekom.usp.datamodel.Operator.GREATER_THAN
 import de.telekom.usp.datamodel.Operator.NOT_EQUALS
+import de.telekom.usp.first
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith

@@ -15,9 +15,23 @@ interface Path {
      */
     val elements: List<PathElement>
 
+    /**
+     * Returns `true` when this path does not contain any unresolved path elements. Note that this
+     * does not imply that you can safely cast this to [ResolvedPath], use [asResolvedPath] instead.
+     *
+     * @see [PathElement.isResolved]
+     */
+    val isResolved: Boolean
+
     fun asResolvedPath(): ResolvedPath
 
     operator fun plus(path: String): Path
+
+    /**
+     * Replaces the specified [PathElement] at the specified position and returns a new instances
+     * of [Path] with the replaced path elements.
+     */
+    fun replace(index: Int, replacement: PathElement): Path
 
     /**
      * Returns a path containing the results of applying the given [transform] function
@@ -38,96 +52,91 @@ interface Path {
      * Returns a path containing all elements except last n elements.
      */
     fun dropLast(n: Int): Path
-
-    /**
-     * The number of path elements of this.
-     */
-    val size: Int
-        get() = elements.size
-
-    /**
-     * Returns `true` when this path does not contain any unresolved path elements
-     *
-     * @see [PathElement.isResolved]
-     */
-    val isResolved: Boolean
-        get() = elements.isResolved()
-
-    /**
-     * Returns `true` if no path element can be appended to this path, i.e. when it is a parameter,
-     * a command or an event.
-     */
-    val isTerminal: Boolean
-        get() = last().isTerminal
-
-    /**
-     * Returns `true` when this path represents is a parameter
-     */
-    val isParameter: Boolean
-        get() = last() is PathElement.Parameter
-
-    /**
-     * Returns `true` when this path represents is a command
-     */
-    val isCommand: Boolean
-        get() = last() is PathElement.Command
-
-    /**
-     * Returns `true` when this path represents is an event
-     */
-    val isEvent: Boolean
-        get() = last() is PathElement.Event
-
-    /**
-     * Returns `true` when the last path element is an instance number, i.e.
-     * `Device.WiFi.AccessPoint.2.`. Returns `false` for wildcard instances and all other paths.
-     */
-    val isInstance: Boolean
-        get() = last().let { it is PathElement.Object && it.instance != null && it.instance > 0 }
-
-    operator fun get(index: Int) = elements[index]
-
-    fun first(): PathElement = elements.first()
-
-    fun last(): PathElement = elements.last()
-
-    @Suppress("UNCHECKED_CAST")
-    fun <T : PathElement> lastAs(): T = elements.last() as T
-
-    /**
-     * Determines whether the first elements of this path match exactly the specified path
-     */
-    fun startsWith(path: Path): Boolean {
-        if (path.size > this.size) {
-            return false
-        }
-        return this.elements.subList(0, path.size) == path.elements
-    }
-
-    /**
-     * Determines whether the last elements of this path match exactly the specified path
-     */
-    fun endsWith(path: Path): Boolean {
-        if (path.size > this.size) {
-            return false
-        }
-        return this.elements.subList(size - path.size, size) == path.elements
-    }
-
-    /**
-     * Determines whether this path is an instantiated object of the specified path. For example
-     * if this is `Device.WiFi.AccessPoint.2.` then this method returns `true`, if `path` is
-     * `Device.WiFi.AccessPoint.` and `false` for all other paths.
-     */
-    fun isInstanceOf(path: Path): Boolean {
-        return path.size == size - 1 && isInstance && startsWith(path)
-    }
-
-    /**
-     * Determines whether this path starts with 'Device.', that is: if it is an absolute path.
-     */
-    fun startsWithDevice() = startsWith(Device)
 }
+
+// According to https://kotlinlang.org/docs/api-guidelines-minimizing-mental-complexity.html#use-extension-functions-and-properties
+// we define all none strict interface methods of Path as extension functions (rather than default functions):
+
+/**
+ * The number of path elements of this.
+ */
+val Path.size: Int
+    get() = elements.size
+
+/**
+ * Returns `true` if no path element can be appended to this path, i.e. when it is a parameter,
+ * a command or an event.
+ */
+val Path.isTerminal: Boolean
+    get() = last().isTerminal
+
+/**
+ * Returns `true` when this path represents is a parameter
+ */
+val Path.isParameter: Boolean
+    get() = last() is PathElement.Parameter
+
+/**
+ * Returns `true` when this path represents is a command
+ */
+val Path.isCommand: Boolean
+    get() = last() is PathElement.Command
+
+/**
+ * Returns `true` when this path represents is an event
+ */
+val Path.isEvent: Boolean
+    get() = last() is PathElement.Event
+
+/**
+ * Returns `true` when the last path element is an instance number, i.e.
+ * `Device.WiFi.AccessPoint.2.`. Returns `false` for wildcard instances and all other paths.
+ */
+val Path.isInstance: Boolean
+    get() = last().let { it is PathElement.Object && it.instance != null && it.instance > 0 }
+
+operator fun Path.get(index: Int) = elements[index]
+
+fun Path.first(): PathElement = elements.first()
+
+fun Path.last(): PathElement = elements.last()
+
+@Suppress("UNCHECKED_CAST")
+fun <T : PathElement> Path.lastAs(): T = elements.last() as T
+
+/**
+ * Determines whether the first elements of this path match exactly the specified path
+ */
+fun Path.startsWith(path: Path): Boolean {
+    if (path.size > this.size) {
+        return false
+    }
+    return this.elements.subList(0, path.size) == path.elements
+}
+
+/**
+ * Determines whether the last elements of this path match exactly the specified path
+ */
+fun Path.endsWith(path: Path): Boolean {
+    if (path.size > this.size) {
+        return false
+    }
+    return this.elements.subList(size - path.size, size) == path.elements
+}
+
+/**
+ * Determines whether this path is an instantiated object of the specified path. For example
+ * if this is `Device.WiFi.AccessPoint.2.` then this method returns `true`, if `path` is
+ * `Device.WiFi.AccessPoint.` and `false` for all other paths.
+ */
+fun Path.isInstanceOf(path: Path): Boolean {
+    return path.size == size - 1 && isInstance && startsWith(path)
+}
+
+/**
+ * Determines whether this path starts with 'Device.', that is: if it is an absolute path.
+ */
+fun Path.startsWithDevice() = startsWith(Device)
 
 /**
  * Factory function to create a path instance from a string. Don't use this function to create

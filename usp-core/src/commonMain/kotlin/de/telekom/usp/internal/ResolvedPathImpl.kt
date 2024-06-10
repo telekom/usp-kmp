@@ -4,6 +4,8 @@ import de.telekom.usp.Device
 import de.telekom.usp.Path
 import de.telekom.usp.PathElement
 import de.telekom.usp.ResolvedPath
+import de.telekom.usp.first
+import de.telekom.usp.isTerminal
 
 internal class ResolvedPathImpl(elements: List<PathElement>) : PathImpl(elements), ResolvedPath {
 
