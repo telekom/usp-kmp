@@ -2,6 +2,7 @@ package de.telekom.usp.mtp.mqtt
 
 import MQTTClient
 import co.touchlab.kermit.Logger
+import de.telekom.usp.EndpointIdentifier
 import de.telekom.usp.mtp.AbstractMessageTransfer
 import de.telekom.usp.mtp.MessageTransferEvent
 import de.telekom.usp.mtp.mqtt.kmqtt.contentType
@@ -40,9 +41,8 @@ class MqttTransfer(
     user: String? = null,
     password: String? = null,
     useTls: Boolean,
-    private val nameProvider: NameProvider,
-    private val qos: QoS = QoS.AT_LEAST_ONCE,
-    version: Version = Version.Mqtt5,
+    private val from: EndpointIdentifier,
+    private val mqttConfig: MqttConfig,
     private val scope: CoroutineScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
 ) : AbstractMessageTransfer() {
 
@@ -55,7 +55,19 @@ class MqttTransfer(
     private val publishingProperties = MQTT5Properties()
 
     private val remoteTopic: Topic
-        get() = overrideTopic ?: nameProvider.remoteTopic
+        get() = overrideTopic ?: mqttConfig.fixedRemoteTopic
+
+    // See R-MQTT.8
+    private val clientId: String
+        get() = if (mqttConfig.clientId.isNullOrBlank()) {
+            if (mqttConfig.version == Version.Mqtt3_1_1) {
+                from.toShortString()
+            } else {
+                ""
+            }
+        } else {
+            mqttConfig.clientId
+        }
 
     private val subscribeTopics = mutableListOf<Topic>()
 
@@ -63,13 +75,13 @@ class MqttTransfer(
 
     // TODO: refactor the MQTTClient into an interface to make this class testable
     private val client = MQTTClient(
-        mqttVersion = version.toMQTTVersion(),
+        mqttVersion = mqttConfig.version.toMQTTVersion(),
         address = host,
         port = port,
         userName = user,
         password = password?.toByteArray()?.toUByteArray(),
         tls = if (useTls) TLSClientSettings() else null,
-        clientId = nameProvider.clientId,
+        clientId = clientId,
         properties = connectProperties,
         onConnected = ::onConnected,
         onDisconnected = ::onDisconnected,
@@ -87,10 +99,10 @@ class MqttTransfer(
         publishingProperties.contentType = USP_CONTENT_TYPE
 
         // R-MQTT.22, R-MQTT.23: include own topic in response topic
-        publishingProperties.responseTopic = nameProvider.ownTopic.value
+        publishingProperties.responseTopic = mqttConfig.ownTopic.value
 
         // R-MQTT.13: An MQTT 5.0 USP Endpoint MUST include a User Property name-value pair in the CONNECT packet with name of “usp-endpoint-id”
-        connectProperties.addUserProperty("usp-endpoint-id" to nameProvider.from.toShortString())
+        connectProperties.addUserProperty("usp-endpoint-id" to from.toShortString())
     }
 
     override suspend fun connect() {
@@ -122,7 +134,7 @@ class MqttTransfer(
                             val payload = bytes.toByteArray().toUByteArray()
                             client.publish(
                                 retain = false,
-                                qos = qos.toQos(),
+                                qos = mqttConfig.qos.toQos(),
                                 topic = remoteTopic.value,
                                 payload = payload,
                                 properties = publishingProperties
@@ -168,9 +180,14 @@ class MqttTransfer(
     }
 
     private fun subscribe() {
-        val topics = subscribeTopics + nameProvider.ownTopic
+        val topics = subscribeTopics + mqttConfig.ownTopic
         Logger.d { "Sending subscribe request for: $topics" }
-        client.subscribe(topics.map { Subscription(it.value, SubscriptionOptions(qos.toQos())) })
+        client.subscribe(topics.map {
+            Subscription(
+                it.value,
+                SubscriptionOptions(mqttConfig.qos.toQos())
+            )
+        })
     }
 
     private fun onConnected(connack: MQTTConnack) {
@@ -213,7 +230,7 @@ class MqttTransfer(
     }
 
     override fun toString(): String {
-        return "MQTT transfer [from: '${nameProvider.ownTopic}', to: '$remoteTopic', server: $host:$port]"
+        return "MQTT transfer [from: '${mqttConfig.ownTopic}', to: '$remoteTopic', server: $host:$port]"
     }
 
     companion object {

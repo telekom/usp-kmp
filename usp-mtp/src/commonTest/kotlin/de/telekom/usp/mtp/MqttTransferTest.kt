@@ -1,8 +1,9 @@
 package de.telekom.usp.mtp
 
 import de.telekom.usp.EndpointIdentifier
+import de.telekom.usp.mtp.mqtt.MqttConfig
 import de.telekom.usp.mtp.mqtt.MqttTransfer
-import de.telekom.usp.mtp.mqtt.SimpleNameProvider
+import de.telekom.usp.mtp.mqtt.Topic
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
@@ -25,7 +26,8 @@ class MqttTransferTest {
             user = "usp-demo",
             password = passwd,
             useTls = true,
-            nameProvider = SimpleNameProvider(from, to)
+            from = from,
+            mqttConfig = MqttConfig(null, Topic(from.toString()), Topic(to.toString()))
         )
         val eventCollector = launch {
             transfer.events.collect {

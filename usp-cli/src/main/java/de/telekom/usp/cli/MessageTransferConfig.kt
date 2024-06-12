@@ -12,18 +12,32 @@ data class MessageTransferConfig(
     val mtp: MessageTransferProtocol,
     val fromEndpointId: String,
     val toEndpointId: String,
-    val mqttConfig: MqttConfig? = null,
-    val webSocketConfig: WebSocketConfig? = null
+    val mqttConnection: MqttConnection? = null,
+    val webSocketConnection: WebSocketConnection? = null
 ) {
-    val localEndpoint: EndpointIdentifier
+    val from: EndpointIdentifier
         get() = fromEndpointId.toEndpoint()
 
-    val remoteEndpoint: EndpointIdentifier
+    val to: EndpointIdentifier
         get() = toEndpointId.toEndpoint()
+
+    fun whenMqtt(block: (MqttConnection) -> Unit) {
+        if (mtp == MessageTransferProtocol.MQTT) {
+            checkNotNull(mqttConnection) { "MTP is set to MQTT, but the MQTT connection settings are missing" }
+            block(mqttConnection)
+        }
+    }
+
+    fun whenWebsocket(block: (WebSocketConnection) -> Unit) {
+        if (mtp == MessageTransferProtocol.WEB_SOCKET) {
+            checkNotNull(webSocketConnection) { "MTP is set to Websocket, but the WS connection settings are missing" }
+            block(webSocketConnection)
+        }
+    }
 }
 
 @Serializable
-data class MqttConfig(
+data class MqttConnection(
     val host: String,
     val port: Int = 8883,
     val user: String,
@@ -32,7 +46,7 @@ data class MqttConfig(
 )
 
 @Serializable
-data class WebSocketConfig(
+data class WebSocketConnection(
     val host: String,
     val port: Int = 8883,
     val pingDuration: Duration = 20.seconds

@@ -4,18 +4,24 @@ import co.touchlab.kermit.LogWriter
 import co.touchlab.kermit.Logger
 import co.touchlab.kermit.Severity
 import com.github.ajalt.clikt.core.CliktCommand
+import com.github.ajalt.clikt.core.FileNotFound
+import com.github.ajalt.clikt.core.InvalidFileFormat
 import com.github.ajalt.clikt.core.subcommands
 import com.github.ajalt.clikt.parameters.options.default
 import com.github.ajalt.clikt.parameters.options.flag
 import com.github.ajalt.clikt.parameters.options.option
 import com.github.ajalt.clikt.parameters.types.int
 import com.github.ajalt.clikt.parameters.types.path
-import de.telekom.usp.e2e.MessageExchange
-import de.telekom.usp.messages.MessageConverter
-import de.telekom.usp.messages.MessageConverterImpl
+import de.telekom.usp.e2e.e2eMessageExchange
+import kotlinx.serialization.ExperimentalSerializationApi
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.okio.decodeFromBufferedSource
+import okio.FileSystem
 import okio.Path
 import okio.Path.Companion.toOkioPath
 import okio.Path.Companion.toPath
+import okio.buffer
+import okio.use
 import kotlin.time.Duration.Companion.seconds
 
 private val Commands = listOf(
@@ -63,6 +69,20 @@ class Main : CliktCommand(invokeWithoutSubcommand = true, printHelpOnEmptyArgs =
         }
     }
 
+    @OptIn(ExperimentalSerializationApi::class)
+    private fun readConfig(configPath: Path): MessageTransferConfig {
+        if (!FileSystem.SYSTEM.exists(configPath)) {
+            throw FileNotFound("Missing configuration file: '$configPath'")
+        }
+
+        try {
+            FileSystem.SYSTEM.source(configPath).buffer().use { source ->
+                return Json.decodeFromBufferedSource<MessageTransferConfig>(source)
+            }
+        } catch (ex: Exception) {
+            throw InvalidFileFormat(configPath.toString(), "${ex.message}")
+        }
+    }
 
     private fun configureLogging() {
         if (isVerboseLevel) {
@@ -77,16 +97,28 @@ class Main : CliktCommand(invokeWithoutSubcommand = true, printHelpOnEmptyArgs =
 
     override fun run() {
         configureLogging()
-        val factory = JsonMessageTransferFactory(configPath, isDebugLevel || isVerboseLevel)
-        val transfer = factory.create()
-        val converter: MessageConverter =
-            MessageConverterImpl(factory.localEndpoint, factory.remoteEndpoint)
-        val exchange = MessageExchange(converter = converter, transfer = transfer)
 
-        Logger.d { "Created $transfer" }
+        val messageExchange = with(readConfig(configPath)) {
+            e2eMessageExchange(from, to) {
+                debugMode = isDebugLevel || isVerboseLevel
+                allowSessionContext = true
+
+                whenMqtt { mqtt ->
+                    mqttTransfer(mqtt.host, mqtt.port) {
+                        user = mqtt.user
+                        password = mqtt.password
+                        useTls = mqtt.useTls
+                    }
+                }
+
+                whenWebsocket { ws ->
+                    wsTransfer(ws.host, ws.port) { }
+                }
+            }
+        }
 
         // Pass the required data to the subcommand:
-        currentContext.findOrSetObject { CommandContext(exchange, timeout.seconds) }
+        currentContext.findOrSetObject { CommandContext(messageExchange, timeout.seconds) }
     }
 }
 
