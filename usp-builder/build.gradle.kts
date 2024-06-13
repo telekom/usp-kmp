@@ -30,18 +30,13 @@ kotlin {
     sourceSets {
         commonMain.dependencies {
             implementation(project(":usp-core"))
-            implementation(libs.kotlinx.serialization.json)
+            implementation(project(":usp-records"))
+            implementation(project(":usp-mtp"))
             implementation(libs.kermit)
-            implementation(libs.kmqtt.common)
-            implementation(libs.kmqtt.client)
             implementation(libs.okio)
             api(libs.kotlinx.datetime)
             api(libs.wire.runtime)
             api(libs.kotlinx.coroutines.core)
-            api(libs.ktor.client.core)
-            api(libs.ktor.client.cio)
-            api(libs.ktor.client.websockets)
-            api(libs.ktor.client.logging)
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)

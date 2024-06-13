@@ -25,6 +25,7 @@ dependencies {
     implementation(project(":usp-core"))
     implementation(project(":usp-records"))
     implementation(project(":usp-mtp"))
+    implementation(project(":usp-builder"))
     implementation(libs.clikt)
     implementation(libs.kermit)
     implementation(libs.kotlinx.datetime)

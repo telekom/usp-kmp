@@ -18,6 +18,10 @@ import kotlinx.coroutines.SupervisorJob
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
 
+/**
+ * Configure and create an instance of [MessageExchange] to send data between the two specified
+ * endpoint IDs.
+ */
 fun e2eMessageExchange(
     from: EndpointIdentifier,
     to: EndpointIdentifier,
