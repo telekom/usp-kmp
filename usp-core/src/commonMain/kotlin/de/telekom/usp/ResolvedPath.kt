@@ -5,7 +5,15 @@ package de.telekom.usp
  */
 interface ResolvedPath : Path {
 
-    override operator fun plus(path: String): ResolvedPath
+    /**
+     * Adds the specified resolved path and returns a new instance of resolved path.
+     *
+     * @throws IllegalArgumentException when [resolvedPath] string cannot be converted into a
+     *         resolved path. In contrary to this method, the plus operator function of [Path]
+     *         also accepts non resolved paths. We intentionally do not override the operator
+     *         function, to avoid confusions with different return types.
+     */
+    fun add(resolvedPath: String): ResolvedPath
 
     /**
      * Returns a view of the portion of this `ResolvedPath` between the specified [fromIndex]

@@ -90,7 +90,7 @@ class PathResolverImpl(private val model: DataModel) : PathResolver {
 
             return model.directChildren(basePath).mapNotNull { child ->
                 val matches = expressions.all { expression ->
-                    val param = child + expression.relpath.toString()
+                    val param = child.add(expression.relpath.toString())
                     val value = model.readParameter(param)
 
                     value matches expression

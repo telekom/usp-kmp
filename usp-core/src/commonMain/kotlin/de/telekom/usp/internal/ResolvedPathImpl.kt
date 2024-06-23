@@ -15,12 +15,12 @@ internal class ResolvedPathImpl(elements: List<PathElement>) : PathImpl(elements
 
     override fun asResolvedPath() = this
 
-    override operator fun plus(path: String): ResolvedPath {
-        val child = Path(path)
+    override fun add(resolvedPath: String): ResolvedPath {
+        val child = Path(resolvedPath)
 
         require(!isTerminal) { "Path '$this' is terminal, cannot append more to it" }
-        require(child.first() != Device.first()) { "Can only append relative paths: '$path'" }
-        require(child.isResolved) { "'$path' is not resolved and cannot be appended to a resolved path: '$this'" }
+        require(child.first() != Device.first()) { "Can only append relative paths: '$resolvedPath'" }
+        require(child.isResolved) { "'$resolvedPath' is not resolved and cannot be appended to a resolved path: '$this'" }
 
         return ResolvedPathImpl(elements = elements + child.elements)
     }

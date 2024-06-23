@@ -46,7 +46,7 @@ class FileDataModel(private val fileSystem: FileSystem, private val directory: P
 
     override suspend fun directChildren(path: ResolvedPath): List<ResolvedPath> {
         mutex.withLock {
-            return path.toPath().childDirectories().map { path + it.name }
+            return path.toPath().childDirectories().map { path.add(it.name) }
         }
     }
 

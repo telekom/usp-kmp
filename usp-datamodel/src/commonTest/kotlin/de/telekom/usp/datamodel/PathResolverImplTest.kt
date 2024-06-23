@@ -28,7 +28,7 @@ class PathResolverImplTest {
 
     @Test
     fun `a resolved path is returned unchanged`() = runTest {
-        val query = IP + "Interface.1."
+        val query = IP.add("Interface.1.")
         val actual = resolver.resolve(query)
 
         assertTrue(actual.size == 1)
@@ -39,7 +39,7 @@ class PathResolverImplTest {
     fun `wildcard search with empty result`() = runTest {
         val query = Path("Device.IP.Interface.*.IPv6Address.ValidLifetime")
 
-        everySuspend { dataModel.directChildren(IP + "Interface.") } returns emptyList()
+        everySuspend { dataModel.directChildren(IP.add("Interface.")) } returns emptyList()
 
         val actual = resolver.resolve(query)
         assertTrue(actual.isEmpty())
@@ -49,16 +49,16 @@ class PathResolverImplTest {
     fun `wildcard search with two instances`() = runTest {
         val query = Path("Device.IP.Interface.*.IPv6Address.ValidLifetime")
 
-        everySuspend { dataModel.directChildren(IP + "Interface.") } returns listOf(
-            IP + "Interface.1.",
-            IP + "Interface.2."
+        everySuspend { dataModel.directChildren(IP.add("Interface.")) } returns listOf(
+            IP.add("Interface.1."),
+            IP.add("Interface.2.")
         )
 
         val actual = resolver.resolve(query)
         assertEquals(
             listOf(
-                IP + "Interface.1.IPv6Address.ValidLifetime",
-                IP + "Interface.2.IPv6Address.ValidLifetime",
+                IP.add("Interface.1.IPv6Address.ValidLifetime"),
+                IP.add("Interface.2.IPv6Address.ValidLifetime"),
             ), actual
         )
     }
@@ -67,12 +67,12 @@ class PathResolverImplTest {
     fun `basic expression search with empty result`() = runTest {
         val query = Path("Device.IP.Interface.[Type==\"Normal\"].Status")
 
-        everySuspend { dataModel.directChildren(IP + "Interface.") } returns listOf(
-            IP + "Interface.1.",
-            IP + "Interface.2."
+        everySuspend { dataModel.directChildren(IP.add("Interface.")) } returns listOf(
+            IP.add("Interface.1."),
+            IP.add("Interface.2.")
         )
-        everySuspend { dataModel.readParameter(IP + "Interface.1.Type") } returns "Loopback"
-        everySuspend { dataModel.readParameter(IP + "Interface.2.Type") } returns null
+        everySuspend { dataModel.readParameter(IP.add("Interface.1.Type")) } returns "Loopback"
+        everySuspend { dataModel.readParameter(IP.add("Interface.2.Type")) } returns null
 
         val actual = resolver.resolve(query)
         assertTrue(actual.isEmpty())
@@ -82,59 +82,59 @@ class PathResolverImplTest {
     fun `basic expression search with single result`() = runTest {
         val query = Path("Device.IP.Interface.[Type==\"Normal\"].Status")
 
-        everySuspend { dataModel.directChildren(IP + "Interface.") } returns listOf(
-            IP + "Interface.1.",
-            IP + "Interface.2."
+        everySuspend { dataModel.directChildren(IP.add("Interface.")) } returns listOf(
+            IP.add("Interface.1."),
+            IP.add("Interface.2.")
         )
-        everySuspend { dataModel.readParameter(IP + "Interface.1.Type") } returns "Loopback"
-        everySuspend { dataModel.readParameter(IP + "Interface.2.Type") } returns "Normal"
+        everySuspend { dataModel.readParameter(IP.add("Interface.1.Type")) } returns "Loopback"
+        everySuspend { dataModel.readParameter(IP.add("Interface.2.Type")) } returns "Normal"
 
         val actual = resolver.resolve(query)
         assertTrue(actual.size == 1)
-        assertEquals(IP + "Interface.2.Status", actual.first())
+        assertEquals(IP.add("Interface.2.Status"), actual.first())
     }
 
     @Test
     fun `search with wildcard and expression`() = runTest {
         val query = Path("Device.USB.USBHosts.Host.*.Device.[DeviceClass==08].")
 
-        everySuspend { dataModel.directChildren(USB + "USBHosts.Host.") } returns listOf(
-            USB + "USBHosts.Host.1.",
-            USB + "USBHosts.Host.2."
+        everySuspend { dataModel.directChildren(USB.add("USBHosts.Host.")) } returns listOf(
+            USB.add("USBHosts.Host.1."),
+            USB.add("USBHosts.Host.2.")
         )
-        everySuspend { dataModel.directChildren(USB + "USBHosts.Host.1.Device.") } returns listOf(
-            USB + "USBHosts.Host.1.Device.1.",
-            USB + "USBHosts.Host.1.Device.2."
+        everySuspend { dataModel.directChildren(USB.add("USBHosts.Host.1.Device.")) } returns listOf(
+            USB.add("USBHosts.Host.1.Device.1."),
+            USB.add("USBHosts.Host.1.Device.2.")
         )
-        everySuspend { dataModel.directChildren(USB + "USBHosts.Host.2.Device.") } returns emptyList()
-        everySuspend { dataModel.readParameter(USB + "USBHosts.Host.1.Device.1.DeviceClass") } returns "0"
-        everySuspend { dataModel.readParameter(USB + "USBHosts.Host.1.Device.2.DeviceClass") } returns "8"
+        everySuspend { dataModel.directChildren(USB.add("USBHosts.Host.2.Device.")) } returns emptyList()
+        everySuspend { dataModel.readParameter(USB.add("USBHosts.Host.1.Device.1.DeviceClass")) } returns "0"
+        everySuspend { dataModel.readParameter(USB.add("USBHosts.Host.1.Device.2.DeviceClass")) } returns "8"
 
         val actual = resolver.resolve(query)
         assertTrue(actual.size == 1)
-        assertEquals(USB + "USBHosts.Host.1.Device.2.", actual.first())
+        assertEquals(USB.add("USBHosts.Host.1.Device.2."), actual.first())
     }
 
     @Test
     fun `search with first item reference following`() = runTest {
         val query = Path("Device.NAT.PortMapping.1.Interface+.Name")
 
-        everySuspend { dataModel.readParameter(NAT + "PortMapping.1.Interface") } returns "Device.IP.Interface.1."
+        everySuspend { dataModel.readParameter(NAT.add("PortMapping.1.Interface")) } returns "Device.IP.Interface.1."
 
         val actual = resolver.resolve(query)
         assertTrue(actual.size == 1)
-        assertEquals(IP + "Interface.1.Name", actual.first())
+        assertEquals(IP.add("Interface.1.Name"), actual.first())
     }
 
     @Test
     fun `search with wildcard reference following`() = runTest {
         val query = Path("Device.NAT.PortMapping.1.Interface#*+.Name")
 
-        everySuspend { dataModel.readParameter(NAT + "PortMapping.1.Interface") } returns
+        everySuspend { dataModel.readParameter(NAT.add("PortMapping.1.Interface")) } returns
                 "Device.IP.Interface.1., Device.IP.Interface.2."
 
         val actual = resolver.resolve(query)
         assertTrue(actual.size == 2)
-        assertEquals(listOf(IP + "Interface.1.Name", IP + "Interface.2.Name"), actual)
+        assertEquals(listOf(IP.add("Interface.1.Name"), IP.add("Interface.2.Name")), actual)
     }
 }

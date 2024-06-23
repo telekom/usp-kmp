@@ -71,11 +71,11 @@ class InMemoryDataModelTest {
     @Test
     fun `delete removes path from data model`() = runTest {
         model.add(InstanceObject(IP, rows))
-        model.add(InstanceObject(IP + "Interface.", rows))
-        model.add(InstanceObject(IP + "Interface.1.", rows))
+        model.add(InstanceObject(IP.add("Interface."), rows))
+        model.add(InstanceObject(IP.add("Interface.1."), rows))
 
-        assertTrue(model.delete(IP + "Interface.1."))
-        assertTrue(model.read(IP + "Interface.1.", Int.MAX_VALUE).isEmpty())
+        assertTrue(model.delete(IP.add("Interface.1.")))
+        assertTrue(model.read(IP.add("Interface.1."), Int.MAX_VALUE).isEmpty())
         assertTrue(model.read(IP, Int.MAX_VALUE).size == 2)
     }
 
@@ -97,21 +97,21 @@ class InMemoryDataModelTest {
     @Test
     fun `directChildren returns exactly the direct children`() = runTest {
         model.set(
-            InstanceObject(IP + "Interface.1.", rows),
-            InstanceObject(IP + "Interface.2.", rows),
-            InstanceObject(IP + "Interface.1.IPv4Address.", rows),
+            InstanceObject(IP.add("Interface.1."), rows),
+            InstanceObject(IP.add("Interface.2."), rows),
+            InstanceObject(IP.add("Interface.1.IPv4Address."), rows),
         )
 
-        val children = model.directChildren(IP + "Interface.")
-        assertEquals(listOf(IP + "Interface.1.", IP + "Interface.2."), children)
+        val children = model.directChildren(IP.add("Interface."))
+        assertEquals(listOf(IP.add("Interface.1."), IP.add("Interface.2.")), children)
     }
 
     @Test
     fun `read traverses the tree properly`() = runTest {
         model.set(
-            InstanceObject(IP + "Interface.1.", rows),
-            InstanceObject(IP + "Interface.2.", rows),
-            InstanceObject(IP + "Interface.1.IPv4Address.", rows),
+            InstanceObject(IP.add("Interface.1."), rows),
+            InstanceObject(IP.add("Interface.2."), rows),
+            InstanceObject(IP.add("Interface.1.IPv4Address."), rows),
         )
 
         assertTrue(model.read(IP, 0).size == 1)
@@ -122,7 +122,7 @@ class InMemoryDataModelTest {
         // Check the right rows are returned for every InstanceObject
         model.read(IP, Int.MAX_VALUE).forEach { instance ->
             when (instance.path) {
-                IP, IP + "Interface." -> assertTrue(instance.rows.isEmpty())
+                IP, IP.add("Interface.") -> assertTrue(instance.rows.isEmpty())
                 else -> assertEquals(instance.rows, rows)
             }
         }

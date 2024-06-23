@@ -68,7 +68,10 @@ class FileDataModelTest {
         fileSystem.createDirectories(root.resolve("Device./1.".toPath()))
 
         val children = model.directChildren(Device)
-        assertEquals(setOf(Device + "IP.", Device + "DeviceInfo.", Device + "1."), children.toSet())
+        assertEquals(
+            setOf(Device.add("IP."), Device.add("DeviceInfo."), Device.add("1.")),
+            children.toSet()
+        )
     }
 
     @Test
@@ -91,7 +94,7 @@ class FileDataModelTest {
         val level2 = model.read(Device, Int.MAX_VALUE)
         assertTrue(level2.size == 4)
         assertEquals(rows, level2.first { it.path == IP }.rows)
-        assertEquals(rows, level2.first { it.path == IP + "Interface." }.rows)
+        assertEquals(rows, level2.first { it.path == IP.add("Interface.") }.rows)
         assertEquals(rows, level2.first { it.path == DeviceInfo }.rows)
         assertTrue(level2.first { it.path == Device }.rows.isEmpty())
     }
