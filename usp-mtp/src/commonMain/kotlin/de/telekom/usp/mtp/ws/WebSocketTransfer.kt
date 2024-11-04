@@ -11,6 +11,7 @@ import io.ktor.client.plugins.logging.LogLevel
 import io.ktor.client.plugins.logging.Logging
 import io.ktor.client.plugins.websocket.DefaultClientWebSocketSession
 import io.ktor.client.plugins.websocket.WebSockets
+import io.ktor.client.plugins.websocket.pingInterval
 import io.ktor.client.plugins.websocket.webSocket
 import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpMethod
@@ -48,7 +49,7 @@ class WebSocketTransfer(
             logger = KtorKermitBridge(level)
         }
         install(WebSockets) {
-            pingInterval = pingDuration.inWholeMilliseconds
+            pingInterval = pingDuration
         }
         developmentMode = debugMode
     }
