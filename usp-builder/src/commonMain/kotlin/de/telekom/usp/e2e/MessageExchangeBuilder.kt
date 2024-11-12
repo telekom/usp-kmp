@@ -3,8 +3,8 @@ package de.telekom.usp.e2e
 import de.telekom.usp.EndpointIdentifier
 import de.telekom.usp.messages.MessageConverterImpl
 import de.telekom.usp.mtp.MessageTransfer
+import de.telekom.usp.mtp.mqtt.KtorMqttTransfer
 import de.telekom.usp.mtp.mqtt.MqttConfig
-import de.telekom.usp.mtp.mqtt.MqttTransfer
 import de.telekom.usp.mtp.mqtt.QoS
 import de.telekom.usp.mtp.mqtt.Topic
 import de.telekom.usp.mtp.mqtt.Version
@@ -137,12 +137,12 @@ class MqttTransferBuilder(
 
     fun configure(init: MqttConfigBuilder.() -> Unit) = configBuilder.init()
 
-    fun build(scope: CoroutineScope): MqttTransfer {
-        return MqttTransfer(
+    fun build(scope: CoroutineScope): KtorMqttTransfer {
+        return KtorMqttTransfer(
             host = host,
             port = port,
             user = user,
-            password = password,
+            pwd = password,
             useTls = useTls,
             from = from,
             mqttConfig = configBuilder.build(),

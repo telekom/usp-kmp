@@ -9,6 +9,7 @@ wire = "4.9.3"
 okio = "3.9.1"
 moshi = "1.14.0"
 ktor = "3.0.0"
+ktor-mqtt = "0.5.0"
 kmqtt = "0.4.6"
 mockery = "2.3.0" # First part of version name MUST be the Kotlin version!
 kover = "0.8.3"
@@ -39,6 +40,8 @@ okio = { module = "com.squareup.okio:okio", version.ref = "okio" }
 okio-fakefilesystem = { module = "com.squareup.okio:okio-fakefilesystem", version.ref = "okio" }
 kmqtt-common = { module = "io.github.davidepianca98:kmqtt-common", version.ref = "kmqtt" }
 kmqtt-client = { module = "io.github.davidepianca98:kmqtt-client", version.ref = "kmqtt" }
+mqtt-core = { module = "de.kempmobil.ktor.mqtt:mqtt-core", version.ref = "ktor-mqtt" }
+mqtt-client = { module = "de.kempmobil.ktor.mqtt:mqtt-client", version.ref = "ktor-mqtt" }
 slj4j-api = { module = "org.slf4j:slf4j-api", version.ref = "slf4j" }
 slj4j-simple = { module = "org.slf4j:slf4j-simple", version.ref = "slf4j" }
 

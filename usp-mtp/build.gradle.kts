@@ -34,6 +34,8 @@ kotlin {
             implementation(libs.kermit)
             implementation(libs.kmqtt.common)
             implementation(libs.kmqtt.client)
+            implementation(libs.mqtt.core)
+            implementation(libs.mqtt.client)
             implementation(libs.okio)
             api(libs.kotlinx.datetime)
             api(libs.wire.runtime)
