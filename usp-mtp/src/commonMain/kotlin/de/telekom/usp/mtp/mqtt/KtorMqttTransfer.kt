@@ -74,9 +74,8 @@ class KtorMqttTransfer(
     init {
         scope.launch {
             client.publishedPackets.collect { publish ->
-                val event = publish.toMessageTransferEvent()
-                if (event != null) {
-                    _events.emit(event)
+                publish.toMessageTransferEvent()?.let {
+                    _events.emit(it)
                 }
             }
         }
@@ -106,11 +105,11 @@ class KtorMqttTransfer(
     override suspend fun connect() {
         client.connect()
             .onSuccess { connack ->
-                client.subscribe(buildFilterList {
-                    connack.subscribeTopics().forEach { topic ->
-                        add(topic, mqttConfig.qos.asQoS())
-                    }
-                })
+                if (connack.isSuccess) {
+                    subscribe(connack)
+                } else {
+                    Logger.w { "CONNACK received with neg. acknowledgement: $connack" }
+                }
             }
             .onFailure {
                 Logger.w { "Cannot connect: $it" }
@@ -121,9 +120,20 @@ class KtorMqttTransfer(
         client.disconnect()
     }
 
+    private suspend fun subscribe(connack: Connack) {
+        client.subscribe(buildFilterList {
+            add(mqttConfig.ownTopic.toString(), mqttConfig.qos.asQoS())
+            connack.userProperties.values
+                .filter { it.name == "subscribe-topic" }
+                .forEach {
+                    add(it.value, mqttConfig.qos.asQoS())
+                }
+        })
+    }
+
     private fun Publish.toMessageTransferEvent(): MessageTransferEvent? {
-        val replyTo = responseTopic?.value ?: ""
-        if (replyTo.isNotEmpty()) {
+        val replyTo = responseTopic?.value
+        if (!replyTo.isNullOrBlank()) {
             Logger.i { "Client sent new response topic: '$replyTo'" }
             overrideTopic = Topic(replyTo)
         }
@@ -142,15 +152,6 @@ class KtorMqttTransfer(
                 || localContentType == USP_CONTENT_TYPE
                 || localContentType == USP_MIME_TYPE_1
                 || localContentType == USP_MIME_TYPE_2
-    }
-
-    private fun Connack.subscribeTopics(): List<String> {
-        return buildList {
-            add(mqttConfig.ownTopic.toString())
-            userProperties.values.forEach { pair ->
-                if (pair.name == "subscribe-topic") add(pair.value)
-            }
-        }
     }
 
     private fun de.telekom.usp.mtp.mqtt.QoS.asQoS(): QoS {

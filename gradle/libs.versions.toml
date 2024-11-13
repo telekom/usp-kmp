@@ -8,10 +8,10 @@ kotlinx-serialization = "1.7.3"
 wire = "4.9.3"
 okio = "3.9.1"
 moshi = "1.14.0"
-ktor = "3.0.0"
+ktor = "3.0.1"
 ktor-mqtt = "0.5.0"
 kmqtt = "0.4.6"
-mockery = "2.3.0" # First part of version name MUST be the Kotlin version!
+mockery = "2.3.0"
 kover = "0.8.3"
 slf4j = "2.0.16"         # Used only in cli subproject
 
