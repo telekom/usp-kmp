@@ -1,18 +1,18 @@
 [versions]
-usp = "0.1.0"
+usp = "0.2.0"
 
 agp = "8.2.2"
-kotlin = "2.0.20"
-kotlinx-coroutines = "1.9.0"
-kotlinx-serialization = "1.7.3"
-wire = "4.9.3"
-okio = "3.9.1"
+kotlin = "2.1.0"
+kotlinx-coroutines = "1.10.1"
+kotlinx-serialization = "1.8.0"
+wire = "5.3.1"
+okio = "3.10.2"
 moshi = "1.14.0"
-ktor = "3.0.1"
-ktor-mqtt = "0.5.0"
+ktor = "3.1.1"
+ktor-mqtt = "0.5.1"
 kmqtt = "0.4.6"
-mockery = "2.3.0"
-kover = "0.8.3"
+mockery = "2.7.0"
+kover = "0.9.1"
 slf4j = "2.0.16"         # Used only in cli subproject
 
 # Android specifics:
@@ -21,7 +21,7 @@ compileSdk = "34"
 
 [libraries]
 kotlin-test = { module = "org.jetbrains.kotlin:kotlin-test", version.ref = "kotlin" }
-kotlinx-datetime = "org.jetbrains.kotlinx:kotlinx-datetime:0.6.1"
+kotlinx-datetime = "org.jetbrains.kotlinx:kotlinx-datetime:0.6.2"
 kotlinx-coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "kotlinx-coroutines" }
 kotlinx-coroutines-test = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "kotlinx-coroutines" }
 kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "kotlinx-serialization" }

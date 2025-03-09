@@ -5,50 +5,12 @@ import de.telekom.usp.NoError
 import de.telekom.usp.SessionContextNotAllowed
 import de.telekom.usp.messages.MessageConversionResult
 import de.telekom.usp.messages.MessageConverter
-import de.telekom.usp.messages.proto.AddResp
-import de.telekom.usp.messages.proto.DeleteResp
-import de.telekom.usp.messages.proto.DeregisterResp
-import de.telekom.usp.messages.proto.GetInstancesResp
-import de.telekom.usp.messages.proto.GetResp
-import de.telekom.usp.messages.proto.GetSupportedDMResp
-import de.telekom.usp.messages.proto.GetSupportedProtocolResp
-import de.telekom.usp.messages.proto.Header
-import de.telekom.usp.messages.proto.Msg
-import de.telekom.usp.messages.proto.NotifyResp
-import de.telekom.usp.messages.proto.OperateResp
-import de.telekom.usp.messages.proto.RegisterResp
-import de.telekom.usp.messages.proto.SetResp
-import de.telekom.usp.messages.proto.addResponse
-import de.telekom.usp.messages.proto.deleteResponse
-import de.telekom.usp.messages.proto.deregisterResponse
-import de.telekom.usp.messages.proto.error
-import de.telekom.usp.messages.proto.getInstancesResponse
-import de.telekom.usp.messages.proto.getResponse
-import de.telekom.usp.messages.proto.getSupportedDmResponse
-import de.telekom.usp.messages.proto.getSupportedProtocolResponse
-import de.telekom.usp.messages.proto.id
-import de.telekom.usp.messages.proto.isError
-import de.telekom.usp.messages.proto.isResponse
-import de.telekom.usp.messages.proto.notifyRequest
-import de.telekom.usp.messages.proto.notifyResponse
-import de.telekom.usp.messages.proto.operateRequest
-import de.telekom.usp.messages.proto.operateResponse
-import de.telekom.usp.messages.proto.registerResponse
-import de.telekom.usp.messages.proto.requireType
-import de.telekom.usp.messages.proto.setResponse
+import de.telekom.usp.messages.proto.*
 import de.telekom.usp.mtp.MessageTransfer
 import de.telekom.usp.mtp.MessageTransferEvent
-import kotlinx.coroutines.CancellationException
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.IO
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.cancelAndJoin
-import kotlinx.coroutines.delay
+import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.datetime.Clock
@@ -101,11 +63,7 @@ class MessageExchange(
                 watchdog()
             })
 
-            scope.launch {
-                connectionState.emit(ConnectionState.CONNECTING)
-                Logger.i { "Connecting to $transfer" }
-                transfer.connect()
-            }
+            connect()
             isStarted = true
         }
     }
@@ -250,6 +208,10 @@ class MessageExchange(
             throw IllegalStateException("MessageExchange not started, call start() before sending requests")
         }
         waitForConnecting()
+        if (!isConnected()) {
+            connect()
+            waitForConnecting()
+        }
 
         if (connectionState.value == ConnectionState.CONNECTED) {
             if (converter.allowSessionContext && remoteAllowsSessionContext) {
@@ -304,6 +266,16 @@ class MessageExchange(
     private suspend fun waitForConnecting() {
         Logger.d("Waiting for transfer connection to be established...")
         connectionState.first { it != ConnectionState.CONNECTING }
+    }
+
+    private fun isConnected() = connectionState.value == ConnectionState.CONNECTED
+
+    private suspend fun connect() {
+        connectionState.emit(ConnectionState.CONNECTING)
+        scope.launch {
+            Logger.i { "Connecting to $transfer" }
+            transfer.connect()
+        }
     }
 
     private suspend fun handleDecoderResult(result: MessageConversionResult) {

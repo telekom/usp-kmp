@@ -11,10 +11,6 @@ dependencyResolutionManagement {
     repositories {
         google()
         mavenCentral()
-        maven {
-            name = "ktor-mqtt"
-            url = uri("/home/kemp/Workspace/ktor-mqtt/repo")
-        }
     }
 }
 
