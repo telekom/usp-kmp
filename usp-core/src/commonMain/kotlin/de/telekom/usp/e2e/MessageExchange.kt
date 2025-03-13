@@ -213,7 +213,7 @@ class MessageExchange(
             waitForConnecting()
         }
 
-        if (connectionState.value == ConnectionState.CONNECTED) {
+        if (isConnected()) {
             if (converter.allowSessionContext && remoteAllowsSessionContext) {
                 converter.sessionContextMessage(msg = msg).forEach { transfer.send(it) }
             } else {
@@ -268,14 +268,17 @@ class MessageExchange(
         connectionState.first { it != ConnectionState.CONNECTING }
     }
 
-    private fun isConnected() = connectionState.value == ConnectionState.CONNECTED
+    private fun isConnected(): Boolean {
+        return connectionState.value.let {
+            Logger.d("Current connection state is: $it")
+            it == ConnectionState.CONNECTED
+        }
+    }
 
     private suspend fun connect() {
         connectionState.emit(ConnectionState.CONNECTING)
-        scope.launch {
-            Logger.i { "Connecting to $transfer" }
-            transfer.connect()
-        }
+        Logger.i { "Connecting to $transfer..." }
+        transfer.connect()
     }
 
     private suspend fun handleDecoderResult(result: MessageConversionResult) {
