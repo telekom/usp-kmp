@@ -1,25 +1,17 @@
 package de.telekom.usp.mtp.mqtt
 
 import co.touchlab.kermit.Logger
-import de.kempmobil.ktor.mqtt.Connected
-import de.kempmobil.ktor.mqtt.Disconnected
-import de.kempmobil.ktor.mqtt.MqttClient
-import de.kempmobil.ktor.mqtt.PublishRequest
+import de.kempmobil.ktor.mqtt.*
 import de.kempmobil.ktor.mqtt.QoS
-import de.kempmobil.ktor.mqtt.buildFilterList
 import de.kempmobil.ktor.mqtt.packet.Connack
 import de.kempmobil.ktor.mqtt.packet.Publish
 import de.telekom.usp.EndpointIdentifier
 import de.telekom.usp.mtp.MessageTransfer
 import de.telekom.usp.mtp.MessageTransferEvent
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.IO
-import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
-import kotlinx.coroutines.launch
 import okio.ByteString.Companion.toByteString
 
 class KtorMqttTransfer(
@@ -112,7 +104,8 @@ class KtorMqttTransfer(
                 }
             }
             .onFailure {
-                Logger.w { "Cannot connect: $it" }
+                Logger.w { "Connection failed: $it" }
+                _events.emit(MessageTransferEvent.ConnectionFailed(this, it))
             }
     }
 
