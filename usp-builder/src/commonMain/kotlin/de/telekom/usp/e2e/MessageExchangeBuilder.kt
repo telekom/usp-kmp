@@ -135,6 +135,12 @@ class MqttTransferBuilder(
      */
     var useTls: Boolean = true
 
+    /**
+     * The web socket path to enable MQTT via websockets (usually `/mqtt`) or `null` to not use
+     * web sockets.
+     */
+    var webSocketPath: String? = null
+
     fun configure(init: MqttConfigBuilder.() -> Unit) = configBuilder.init()
 
     fun build(scope: CoroutineScope): KtorMqttTransfer {
@@ -144,6 +150,7 @@ class MqttTransferBuilder(
             user = user,
             pwd = password,
             useTls = useTls,
+            webSocketPath = webSocketPath,
             from = from,
             mqttConfig = configBuilder.build(),
             scope = scope
