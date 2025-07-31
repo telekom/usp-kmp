@@ -20,6 +20,7 @@ class KtorMqttTransfer(
     user: String? = null,
     pwd: String? = null,
     useTls: Boolean,
+    val webSocketPath: String? = null,
     private val from: EndpointIdentifier,
     private val mqttConfig: MqttConfig,
     private val scope: CoroutineScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
@@ -64,6 +65,9 @@ class KtorMqttTransfer(
         get() = _events.asSharedFlow()
 
     init {
+        if (webSocketPath != null) {
+            throw UnsupportedOperationException("MQTT with Ktor and Websockets is currently not supported")
+        }
         scope.launch {
             client.publishedPackets.collect { publish ->
                 publish.toMessageTransferEvent()?.let {
