@@ -6,23 +6,10 @@ import de.telekom.usp.Path
 import de.telekom.usp.isCommand
 import de.telekom.usp.isEvent
 import de.telekom.usp.messages.MessageIdFactory
-import de.telekom.usp.messages.proto.Add
-import de.telekom.usp.messages.proto.Body
-import de.telekom.usp.messages.proto.Delete
-import de.telekom.usp.messages.proto.Deregister
-import de.telekom.usp.messages.proto.Get
-import de.telekom.usp.messages.proto.GetInstances
-import de.telekom.usp.messages.proto.GetSupportedDM
+import de.telekom.usp.messages.proto.*
 import de.telekom.usp.messages.proto.GetSupportedProtocol
-import de.telekom.usp.messages.proto.Header
-import de.telekom.usp.messages.proto.Msg
-import de.telekom.usp.messages.proto.Notify
 import de.telekom.usp.messages.proto.Notify.OperationComplete.CommandFailure
 import de.telekom.usp.messages.proto.Notify.OperationComplete.OutputArgs
-import de.telekom.usp.messages.proto.Operate
-import de.telekom.usp.messages.proto.Register
-import de.telekom.usp.messages.proto.Request
-import de.telekom.usp.messages.proto.Set
 
 /**
  * Create a new `Msg` of type GET. Sample usage:
@@ -30,7 +17,7 @@ import de.telekom.usp.messages.proto.Set
  * ```kotlin
  * val msg = Get {
  *     maxDepth = 2
- *     addPath("Device.")
+ *     paths("Device.")
  * }
  * ```
  */
@@ -42,7 +29,7 @@ fun Get(init: GetRequestBuilder.() -> Unit) = initBuilder(GetRequestBuilder(), i
  * ```kotlin
  * val msg = Set {
  *     allowPartial = false
- *     addPath("Device.") {
+ *     path("Device.") {
  *         params["param1"] = "value1" required true
  *     }
  * }
@@ -56,7 +43,7 @@ fun Set(init: SetRequestBuilder.() -> Unit) = initBuilder(SetRequestBuilder(), i
  * ```kotlin
  * val msg = Add {
  *     allowPartial = false
- *     addPath("Device.") {
+ *     path("Device.") {
  *         params["param1"] = "value1" required true
  *     }
  * }
@@ -70,7 +57,7 @@ fun Add(init: AddRequestBuilder.() -> Unit) = initBuilder(AddRequestBuilder(), i
  * ```kotlin
  * val msg = Delete {
  *     allowPartial = false
- *     addPath("Device.")
+ *     paths("Device.")
  * }
  * ```
  */
@@ -82,7 +69,7 @@ fun Delete(init: DeleteRequestBuilder.() -> Unit) = initBuilder(DeleteRequestBui
  * ```kotlin
  * val msg = Register {
  *     allowPartial = false
- *     addPath("Device.")
+ *     paths("Device.")
  * }
  * ```
  */
@@ -93,7 +80,7 @@ fun Register(init: RegisterBuilder.() -> Unit) = initBuilder(RegisterBuilder(), 
  *
  * ```kotlin
  * val msg = Deregister {
- *     addPath("Device.")
+ *     paths("Device.")
  * }
  * ```
  */
@@ -175,7 +162,7 @@ fun GetSupportedProtocol(
  * ```kotlin
  * val msg = GetInstances {
  *     firstLevelOnly = false
- *     path("Device.")
+ *     paths("Device.")
  * }
  * ```
  */
@@ -265,6 +252,10 @@ class SetRequestBuilder internal constructor() : RequestMessageBuilder(Header.Ms
         }
 
     var allowPartial = true
+
+    fun path(path: Path, init: ParamSettingsBuilder.() -> Unit) {
+        addBuilder(ParamSettingsBuilder(path.toString()), paramSettingsBuilder, init)
+    }
 
     fun path(path: String, init: ParamSettingsBuilder.() -> Unit) {
         addBuilder(ParamSettingsBuilder(path), paramSettingsBuilder, init)
