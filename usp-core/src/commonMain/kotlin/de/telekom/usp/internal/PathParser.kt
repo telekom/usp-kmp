@@ -1,11 +1,6 @@
 package de.telekom.usp.internal
 
-import de.telekom.usp.Device
-import de.telekom.usp.Path
-import de.telekom.usp.PathElement
-import de.telekom.usp.ReferenceFollowing
-import de.telekom.usp.first
-import de.telekom.usp.isResolved
+import de.telekom.usp.*
 
 internal class PathParser(private val text: String) {
     private var start = 0
@@ -16,13 +11,13 @@ internal class PathParser(private val text: String) {
     private val isAtEnd: Boolean
         get() = current >= text.length
 
-    fun parse(asSupportedDataModelPath: Boolean = false): Path {
+    fun parse(asSupportedDataModelPath: Boolean = false, asReferencePath: Boolean = false): Path {
         current = 0
         elements.clear()
 
         while (!isAtEnd) {
             start = current
-            parseElement()
+            parseElement(asReferencePath)
         }
 
         return if (containsPlaceholder || asSupportedDataModelPath) {
@@ -34,7 +29,7 @@ internal class PathParser(private val text: String) {
         }
     }
 
-    private fun parseElement() {
+    private fun parseElement(asReferencePath: Boolean) {
         while (!isAtEnd) {
             when (advance()) {
                 '[' -> {
@@ -60,7 +55,11 @@ internal class PathParser(private val text: String) {
         }
 
         if (start < current) {
-            parameter()
+            if (asReferencePath) {
+                objectPath()
+            } else {
+                parameter()
+            }
         }
     }
 
@@ -75,7 +74,14 @@ internal class PathParser(private val text: String) {
 
             else -> {
                 val instance = base.toIntOrNull()
-                val name = text.substring(start, current) // Includes the terminal dot
+                val name = with(text.substring(start, current)) {
+                    // When parsing a reference path, the last dot will be omitted, add it here:
+                    if (last() == '.') {
+                        this
+                    } else {
+                        "$this."
+                    }
+                }
 
                 if (instance == null) {
                     add(PathElement.Object(name, null, ReferenceFollowing.from(base)))

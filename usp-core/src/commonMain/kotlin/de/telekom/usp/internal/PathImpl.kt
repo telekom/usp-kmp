@@ -1,12 +1,6 @@
 package de.telekom.usp.internal
 
-import de.telekom.usp.Device
-import de.telekom.usp.Path
-import de.telekom.usp.PathElement
-import de.telekom.usp.ResolvedPath
-import de.telekom.usp.first
-import de.telekom.usp.isResolved
-import de.telekom.usp.isTerminal
+import de.telekom.usp.*
 
 
 internal open class PathImpl(final override val elements: List<PathElement>) : Path {
@@ -57,9 +51,7 @@ internal open class PathImpl(final override val elements: List<PathElement>) : P
 
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
-        if (other == null || this::class != other::class) return false
-
-        other as PathImpl
+        if (other == null || other !is Path) return false
 
         return elements == other.elements
     }

@@ -51,7 +51,12 @@ interface Path {
     /**
      * Returns a path containing all elements except last n elements.
      */
-    fun dropLast(n: Int): Path
+    fun dropLast(n: Int = 1): Path
+
+    /**
+     * Must return the path value of this as a string.
+     */
+    override fun toString(): String
 }
 
 // According to https://kotlinlang.org/docs/api-guidelines-minimizing-mental-complexity.html#use-extension-functions-and-properties
@@ -125,9 +130,10 @@ fun Path.endsWith(path: Path): Boolean {
 }
 
 /**
- * Determines whether this path is an instantiated object of the specified path. For example
+ * Determines whether this path is an instantiated object of the specified path. For example,
  * if this is `Device.WiFi.AccessPoint.2.` then this method returns `true`, if `path` is
- * `Device.WiFi.AccessPoint.` and `false` for all other paths.
+ * `Device.WiFi.AccessPoint.` and `false` for all other paths. Specifically, it returns `false`
+ * when `path` is for example `Device.WiFi.AccessPoint.2.Security.`.
  */
 fun Path.isInstanceOf(path: Path): Boolean {
     return path.size == size - 1 && isInstance && startsWith(path)
@@ -142,11 +148,15 @@ fun Path.startsWithDevice() = startsWith(Device)
  * Factory function to create a path instance from a string. Don't use this function to create
  * supported data model paths (i.e. paths which contain "{i}")! See the [SupportedDataModelPath]
  * factory function for this.
+ *
+ * @param isReference when `true` parses the text as a path reference. Path references do not contain dots at the end.
+ *        Hence, the resulting path will contain an object element as the last path element, while a path which is not
+ *        a reference and ends without a dot, will contain a parameter as the last path element!
  */
-fun Path(text: String): Path {
+fun Path(text: String, isReference: Boolean = false): Path {
     require(text.isNotBlank()) { "Empty Path not allowed" }
 
-    val path = PathParser(text).parse()
+    val path = PathParser(text).parse(asReferencePath = isReference)
     if (path is SupportedDataModelPath) {
         throw IllegalArgumentException("Use SupportedDataModelPath(String) to create supported data model paths")
     }
@@ -154,6 +164,11 @@ fun Path(text: String): Path {
 }
 
 fun String.toPath() = Path(this)
+
+/**
+ * See the `Path(String, Boolean)` function.
+ */
+fun String.toPathAsReference() = Path(this, true)
 
 fun String.toPathOrNull(): Path? {
     return try {

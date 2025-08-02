@@ -1,28 +1,7 @@
 package de.telekom.usp.internal
 
-import de.telekom.usp.Device
-import de.telekom.usp.DeviceInfo
-import de.telekom.usp.IP
-import de.telekom.usp.Path
-import de.telekom.usp.PathElement
-import de.telekom.usp.ResolvedPath
-import de.telekom.usp.WiFi
-import de.telekom.usp.endsWith
-import de.telekom.usp.isInstanceOf
-import de.telekom.usp.isTerminal
-import de.telekom.usp.last
-import de.telekom.usp.lastAs
-import de.telekom.usp.startsWith
-import de.telekom.usp.startsWithDevice
-import kotlin.test.Test
-import kotlin.test.assertContains
-import kotlin.test.assertEquals
-import kotlin.test.assertFailsWith
-import kotlin.test.assertFalse
-import kotlin.test.assertIs
-import kotlin.test.assertNotEquals
-import kotlin.test.assertNotNull
-import kotlin.test.assertTrue
+import de.telekom.usp.*
+import kotlin.test.*
 
 
 class PathParserTest {
@@ -42,6 +21,14 @@ class PathParserTest {
         }
     }
 
+
+    @Test
+    fun `parses reference paths without error`() {
+        val expected = Path("Device.WiFi.SSID.1.")
+        assertEquals(expected, Path("Device.WiFi.SSID.1", true))
+        assertEquals(expected, Path("Device.WiFi.SSID.1.", true))
+    }
+
     @Test
     fun `equals matches paths correctly`() {
         assertEquals(Path("Device.IP.Interface.*."), Path("Device.IP.Interface.*."))
@@ -50,6 +37,10 @@ class PathParserTest {
         assertEquals(IP + "Interface.", IP + "Interface.")
 
         assertNotEquals(Path("Parameter."), Path("Parameter"))
+
+        // Special case: ResolvedPath equals Path which is resolved when path elements match
+        val resolved = Path("Device.IP.Interface.1.").asResolvedPath()
+        assertEquals(Path("Device.IP.Interface.1."), resolved)
     }
 
     @Test
@@ -81,6 +72,45 @@ class PathParserTest {
         assertNotNull(ref.refFollow)
         assertEquals(1, ref.refFollow!!.itemNumber)
         assertEquals("Interface", ref.refFollow!!.name)
+    }
+
+    @Test
+    fun `returns a resolved path instance when path is resolved`() {
+        val resolved = Path("Device.WiFi.SSID.1.")
+        assertIs<ResolvedPath>(resolved.asResolvedPath())
+
+        val notResolved = Path("Device.IP.Interface.*.Type")
+        assertFailsWith<IllegalArgumentException> {
+            notResolved.asResolvedPath()
+        }
+    }
+
+    @Test
+    fun `replace replaces the proper path elements`() {
+        val path = Path("Device.WiFi.SSID.1.")
+        val replaced = path.replace(1, Path("IP.").elements[0])
+
+        assertEquals(Path("Device.IP.SSID.1."), replaced)
+    }
+
+    @Test
+    fun `mapIndexed creates a mapped path`() {
+        val path = Path("Device.WiFi.SSID.1.")
+        val mapped = path.mapIndexed { index, element ->
+            if (index == 2) Path("IP.").elements[0]
+            else if (index == 3) Path("4.").elements[0]
+            else element
+        }
+
+        assertEquals(Path("Device.WiFi.IP.4."), mapped)
+    }
+
+    @Test
+    fun `subPath returns a view of the original path`() {
+        val path = Path("Device.WiFi.SSID.1.")
+        val subPath = path.subPath(1, 3)
+
+        assertEquals(Path("WiFi.SSID."), subPath)
     }
 
     @Test
@@ -211,5 +241,27 @@ class PathParserTest {
         assertFalse((WiFi + "1.").isInstanceOf(parent))
         assertFalse((parent + "1.AssociatedDevice.").isInstanceOf(parent))
         assertFalse((parent + "1.AssociatedDevice.1.").isInstanceOf(parent))
+    }
+
+    @Test
+    fun `dropLast drops the correct number of path elements`() {
+        val path = Path("Device.IP.Interface.1.Interface.3.IPv4Address.")
+        assertEquals(Path("Device.IP.Interface.1.Interface.3.IPv4Address."), path.dropLast(0))
+        assertEquals(Path("Device.IP.Interface.1.Interface.3."), path.dropLast())
+        assertEquals(Path("Device.IP.Interface.1.Interface."), path.dropLast(2))
+        assertEquals(Path("Device.IP.Interface.1."), path.dropLast(3))
+    }
+
+    @Test
+    fun `toString returns the path value`() {
+        listOf(
+            "Device.IP.Interface.",
+            "Device.IP.Interface.Status",
+            "Device.IP.Interface.1.",
+            "Device.IP.Interface.1.Interface.3.IPv4Address.",
+            "Device.Reboot()",
+        ).forEach {
+            assertEquals(it, Path(it).toString())
+        }
     }
 }
