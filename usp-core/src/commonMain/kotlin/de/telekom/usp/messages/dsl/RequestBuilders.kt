@@ -6,10 +6,24 @@ import de.telekom.usp.Path
 import de.telekom.usp.isCommand
 import de.telekom.usp.isEvent
 import de.telekom.usp.messages.MessageIdFactory
-import de.telekom.usp.messages.proto.*
+//import de.telekom.usp.messages.proto.*  // THIS WILL LEAD TO COMPILATION ERRORS, DON'T USE THIS!!!
+import de.telekom.usp.messages.proto.Add
+import de.telekom.usp.messages.proto.Body
+import de.telekom.usp.messages.proto.Delete
+import de.telekom.usp.messages.proto.Deregister
+import de.telekom.usp.messages.proto.Get
+import de.telekom.usp.messages.proto.GetInstances
+import de.telekom.usp.messages.proto.GetSupportedDM
 import de.telekom.usp.messages.proto.GetSupportedProtocol
+import de.telekom.usp.messages.proto.Header
+import de.telekom.usp.messages.proto.Msg
+import de.telekom.usp.messages.proto.Notify
 import de.telekom.usp.messages.proto.Notify.OperationComplete.CommandFailure
 import de.telekom.usp.messages.proto.Notify.OperationComplete.OutputArgs
+import de.telekom.usp.messages.proto.Operate
+import de.telekom.usp.messages.proto.Register
+import de.telekom.usp.messages.proto.Request
+import de.telekom.usp.messages.proto.Set
 
 /**
  * Create a new `Msg` of type GET. Sample usage:
