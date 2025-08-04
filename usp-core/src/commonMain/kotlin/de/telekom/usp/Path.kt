@@ -145,6 +145,41 @@ fun Path.isInstanceOf(path: Path): Boolean {
 fun Path.startsWithDevice() = startsWith(Device)
 
 /**
+ * Returns a string representation of this path as a reference, i.e. without the trailing dot at the end.
+ *
+ * @throws IllegalStateException when this path is a command, a parameter or an event, as they cannot be converted
+ *         into a reference
+ */
+fun Path.toStringAsReference(): String {
+    return when (last()) {
+        is PathElement.Command -> {
+            throw IllegalStateException("Cannot convert a command path ($this) into a reference")
+        }
+
+        is PathElement.Event -> {
+            throw IllegalStateException("Cannot convert an event path ($this) into a reference")
+        }
+
+        is PathElement.Parameter -> {
+            throw IllegalStateException("Cannot convert a parameter path ($this) into a reference")
+        }
+
+        else -> {
+            buildString {
+                val limit = elements.size - 1
+                elements.forEachIndexed { index, element ->
+                    if (index < limit) {
+                        append(element)
+                    } else {
+                        append(element.text.removeSuffix("."))
+                    }
+                }
+            }
+        }
+    }
+}
+
+/**
  * Factory function to create a path instance from a string. Don't use this function to create
  * supported data model paths (i.e. paths which contain "{i}")! See the [SupportedDataModelPath]
  * factory function for this.
@@ -168,7 +203,7 @@ fun String.toPath() = Path(this)
 /**
  * See the `Path(String, Boolean)` function.
  */
-fun String.toPathAsReference() = Path(this, true)
+fun String.toPathFromReference() = Path(this, true)
 
 fun String.toPathOrNull(): Path? {
     return try {

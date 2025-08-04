@@ -30,6 +30,16 @@ class PathParserTest {
     }
 
     @Test
+    fun `toStringAsReference removes the trailing dot`() {
+        val path = Path("Device.WiFi.SSID.1.")
+        assertEquals("Device.WiFi.SSID.1", path.toStringAsReference())
+
+        assertFailsWith<IllegalStateException> { Path("Device.Reboot()").toStringAsReference() }
+        assertFailsWith<IllegalStateException> { Path("Device.Event!").toStringAsReference() }
+        assertFailsWith<IllegalStateException> { Path("Device.Parameter").toStringAsReference() }
+    }
+
+    @Test
     fun `equals matches paths correctly`() {
         assertEquals(Path("Device.IP.Interface.*."), Path("Device.IP.Interface.*."))
         assertEquals(Path("Parameter"), Path("Parameter"))
