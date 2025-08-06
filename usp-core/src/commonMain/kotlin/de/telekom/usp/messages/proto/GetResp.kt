@@ -1,11 +1,8 @@
 package de.telekom.usp.messages.proto
 
+import de.telekom.usp.*
 import de.telekom.usp.Error
-import de.telekom.usp.Path
-import de.telekom.usp.ResolvedPath
 import de.telekom.usp.datamodel.InstanceObject
-import de.telekom.usp.isInstanceOf
-import de.telekom.usp.toResolvedPath
 
 fun GetResp.allResolvedPaths(): List<InstanceObject> {
     return req_path_results.flatMap { requestedPathResult ->
@@ -30,6 +27,22 @@ inline fun GetResp.filter(predicate: (ResolvedPath) -> Boolean): List<InstanceOb
             }
         }
     }
+}
+
+/**
+ * Returns the first InstanceObject matching the specified predicate or `null` if none is found.
+ */
+fun GetResp.firstOrNull(predicate: (ResolvedPath) -> Boolean): InstanceObject? {
+    req_path_results.forEach { requestedPathResult ->
+        requestedPathResult.resolved_path_results.forEach { result ->
+            val resolvedPath = result.resolved_path.toResolvedPath()
+
+            if (predicate(resolvedPath)) {
+                return InstanceObject(resolvedPath, result.result_params)
+            }
+        }
+    }
+    return null
 }
 
 /**
