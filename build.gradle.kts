@@ -4,6 +4,7 @@ plugins {
     alias(libs.plugins.kotlinMultiplatform).apply(false)
     alias(libs.plugins.org.jetbrains.kotlin.jvm).apply(false)
     alias(libs.plugins.kover).apply(false)
+    id("com.github.jk1.dependency-license-report") version "3.1.4"
 }
 
 // Local maven repository to publish artifacts to
