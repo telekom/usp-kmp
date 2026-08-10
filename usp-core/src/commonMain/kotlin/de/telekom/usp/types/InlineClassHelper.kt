@@ -1,3 +1,9 @@
+/*
+ * SPDX-FileCopyrightText: 2026 Deutsche Telekom AG
+ *
+ * SPDX-License-Identifier: APACHE-2.0
+ */
+
 package de.telekom.usp.types
 
 public inline fun packInts(val1: Int, val2: Int): Long = val1.toLong().shl(32) or (val2.toLong() and

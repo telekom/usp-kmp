@@ -1,22 +1,15 @@
+/*
+ * SPDX-FileCopyrightText: 2026 Deutsche Telekom AG
+ *
+ * SPDX-License-Identifier: APACHE-2.0
+ */
+
 package de.telekom.usp.messages.dsl
 
-import de.telekom.usp.InternalError
-import de.telekom.usp.InvalidType
-import de.telekom.usp.MessageNotSupported
-import de.telekom.usp.ParameterActionFailed
-import de.telekom.usp.Path
-import de.telekom.usp.RequestDenied
-import de.telekom.usp.messages.proto.GetSupportedDMResp.CmdType
-import de.telekom.usp.messages.proto.GetSupportedDMResp.ObjAccessType
-import de.telekom.usp.messages.proto.GetSupportedDMResp.ParamAccessType
-import de.telekom.usp.messages.proto.GetSupportedDMResp.ParamValueType
-import de.telekom.usp.messages.proto.GetSupportedDMResp.ValueChangeType
+import de.telekom.usp.*
+import de.telekom.usp.messages.proto.GetSupportedDMResp.*
 import de.telekom.usp.messages.proto.Header
-import kotlin.test.Test
-import kotlin.test.assertEquals
-import kotlin.test.assertNotNull
-import kotlin.test.assertNull
-import kotlin.test.assertTrue
+import kotlin.test.*
 
 class ResponseBuildersTest {
 

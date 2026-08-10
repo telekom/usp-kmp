@@ -1,7 +1,13 @@
+/*
+ * SPDX-FileCopyrightText: 2026 Deutsche Telekom AG
+ *
+ * SPDX-License-Identifier: APACHE-2.0
+ */
+
 package de.telekom.usp.mtp.ws
 
 import co.touchlab.kermit.Logger
-import io.ktor.client.plugins.logging.LogLevel
+import io.ktor.client.plugins.logging.*
 
 class KtorKermitBridge(level: LogLevel) : io.ktor.client.plugins.logging.Logger {
 

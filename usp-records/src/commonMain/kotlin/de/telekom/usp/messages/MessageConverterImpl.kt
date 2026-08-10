@@ -1,37 +1,17 @@
+/*
+ * SPDX-FileCopyrightText: 2026 Deutsche Telekom AG
+ *
+ * SPDX-License-Identifier: APACHE-2.0
+ */
+
 package de.telekom.usp.messages
 
 import co.touchlab.kermit.Logger
-import de.telekom.usp.EndpointIdentifier
-import de.telekom.usp.Error
-import de.telekom.usp.MessageNotSupported
-import de.telekom.usp.SessionContextNotAllowed
-import de.telekom.usp.Versions
-import de.telekom.usp.messages.MessageConversionResult.DecoderError
-import de.telekom.usp.messages.MessageConversionResult.Disconnect
-import de.telekom.usp.messages.MessageConversionResult.Message
-import de.telekom.usp.messages.MessageConversionResult.MqttConnect
-import de.telekom.usp.messages.MessageConversionResult.RecordsMissing
-import de.telekom.usp.messages.MessageConversionResult.Retransmit
-import de.telekom.usp.messages.MessageConversionResult.SessionEstablished
-import de.telekom.usp.messages.MessageConversionResult.StompConnect
-import de.telekom.usp.messages.MessageConversionResult.UdsConnect
-import de.telekom.usp.messages.MessageConversionResult.UspError
-import de.telekom.usp.messages.MessageConversionResult.WebSocketConnect
+import de.telekom.usp.*
+import de.telekom.usp.messages.MessageConversionResult.*
 import de.telekom.usp.messages.proto.Msg
-import de.telekom.usp.record.proto.DisconnectRecord
-import de.telekom.usp.record.proto.MQTTConnectRecord
-import de.telekom.usp.record.proto.NoSessionContextRecord
-import de.telekom.usp.record.proto.Record
+import de.telekom.usp.record.proto.*
 import de.telekom.usp.record.proto.Record.PayloadSecurity
-import de.telekom.usp.record.proto.STOMPConnectRecord
-import de.telekom.usp.record.proto.SessionContextRecord
-import de.telekom.usp.record.proto.UDSConnectRecord
-import de.telekom.usp.record.proto.WebSocketConnectRecord
-import de.telekom.usp.record.proto.containsRetransmitRequest
-import de.telekom.usp.record.proto.hasPayload
-import de.telekom.usp.record.proto.isComplete
-import de.telekom.usp.record.proto.isSingleRecord
-import de.telekom.usp.record.proto.payloadToBufferedSource
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.sync.Mutex

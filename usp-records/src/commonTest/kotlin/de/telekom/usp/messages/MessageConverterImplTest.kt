@@ -1,23 +1,16 @@
+/*
+ * SPDX-FileCopyrightText: 2026 Deutsche Telekom AG
+ *
+ * SPDX-License-Identifier: APACHE-2.0
+ */
+
 package de.telekom.usp.messages
 
-import de.telekom.usp.CommandCanceled
-import de.telekom.usp.EndpointIdentifier
-import de.telekom.usp.MessageNotSupported
-import de.telekom.usp.SessionContextNotAllowed
-import de.telekom.usp.Versions
+import de.telekom.usp.*
 import de.telekom.usp.messages.proto.Header
 import de.telekom.usp.messages.proto.Msg
-import de.telekom.usp.record.proto.DisconnectRecord
-import de.telekom.usp.record.proto.MQTTConnectRecord
-import de.telekom.usp.record.proto.NoSessionContextRecord
-import de.telekom.usp.record.proto.Record
-import de.telekom.usp.record.proto.STOMPConnectRecord
-import de.telekom.usp.record.proto.SessionContextRecord
-import de.telekom.usp.record.proto.SessionContextRecord.PayloadSARState.BEGIN
-import de.telekom.usp.record.proto.SessionContextRecord.PayloadSARState.COMPLETE
-import de.telekom.usp.record.proto.SessionContextRecord.PayloadSARState.INPROCESS
-import de.telekom.usp.record.proto.UDSConnectRecord
-import de.telekom.usp.record.proto.WebSocketConnectRecord
+import de.telekom.usp.record.proto.*
+import de.telekom.usp.record.proto.SessionContextRecord.PayloadSARState.*
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.TestScope
@@ -25,14 +18,7 @@ import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import okio.ByteString
 import okio.ByteString.Companion.encodeUtf8
-import kotlin.test.BeforeTest
-import kotlin.test.Test
-import kotlin.test.assertEquals
-import kotlin.test.assertFalse
-import kotlin.test.assertIs
-import kotlin.test.assertNotNull
-import kotlin.test.assertSame
-import kotlin.test.assertTrue
+import kotlin.test.*
 
 
 class MessageConverterImplTest {

@@ -1,11 +1,12 @@
+/*
+ * SPDX-FileCopyrightText: 2026 Deutsche Telekom AG
+ *
+ * SPDX-License-Identifier: APACHE-2.0
+ */
+
 package de.telekom.usp.internal
 
-import de.telekom.usp.Device
-import de.telekom.usp.Path
-import de.telekom.usp.PathElement
-import de.telekom.usp.ResolvedPath
-import de.telekom.usp.first
-import de.telekom.usp.isTerminal
+import de.telekom.usp.*
 
 internal class ResolvedPathImpl(elements: List<PathElement>) : PathImpl(elements), ResolvedPath {
 

@@ -1,12 +1,14 @@
+/*
+ * SPDX-FileCopyrightText: 2026 Deutsche Telekom AG
+ *
+ * SPDX-License-Identifier: APACHE-2.0
+ */
+
 package de.telekom.usp.messages
 
 import de.telekom.usp.record.proto.SessionContextRecord
 import okio.ByteString
-import kotlin.test.BeforeTest
-import kotlin.test.Test
-import kotlin.test.assertEquals
-import kotlin.test.assertNull
-import kotlin.test.assertSame
+import kotlin.test.*
 
 class InMemoryRecordBufferTest {
 

@@ -1,3 +1,9 @@
+/*
+ * SPDX-FileCopyrightText: 2026 Deutsche Telekom AG
+ *
+ * SPDX-License-Identifier: APACHE-2.0
+ */
+
 package de.telekom.usp.mtp.mqtt
 
 import MQTTClient
@@ -5,22 +11,9 @@ import co.touchlab.kermit.Logger
 import de.telekom.usp.EndpointIdentifier
 import de.telekom.usp.mtp.AbstractMessageTransfer
 import de.telekom.usp.mtp.MessageTransferEvent
-import de.telekom.usp.mtp.mqtt.kmqtt.contentType
-import de.telekom.usp.mtp.mqtt.kmqtt.isUspContentType
-import de.telekom.usp.mtp.mqtt.kmqtt.replyTo
-import de.telekom.usp.mtp.mqtt.kmqtt.subscriptionTopics
-import de.telekom.usp.mtp.mqtt.kmqtt.toMQTTVersion
-import de.telekom.usp.mtp.mqtt.kmqtt.toQos
-import io.ktor.utils.io.core.toByteArray
-import kotlinx.coroutines.CancellationException
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.IO
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.cancelAndJoin
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
+import de.telekom.usp.mtp.mqtt.kmqtt.*
+import io.ktor.utils.io.core.*
+import kotlinx.coroutines.*
 import mqtt.Subscription
 import mqtt.packets.mqtt.MQTTConnack
 import mqtt.packets.mqtt.MQTTDisconnect

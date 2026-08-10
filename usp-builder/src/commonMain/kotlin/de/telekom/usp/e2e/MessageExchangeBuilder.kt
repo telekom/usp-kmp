@@ -1,16 +1,17 @@
+/*
+ * SPDX-FileCopyrightText: 2026 Deutsche Telekom AG
+ *
+ * SPDX-License-Identifier: APACHE-2.0
+ */
 package de.telekom.usp.e2e
 
 import de.telekom.usp.EndpointIdentifier
 import de.telekom.usp.messages.MessageConverterImpl
 import de.telekom.usp.mtp.MessageTransfer
-import de.telekom.usp.mtp.mqtt.KtorMqttTransfer
-import de.telekom.usp.mtp.mqtt.MqttConfig
-import de.telekom.usp.mtp.mqtt.QoS
-import de.telekom.usp.mtp.mqtt.Topic
-import de.telekom.usp.mtp.mqtt.Version
+import de.telekom.usp.mtp.mqtt.*
 import de.telekom.usp.mtp.ws.WebSocketTransfer
-import io.ktor.client.engine.HttpClientEngine
-import io.ktor.client.engine.cio.CIO
+import io.ktor.client.engine.*
+import io.ktor.client.engine.cio.*
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO

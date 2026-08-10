@@ -1,3 +1,9 @@
+/*
+ * SPDX-FileCopyrightText: 2026 Deutsche Telekom AG
+ *
+ * SPDX-License-Identifier: APACHE-2.0
+ */
+
 @file:Suppress("FunctionName")
 
 package de.telekom.usp.messages.dsl
@@ -5,27 +11,11 @@ package de.telekom.usp.messages.dsl
 import de.telekom.usp.Error
 import de.telekom.usp.NoError
 import de.telekom.usp.Path
-import de.telekom.usp.messages.proto.AddResp
+import de.telekom.usp.messages.proto.*
 import de.telekom.usp.messages.proto.AddResp.CreatedObjectResult
-import de.telekom.usp.messages.proto.Body
-import de.telekom.usp.messages.proto.DeleteResp
 import de.telekom.usp.messages.proto.DeleteResp.DeletedObjectResult
-import de.telekom.usp.messages.proto.DeregisterResp
 import de.telekom.usp.messages.proto.DeregisterResp.DeregisteredPathResult
-import de.telekom.usp.messages.proto.GetInstancesResp
-import de.telekom.usp.messages.proto.GetResp
-import de.telekom.usp.messages.proto.GetSupportedDMResp
-import de.telekom.usp.messages.proto.GetSupportedProtocolResp
-import de.telekom.usp.messages.proto.Header
-import de.telekom.usp.messages.proto.Msg
-import de.telekom.usp.messages.proto.NotifyResp
-import de.telekom.usp.messages.proto.OperateResp
-import de.telekom.usp.messages.proto.RegisterResp
 import de.telekom.usp.messages.proto.RegisterResp.RegisteredPathResult
-import de.telekom.usp.messages.proto.Response
-import de.telekom.usp.messages.proto.SetResp
-import de.telekom.usp.messages.proto.id
-import de.telekom.usp.messages.proto.requireType
 import de.telekom.usp.toStrings
 
 fun GetResp(request: Msg, init: GetRespBuilder.() -> Unit) =

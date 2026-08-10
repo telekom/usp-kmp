@@ -1,3 +1,9 @@
+/*
+ * SPDX-FileCopyrightText: 2026 Deutsche Telekom AG
+ *
+ * SPDX-License-Identifier: APACHE-2.0
+ */
+
 package de.telekom.usp.datamodel
 
 import de.telekom.usp.IP
@@ -9,11 +15,7 @@ import dev.mokkery.everySuspend
 import dev.mokkery.mock
 import dev.mokkery.resetAnswers
 import kotlinx.coroutines.test.runTest
-import kotlin.test.BeforeTest
-import kotlin.test.Test
-import kotlin.test.assertEquals
-import kotlin.test.assertSame
-import kotlin.test.assertTrue
+import kotlin.test.*
 
 class PathResolverImplTest {
 

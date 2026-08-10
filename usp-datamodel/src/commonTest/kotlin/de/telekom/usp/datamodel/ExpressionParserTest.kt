@@ -1,11 +1,14 @@
+/*
+ * SPDX-FileCopyrightText: 2026 Deutsche Telekom AG
+ *
+ * SPDX-License-Identifier: APACHE-2.0
+ */
+
 package de.telekom.usp.datamodel
 
 import de.telekom.usp.Path
 import de.telekom.usp.PathElement
-import de.telekom.usp.datamodel.Operator.CONTAINS
-import de.telekom.usp.datamodel.Operator.EQUALS
-import de.telekom.usp.datamodel.Operator.GREATER_THAN
-import de.telekom.usp.datamodel.Operator.NOT_EQUALS
+import de.telekom.usp.datamodel.Operator.*
 import de.telekom.usp.first
 import kotlin.test.Test
 import kotlin.test.assertEquals

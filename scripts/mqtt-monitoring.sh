@@ -1,4 +1,10 @@
 #!/bin/sh
+#
+# SPDX-FileCopyrightText: 2026 Deutsche Telekom AG
+#
+# SPDX-License-Identifier: APACHE-2.0
+#
+
 USER=usp-demo
 PASSWD=`cat ../mqtt-passwd`
 CLIENT_ID=monitoring

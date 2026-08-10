@@ -1,4 +1,10 @@
 #!/bin/sh
+#
+# SPDX-FileCopyrightText: 2026 Deutsche Telekom AG
+#
+# SPDX-License-Identifier: APACHE-2.0
+#
+
 # Script to create a local AXACT controller with the dmtest tool
 
 rm ./prefix/var/lib/axact/db.xml

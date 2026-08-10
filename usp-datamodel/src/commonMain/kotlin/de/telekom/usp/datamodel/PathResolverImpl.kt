@@ -1,12 +1,14 @@
+/*
+ * SPDX-FileCopyrightText: 2026 Deutsche Telekom AG
+ *
+ * SPDX-License-Identifier: APACHE-2.0
+ */
+
 package de.telekom.usp.datamodel
 
 import co.touchlab.kermit.Logger
-import de.telekom.usp.Path
-import de.telekom.usp.PathElement
-import de.telekom.usp.ResolvedPath
+import de.telekom.usp.*
 import de.telekom.usp.datamodel.ExpressionComponent.Companion.matches
-import de.telekom.usp.get
-import de.telekom.usp.last
 
 class PathResolverImpl(private val model: DataModel) : PathResolver {
 
