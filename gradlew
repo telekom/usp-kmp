@@ -1,7 +1,6 @@
 #!/usr/bin/env sh
-
 #
-# SPDX-FileCopyrightText: 2026 Deutsche Telekom AG
+# SPDX-FileCopyrightText: 2015 the original author or authors.
 #
 # SPDX-License-Identifier: Apache-2.0
 #
