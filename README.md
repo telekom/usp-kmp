@@ -1,7 +1,7 @@
 <!--
 SPDX-FileCopyrightText: 2026 Deutsche Telekom AG
 
-SPDX-License-Identifier: CC0-1.0    
+SPDX-License-Identifier: Apache-2.0    
 -->
 
 # USP Kotlin Multiplatform Client Library
