@@ -1,5 +1,9 @@
 syntax = "proto3";
-
+//
+// SPDX-FileCopyrightText: 2017-2022, Broadband Forum
+//
+// SPDX-License-Identifier: LicenseRef-BBF
+//
 //**************************************************************************
 // TR-369 USP Record Protocol Buffer Schema
 //
