@@ -6,49 +6,71 @@ SPDX-License-Identifier: Apache-2.0
 
 # USP Kotlin Multiplatform Client Library
 
-This is a Kotlin Multiplatform client library for the [User Services Platform](https://usp.technology/) (USP).
+A Kotlin Multiplatform client library for [TR-369](https://usp.technology/specification/index.html),
+the [User Services Platform](https://usp.technology/) (USP) specified by the Broad Band Forum.
 
 [![REUSE Compliance Check](../../actions/workflows/reuse-compliance.yml/badge.svg)](../../actions/workflows/reuse-compliance.yml)
 
 ## Overview of components
 
-### Message Transfer
+Packages and subprojects are aligned with the chapters of the TR-369 specification:
 
-The package `de.telekom.usp.mtp` contains classes implementing the USP message transfer protocols.
-Currently only web socket and MQTT are supported. The core interface `MessageTransfer` is contained
-in the **usp-core** project, while implementations are available in **usp-mtp**.
+### Core
 
-### USP Record Parsing
+The core project (**usp-core**) provides some base classes like `Path`, `ResolvedPath`,
+`EndpointIdentifier` etc. It also contains Kotlin value classes which represent all types
+defined by the USP specification (like `Alias`, `MACAddress` etc. pp.).
 
-USP records are only used during transport and can be neglected once a USP message is derived from one
-or more records. Hence, record parsing is encapsulated in the `MessageConverter` interface.
-Its implementation is contained in the **usp-records** project. This is also the only project with
-references to the USP record proto buffer classes.
+It additionally defines interfaces for the main USP processing logic like `MessageTransfer`,
+`MessageConverter` and `DataModel`.
 
-### End to End Message Exchange
+The core project also contains the auto-generated Kotlin classes derived from the proto buffer message
+definitions, like for example `Get` and `GetResp` (we use [wire](https://square.github.io/wire/)
+for code generation). The `de.telekom.usp.messages.dsl` package also provides exhaustive DSL support
+for generating messages. Using the DSL, creating a `Get` message is as simple as:
 
-The package `de.telekom.usp.e2e` contains the `MessageConverter` class, which uses `MessageTransfer`
-and `MessageConverter` to provide an easy-to-use interface for sending USP messages.
+```kotlin
+val get = Get {
+    maxDepth = 2
+    paths(Device, DeviceInfo)
+}
+```
+
+(Note that this example also uses the Kotlin objects `Device` and `DeviceInfo`. There is a Kotlin
+object for every root path specified by USP.)
+
+Finally, the core package also contains the `MessageExchange` class, which is responsible for handling
+the end-to-end message exchange, replying on the `MessageTransfer` and `MessageConverter` interfaces.
+
+### MTP
+
+The **usp-mtp** subproject provides an implementation of the `MessageTransfer` interface, responsible
+for encapsulation of the message transfer details. Currently supported transfer protocols are
+**Websockets** and **MQTT**.
+
+### Records
+
+The **usp-records** subproject provides an implementation of the `MessageConverter` interface, responsible
+for converting raw bytes from and to USP messages.
+
+It also contains the auto-generated Kotlin classes derived from the proto buffer record definitions.
 
 ### Data Model
 
-The data model implementation of this library is mainly used for storing USP agent data retrieved
-via the network. Hence it contains no data validation, but also provides a `PathResolver` for
-conversion of an unresolved path into resolved paths.
+The **usp-datamodel** subproject provides simple data model implementation (im-memory or file based)
+for storing USP agent data retrieved via the network. It is a light-weight data model, not meant for
+full-featured data model storage. It also provides a `PathResolver` for conversion of an unresolved
+path into resolved paths.
 
-### Core Project
+### CLI
 
-The core project (**usp-core**) provides the interface definitions of the aforementioned classes and
-some additional core classes like `Path`, `ResolvedPath`, `EndpointIdentifier` etc.
-
-It also contains the auto-generated proto buffer classes for message exchange in package
-`de.telekom.usp.messages.proto`. Additionally `de.telekom.usp.messages.dsl` provides a Kotlin DSL
-for creation of USP `Msg` instances.
-
-### Command Line Interface
-
-The project **usp-cli** contains a simple command line interface, mainly aimed at testing and basic
+The **usp-cli** subproject provides a simple command line interface, mainly aimed at testing and basic
 agent manipulation.
+
+### Builder
+
+Finally, the **usp-builder** subproject provides a Kotlin factory DSL for creating a `MessageExchange`
+instance, hiding the bits and pieces of gluing together all the various required interfaces.
 
 ## Code of Conduct
 
