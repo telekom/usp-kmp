@@ -13,15 +13,8 @@ import de.telekom.usp.Path
 import de.telekom.usp.isCommand
 import de.telekom.usp.isEvent
 import de.telekom.usp.messages.MessageIdFactory
-import de.telekom.usp.messages.proto.Add
-import de.telekom.usp.messages.proto.Body
-import de.telekom.usp.messages.proto.GetSupportedDM
-import de.telekom.usp.messages.proto.Header
-import de.telekom.usp.messages.proto.Msg
-import de.telekom.usp.messages.proto.Notify
-import de.telekom.usp.messages.proto.Notify.OperationComplete.CommandFailure
-import de.telekom.usp.messages.proto.Notify.OperationComplete.OutputArgs
-import de.telekom.usp.messages.proto.Request
+import de.telekom.usp.messages.proto.*
+import de.telekom.usp.messages.proto.GetSupportedProtocol
 
 /**
  * Create a new `Msg` of type GET. Sample usage:
@@ -471,8 +464,8 @@ class OperationCompleteBuilder internal constructor(
             obj_path = path.toString(),
             command_name = commandName,
             command_key = commandKey,
-            req_output_args = if (outputArgs.isNotEmpty()) OutputArgs(outputArgs) else null,
-            cmd_failure = commandFailure?.let { CommandFailure(it.first, it.second) }
+            req_output_args = if (outputArgs.isNotEmpty()) Notify.OperationComplete.OutputArgs(outputArgs) else null,
+            cmd_failure = commandFailure?.let { Notify.OperationComplete.CommandFailure(it.first, it.second) }
         )
     }
 }

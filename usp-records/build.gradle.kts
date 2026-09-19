@@ -39,6 +39,7 @@ kotlin {
 
     sourceSets {
         commonMain {
+            kotlin.srcDir("build/generated/source/wire") // Avoid errors in Intellij, Gradle works without this line
             dependencies {
                 implementation(project(":usp-core"))
                 api(libs.kotlinx.datetime)

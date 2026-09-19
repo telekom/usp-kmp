@@ -40,6 +40,7 @@ kotlin {
 
     sourceSets {
         commonMain {
+            kotlin.srcDir("build/generated/source/wire") // Avoid errors in Intellij, Gradle works without this line
             dependencies {
                 api(libs.kotlinx.datetime)
                 implementation(libs.kotlinx.coroutines.core)
