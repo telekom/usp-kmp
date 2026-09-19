@@ -1,3 +1,5 @@
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+
 /*
  * SPDX-FileCopyrightText: 2026 Deutsche Telekom AG
  *
@@ -6,7 +8,7 @@
 
 plugins {
     alias(libs.plugins.kotlinMultiplatform)
-    alias(libs.plugins.androidLibrary)
+    alias(libs.plugins.androidMultiplatformLibrary)
     alias(libs.plugins.wire)
     alias(libs.plugins.kover)
     `maven-publish`
@@ -14,15 +16,17 @@ plugins {
 
 kotlin {
     jvm()
-    androidTarget {
-        compilations.all {
-            kotlinOptions {
-                jvmTarget = "1.8"
-            }
+    android {
+        namespace = "de.telekom.usp"
+        compileSdk = libs.versions.compileSdk.get().toInt()
+        minSdk = libs.versions.minSdk.get().toInt()
+        compilerOptions {
+            jvmTarget.set(
+                JvmTarget.JVM_1_8
+            )
         }
-        publishLibraryVariants("release", "debug")
     }
-    
+
     listOf(
         iosX64(),
         iosArm64(),
@@ -47,14 +51,6 @@ kotlin {
                 implementation(libs.kotlin.test)
             }
         }
-    }
-}
-
-android {
-    namespace = "de.telekom.usp"
-    compileSdk = libs.versions.compileSdk.get().toInt()
-    defaultConfig {
-        minSdk = libs.versions.minSdk.get().toInt()
     }
 }
 

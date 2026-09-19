@@ -4,18 +4,18 @@
 [versions]
 usp = "0.2.0"
 
-agp = "8.9.3"
+agp = "9.1.0"
 kotlin = "2.4.10"
 kotlinx-coroutines = "1.10.1"
 kotlinx-serialization = "1.8.0"
-wire = "5.3.1"
+wire = "7.0.3"
 okio = "3.10.2"
 moshi = "1.14.0"
 ktor = "3.5.1"
 ktor-mqtt = "1.2.0"
 kmqtt = "0.4.6"
 mockery = "3.4.2"
-kover = "0.9.1"
+kover = "0.9.9"
 slf4j = "2.0.16"         # Used only in cli subproject
 
 # Android specifics:
@@ -49,10 +49,9 @@ slj4j-api = { module = "org.slf4j:slf4j-api", version.ref = "slf4j" }
 slj4j-simple = { module = "org.slf4j:slf4j-simple", version.ref = "slf4j" }
 
 [plugins]
-androidApplication = { id = "com.android.application", version.ref = "agp" }
-androidLibrary = { id = "com.android.library", version.ref = "agp" }
-kotlinAndroid = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
 kotlinMultiplatform = { id = "org.jetbrains.kotlin.multiplatform", version.ref = "kotlin" }
+androidMultiplatformLibrary = { id = "com.android.kotlin.multiplatform.library", version.ref = "agp" }
+kotlinJvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
 kotlinSerialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
 kotlinCocoapods = { id = "org.jetbrains.kotlin.native.cocoapods", version.ref = "kotlin" }
 wire = { id = "com.squareup.wire", version.ref = "wire" }
