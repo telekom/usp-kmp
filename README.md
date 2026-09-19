@@ -62,15 +62,16 @@ for storing USP agent data retrieved via the network. It is a light-weight data 
 full-featured data model storage. It also provides a `PathResolver` for conversion of an unresolved
 path into resolved paths.
 
+### Exchange
+
+Finally, the **usp-exchange** subproject provides the `MessageExchange` class for exchanging actual data
+between USP endpoints. It also provides a builder class for gluing together all configuration parts of
+the message exchange.
+
 ### CLI
 
-The **usp-cli** subproject provides a simple command line interface, mainly aimed at testing and basic
-agent manipulation.
-
-### Builder
-
-Finally, the **usp-builder** subproject provides a Kotlin factory DSL for creating a `MessageExchange`
-instance, hiding the bits and pieces of gluing together all the various required interfaces.
+Additionally, the **usp-cli** is a JVM only subproject, which provides a simple command line interface,
+aimed at interactive testing and basic agent manipulation.
 
 ## Code of Conduct
 
