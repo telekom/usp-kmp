@@ -23,11 +23,11 @@ class ErrorBuilderTest {
 
         assertMessageType(Header.MsgType.ERROR, error)
         assertEquals(InternalError.name, error.body!!.error!!.err_msg)
-        assertEquals(InternalError.code, error.body!!.error!!.err_code)
-        assertEquals(2, error.body!!.error!!.param_errs.size)
-        assertEquals(4711, error.body!!.error!!.param_errs[0].err_code)
-        assertEquals("test-error", error.body!!.error!!.param_errs[0].err_msg)
-        assertEquals(ParameterActionFailed.code, error.body!!.error!!.param_errs[1].err_code)
-        assertEquals(ParameterActionFailed.name, error.body!!.error!!.param_errs[1].err_msg)
+        assertEquals(InternalError.code, error.body.error.err_code)
+        assertEquals(2, error.body.error.param_errs.size)
+        assertEquals(4711, error.body.error.param_errs[0].err_code)
+        assertEquals("test-error", error.body.error.param_errs[0].err_msg)
+        assertEquals(ParameterActionFailed.code, error.body.error.param_errs[1].err_code)
+        assertEquals(ParameterActionFailed.name, error.body.error.param_errs[1].err_msg)
     }
 }

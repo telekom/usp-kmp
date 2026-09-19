@@ -31,7 +31,7 @@ class ResponseBuildersTest {
         assertNotNull(resp.body!!.response!!.get_resp)
         assertEquals("id-1", resp.header_!!.msg_id)
 
-        val results = resp.body!!.response!!.get_resp!!.req_path_results
+        val results = resp.body.response.get_resp.req_path_results
         assertEquals(1, results.size)
         assertEquals(0, results[0].err_code)
         assertEquals("", results[0].err_msg)
@@ -70,7 +70,7 @@ class ResponseBuildersTest {
         assertNotNull(resp.body!!.response!!.get_supported_dm_resp)
         assertEquals("msg-1", resp.header_!!.msg_id)
 
-        val results = resp.body!!.response!!.get_supported_dm_resp!!.req_obj_results
+        val results = resp.body.response.get_supported_dm_resp.req_obj_results
         assertEquals(1, results.size)
         assertEquals(0, results[0].err_code)
         assertEquals("", results[0].err_msg)
@@ -119,7 +119,7 @@ class ResponseBuildersTest {
         assertNotNull(resp.body!!.response!!.get_instances_resp)
         assertEquals("42", resp.header_!!.msg_id)
 
-        val results = resp.body!!.response!!.get_instances_resp!!.req_path_results
+        val results = resp.body.response.get_instances_resp.req_path_results
         assertEquals(1, results.size)
         assertEquals("Device.Wifi.", results[0].requested_path)
         assertEquals(2, results[0].curr_insts.size)
@@ -153,7 +153,7 @@ class ResponseBuildersTest {
         assertNotNull(resp.body!!.response!!.set_resp)
         assertEquals("set-1", resp.header_!!.msg_id)
 
-        val results = resp.body!!.response!!.set_resp!!.updated_obj_results
+        val results = resp.body.response.set_resp.updated_obj_results
         assertEquals(2, results.size)
         assertNotNull(results[0].oper_status)
         assertNotNull(results[0].oper_status!!.oper_success)
@@ -195,7 +195,7 @@ class ResponseBuildersTest {
         assertNotNull(resp.body!!.response!!.add_resp)
         assertEquals("add-1", resp.header_!!.msg_id)
 
-        val results = resp.body!!.response!!.add_resp!!.created_obj_results
+        val results = resp.body.response.add_resp.created_obj_results
         assertEquals(2, results.size)
         assertEquals("Device.", results[0].requested_path)
         assertNotNull(results[0].oper_status!!.oper_success)
@@ -231,7 +231,7 @@ class ResponseBuildersTest {
         assertNotNull(resp.body!!.response!!.delete_resp)
         assertEquals("del-1", resp.header_!!.msg_id)
 
-        val results = resp.body!!.response!!.delete_resp!!.deleted_obj_results
+        val results = resp.body.response.delete_resp.deleted_obj_results
         assertEquals(2, results.size)
         assertEquals("Device.", results[0].requested_path)
         assertNotNull(results[0].oper_status!!.oper_success)
@@ -265,7 +265,7 @@ class ResponseBuildersTest {
         assertNotNull(resp.body!!.response!!.operate_resp)
         assertEquals("oper-1", resp.header_!!.msg_id)
 
-        val results = resp.body!!.response!!.operate_resp!!.operation_results
+        val results = resp.body.response.operate_resp.operation_results
         assertEquals(3, results.size)
         assertEquals("Device.SelfTestDiagnostics()", results[0].executed_command)
         assertEquals("Device.LocalAgent.Request.1.", results[0].req_obj_path)
@@ -282,7 +282,7 @@ class ResponseBuildersTest {
         assertMessageType(Header.MsgType.NOTIFY_RESP, resp)
         assertNotNull(resp.body!!.response!!.notify_resp)
         assertEquals("notify-1", resp.header_!!.msg_id)
-        assertEquals("subscription_1", resp.body!!.response!!.notify_resp!!.subscription_id)
+        assertEquals("subscription_1", resp.body.response.notify_resp.subscription_id)
     }
 
     @Test
@@ -294,7 +294,7 @@ class ResponseBuildersTest {
         assertEquals("proto-1", resp.header_!!.msg_id)
         assertEquals(
             "1.2,1.3",
-            resp.body!!.response!!.get_supported_protocol_resp!!.agent_supported_protocol_versions
+            resp.body.response.get_supported_protocol_resp.agent_supported_protocol_versions
         )
     }
 
@@ -313,7 +313,7 @@ class ResponseBuildersTest {
         assertNotNull(resp.body!!.response!!.register_resp)
         assertEquals("resp-1", resp.header_!!.msg_id)
 
-        val results = resp.body!!.response!!.register_resp!!.registered_path_results
+        val results = resp.body.response.register_resp.registered_path_results
         assertEquals(2, results.size)
 
         assertEquals("Device.", results[0].requested_path)
@@ -343,7 +343,7 @@ class ResponseBuildersTest {
         assertNotNull(resp.body!!.response!!.deregister_resp)
         assertEquals("de-1", resp.header_!!.msg_id)
 
-        val results = resp.body!!.response!!.deregister_resp!!.deregistered_path_results
+        val results = resp.body.response.deregister_resp.deregistered_path_results
         assertEquals(2, results.size)
 
         assertEquals("Device.", results[0].requested_path)

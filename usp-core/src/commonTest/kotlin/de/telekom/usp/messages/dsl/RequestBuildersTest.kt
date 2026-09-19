@@ -32,8 +32,8 @@ class RequestBuildersTest {
 
         assertMessageType(Header.MsgType.GET, get)
         assertNotNull(get.body!!.request!!.get_)
-        assertEquals(42, get.body!!.request!!.get_!!.max_depth)
-        assertEquals(samplePaths.toList(), get.body!!.request!!.get_!!.param_paths)
+        assertEquals(42, get.body.request.get_.max_depth)
+        assertEquals(samplePaths.toList(), get.body.request.get_.param_paths)
     }
 
     @Test
@@ -47,10 +47,10 @@ class RequestBuildersTest {
 
         assertMessageType(Header.MsgType.SET, set)
         assertNotNull(set.body!!.request!!.set_)
-        assertFalse(set.body!!.request!!.set_!!.allow_partial)
-        assertEquals(samplePaths[0], set.body!!.request!!.set_!!.update_objs[0].obj_path)
-        assertEquals("param1", set.body!!.request!!.set_!!.update_objs[0].param_settings[0].param_)
-        assertEquals("value1", set.body!!.request!!.set_!!.update_objs[0].param_settings[0].value_)
+        assertFalse(set.body.request.set_.allow_partial)
+        assertEquals(samplePaths[0], set.body.request.set_.update_objs[0].obj_path)
+        assertEquals("param1", set.body.request.set_.update_objs[0].param_settings[0].param_)
+        assertEquals("value1", set.body.request.set_.update_objs[0].param_settings[0].value_)
     }
 
     @Test
@@ -64,10 +64,10 @@ class RequestBuildersTest {
 
         assertMessageType(Header.MsgType.ADD, add)
         assertNotNull(add.body!!.request!!.add)
-        assertFalse(add.body!!.request!!.add!!.allow_partial)
-        assertEquals(samplePaths[0], add.body!!.request!!.add!!.create_objs[0].obj_path)
-        assertEquals("param1", add.body!!.request!!.add!!.create_objs[0].param_settings[0].param_)
-        assertEquals("value1", add.body!!.request!!.add!!.create_objs[0].param_settings[0].value_)
+        assertFalse(add.body.request.add.allow_partial)
+        assertEquals(samplePaths[0], add.body.request.add.create_objs[0].obj_path)
+        assertEquals("param1", add.body.request.add.create_objs[0].param_settings[0].param_)
+        assertEquals("value1", add.body.request.add.create_objs[0].param_settings[0].value_)
     }
 
     @Test
@@ -79,8 +79,8 @@ class RequestBuildersTest {
 
         assertMessageType(Header.MsgType.DELETE, delete)
         assertNotNull(delete.body!!.request!!.delete)
-        assertFalse(delete.body!!.request!!.delete!!.allow_partial)
-        assertEquals(samplePaths[0], delete.body!!.request!!.delete!!.obj_paths[0])
+        assertFalse(delete.body.request.delete.allow_partial)
+        assertEquals(samplePaths[0], delete.body.request.delete.obj_paths[0])
     }
 
     @Test
@@ -92,8 +92,8 @@ class RequestBuildersTest {
 
         assertMessageType(Header.MsgType.REGISTER, register)
         assertNotNull(register.body!!.request!!.register)
-        assertFalse(register.body!!.request!!.register!!.allow_partial)
-        assertEquals(samplePaths[0], register.body!!.request!!.register!!.reg_paths[0].path)
+        assertFalse(register.body.request.register.allow_partial)
+        assertEquals(samplePaths[0], register.body.request.register.reg_paths[0].path)
     }
 
     @Test
@@ -104,7 +104,7 @@ class RequestBuildersTest {
 
         assertMessageType(Header.MsgType.DEREGISTER, deregister)
         assertNotNull(deregister.body!!.request!!.deregister)
-        assertEquals(samplePaths[0], deregister.body!!.request!!.deregister!!.paths[0])
+        assertEquals(samplePaths[0], deregister.body.request.deregister.paths[0])
     }
 
     @Test
@@ -119,8 +119,8 @@ class RequestBuildersTest {
 
         assertMessageType(Header.MsgType.OPERATE, operate)
         assertNotNull(operate.body!!.request!!.operate)
-        assertEquals("cmd_key", operate.body!!.request!!.operate!!.command_key)
-        assertEquals("value1", operate.body!!.request!!.operate!!.input_args["arg1"])
+        assertEquals("cmd_key", operate.body.request.operate.command_key)
+        assertEquals("value1", operate.body.request.operate.input_args["arg1"])
     }
 
     @Test
@@ -131,8 +131,8 @@ class RequestBuildersTest {
 
         assertMessageType(Header.MsgType.NOTIFY, notify)
         assertNotNull(notify.body!!.request!!.notify)
-        assertEquals("subscription_1", notify.body!!.request!!.notify!!.subscription_id)
-        assertFalse(notify.body!!.request!!.notify!!.send_resp)
+        assertEquals("subscription_1", notify.body.request.notify.subscription_id)
+        assertFalse(notify.body.request.notify.send_resp)
 
         assertFailsWith(IllegalArgumentException::class) {
             Notify("subscription_1") {
@@ -146,16 +146,16 @@ class RequestBuildersTest {
             }
         }
         assertNotNull(event.body!!.request!!.notify!!.event)
-        assertEquals("Device.SampleEvent!", event.body!!.request!!.notify!!.event!!.obj_path)
-        assertEquals("event_name_1", event.body!!.request!!.notify!!.event!!.event_name)
-        assertEquals("value1", event.body!!.request!!.notify!!.event!!.params["param1"])
+        assertEquals("Device.SampleEvent!", event.body.request.notify.event.obj_path)
+        assertEquals("event_name_1", event.body.request.notify.event.event_name)
+        assertEquals("value1", event.body.request.notify.event.params["param1"])
 
         val valueChange = Notify("subscription_1") {
             valueChange("Device.", "xyz")
         }
         assertNotNull(valueChange.body!!.request!!.notify!!.value_change)
-        assertEquals("xyz", valueChange.body!!.request!!.notify!!.value_change!!.param_value)
-        assertEquals("Device.", valueChange.body!!.request!!.notify!!.value_change!!.param_path)
+        assertEquals("xyz", valueChange.body.request.notify.value_change.param_value)
+        assertEquals("Device.", valueChange.body.request.notify.value_change.param_path)
 
         val objectCreation = Notify("subscription_1") {
             objectCreation(samplePaths[0]) {
@@ -166,15 +166,15 @@ class RequestBuildersTest {
         assertNotNull(objectCreation.body!!.request!!.notify!!.obj_creation)
         assertEquals(
             samplePaths[0],
-            objectCreation.body!!.request!!.notify!!.obj_creation!!.obj_path
+            objectCreation.body.request.notify.obj_creation.obj_path
         )
         assertEquals(
             "unique_1",
-            objectCreation.body!!.request!!.notify!!.obj_creation!!.unique_keys["key_1"]
+            objectCreation.body.request.notify.obj_creation.unique_keys["key_1"]
         )
         assertEquals(
             "unique_2",
-            objectCreation.body!!.request!!.notify!!.obj_creation!!.unique_keys["key_2"]
+            objectCreation.body.request.notify.obj_creation.unique_keys["key_2"]
         )
 
         val objectDeletion = Notify("subscription_1") {
@@ -183,7 +183,7 @@ class RequestBuildersTest {
         assertNotNull(objectDeletion.body!!.request!!.notify!!.obj_deletion)
         assertEquals(
             samplePaths[0],
-            objectDeletion.body!!.request!!.notify!!.obj_deletion!!.obj_path
+            objectDeletion.body.request.notify.obj_deletion.obj_path
         )
 
         val operationComplete1 = Notify("subscription_1") {
@@ -194,23 +194,23 @@ class RequestBuildersTest {
         assertNotNull(operationComplete1.body!!.request!!.notify!!.oper_complete)
         assertEquals(
             samplePaths[0],
-            operationComplete1.body!!.request!!.notify!!.oper_complete!!.obj_path
+            operationComplete1.body.request.notify.oper_complete.obj_path
         )
         assertEquals(
             "command_name1",
-            operationComplete1.body!!.request!!.notify!!.oper_complete!!.command_name
+            operationComplete1.body.request.notify.oper_complete.command_name
         )
         assertEquals(
             "key_1",
-            operationComplete1.body!!.request!!.notify!!.oper_complete!!.command_key
+            operationComplete1.body.request.notify.oper_complete.command_key
         )
         assertEquals(
             MessageNotSupported.code,
-            operationComplete1.body!!.request!!.notify!!.oper_complete!!.cmd_failure!!.err_code
+            operationComplete1.body.request.notify.oper_complete.cmd_failure!!.err_code
         )
         assertEquals(
             MessageNotSupported.name,
-            operationComplete1.body!!.request!!.notify!!.oper_complete!!.cmd_failure!!.err_msg
+            operationComplete1.body.request.notify.oper_complete.cmd_failure.err_msg
         )
 
         val operationComplete2 = Notify("subscription_1") {
@@ -221,37 +221,37 @@ class RequestBuildersTest {
         assertNotNull(operationComplete2.body!!.request!!.notify!!.oper_complete)
         assertEquals(
             samplePaths[0],
-            operationComplete2.body!!.request!!.notify!!.oper_complete!!.obj_path
+            operationComplete2.body.request.notify.oper_complete.obj_path
         )
         assertEquals(
             "command_name1",
-            operationComplete2.body!!.request!!.notify!!.oper_complete!!.command_name
+            operationComplete2.body.request.notify.oper_complete.command_name
         )
         assertEquals(
             "key_1",
-            operationComplete2.body!!.request!!.notify!!.oper_complete!!.command_key
+            operationComplete2.body.request.notify.oper_complete.command_key
         )
         assertEquals(
             "value_1",
-            operationComplete2.body!!.request!!.notify!!.oper_complete!!.req_output_args!!.output_args["arg_1"]
+            operationComplete2.body.request.notify.oper_complete.req_output_args!!.output_args["arg_1"]
         )
 
         val onBoardRequest = Notify("subscription_1") {
             onBoardRequest("oui_1", "product_2", "serial_3", "v_4")
         }
         assertNotNull(onBoardRequest.body!!.request!!.notify!!.on_board_req)
-        assertEquals("oui_1", onBoardRequest.body!!.request!!.notify!!.on_board_req!!.oui)
+        assertEquals("oui_1", onBoardRequest.body.request.notify.on_board_req.oui)
         assertEquals(
             "product_2",
-            onBoardRequest.body!!.request!!.notify!!.on_board_req!!.product_class
+            onBoardRequest.body.request.notify.on_board_req.product_class
         )
         assertEquals(
             "serial_3",
-            onBoardRequest.body!!.request!!.notify!!.on_board_req!!.serial_number
+            onBoardRequest.body.request.notify.on_board_req.serial_number
         )
         assertEquals(
             "v_4",
-            onBoardRequest.body!!.request!!.notify!!.on_board_req!!.agent_supported_protocol_versions
+            onBoardRequest.body.request.notify.on_board_req.agent_supported_protocol_versions
         )
     }
 
@@ -266,10 +266,10 @@ class RequestBuildersTest {
 
         assertMessageType(Header.MsgType.GET_SUPPORTED_DM, getSupportedDm)
         assertNotNull(getSupportedDm.body!!.request!!.get_supported_dm)
-        assertFalse(getSupportedDm.body!!.request!!.get_supported_dm!!.first_level_only)
-        assertTrue(getSupportedDm.body!!.request!!.get_supported_dm!!.return_commands)
-        assertFalse(getSupportedDm.body!!.request!!.get_supported_dm!!.return_events)
-        assertTrue(getSupportedDm.body!!.request!!.get_supported_dm!!.return_params)
+        assertFalse(getSupportedDm.body.request.get_supported_dm.first_level_only)
+        assertTrue(getSupportedDm.body.request.get_supported_dm.return_commands)
+        assertFalse(getSupportedDm.body.request.get_supported_dm.return_events)
+        assertTrue(getSupportedDm.body.request.get_supported_dm.return_params)
     }
 
     @Test
@@ -280,7 +280,7 @@ class RequestBuildersTest {
         assertNotNull(getSupportedProtocol.body!!.request!!.get_supported_protocol)
         assertEquals(
             "v_77",
-            getSupportedProtocol.body!!.request!!.get_supported_protocol!!.controller_supported_protocol_versions
+            getSupportedProtocol.body.request.get_supported_protocol.controller_supported_protocol_versions
         )
     }
 
@@ -293,6 +293,6 @@ class RequestBuildersTest {
 
         assertMessageType(Header.MsgType.GET_INSTANCES, getInstances)
         assertNotNull(getInstances.body!!.request!!.get_instances)
-        assertEquals(samplePaths.toList(), getInstances.body!!.request!!.get_instances!!.obj_paths)
+        assertEquals(samplePaths.toList(), getInstances.body.request.get_instances.obj_paths)
     }
 }
