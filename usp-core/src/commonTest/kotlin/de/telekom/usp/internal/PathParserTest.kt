@@ -86,8 +86,8 @@ class PathParserTest {
         val ref = path.elements[4]
         assertIs<PathElement.Object>(ref)
         assertNotNull(ref.refFollow)
-        assertEquals(1, ref.refFollow!!.itemNumber)
-        assertEquals("Interface", ref.refFollow!!.name)
+        assertEquals(1, ref.refFollow.itemNumber)
+        assertEquals("Interface", ref.refFollow.name)
     }
 
     @Test
