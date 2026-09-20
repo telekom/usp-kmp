@@ -10,6 +10,7 @@ A Kotlin Multiplatform client library for [TR-369](https://usp.technology/specif
 the [User Services Platform](https://usp.technology/) (USP) specified by the Broad Band Forum.
 
 [![REUSE Compliance Check](../../actions/workflows/reuse-compliance.yml/badge.svg)](../../actions/workflows/reuse-compliance.yml)
+[![Unit Tests](https://github.com/telekom/usp-kmp/actions/workflows/unit-tests.yml/badge.svg)](https://github.com/telekom/usp-kmp/actions/workflows/unit-tests.yml)
 
 ## Overview of components
 
