@@ -67,8 +67,7 @@ class KtorMqttTransfer(
     }
 
     private val _events = MutableSharedFlow<MessageTransferEvent>()
-    override val events: SharedFlow<MessageTransferEvent>
-        get() = _events.asSharedFlow()
+    override val events: SharedFlow<MessageTransferEvent> = _events.asSharedFlow()
 
     init {
         if (webSocketPath != null) {

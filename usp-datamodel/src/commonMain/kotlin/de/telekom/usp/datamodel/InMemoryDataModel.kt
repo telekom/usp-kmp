@@ -10,18 +10,17 @@ import co.touchlab.kermit.Logger
 import de.telekom.usp.*
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharedFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 
 open class InMemoryDataModel : DataModel {
 
     private val _updates = MutableSharedFlow<InstanceObject>()
-    override val updates: SharedFlow<InstanceObject>
-        get() = _updates
+    override val updates: SharedFlow<InstanceObject> = _updates.asSharedFlow()
 
     private val _deletes = MutableSharedFlow<ResolvedPath>()
-    override val deletes: SharedFlow<ResolvedPath>
-        get() = _deletes
+    override val deletes: SharedFlow<ResolvedPath> = _deletes.asSharedFlow()
 
     private val root = Node(Device)
 

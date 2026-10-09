@@ -18,8 +18,7 @@ import okio.ByteString
 abstract class AbstractMessageTransfer : MessageTransfer {
 
     private val _events = MutableSharedFlow<MessageTransferEvent>()
-    override val events: SharedFlow<MessageTransferEvent>
-        get() = _events.asSharedFlow()
+    override val events: SharedFlow<MessageTransferEvent> = _events.asSharedFlow()
 
     protected val inputBuffer =
         MutableSharedFlow<ByteString>(replay = 10, onBufferOverflow = BufferOverflow.DROP_OLDEST)
@@ -32,11 +31,7 @@ abstract class AbstractMessageTransfer : MessageTransfer {
         inputBuffer.emit(bytes)
     }
 
-    protected suspend fun isConnected(): Boolean {
-        mutex.withLock {
-            return isConnected
-        }
-    }
+    protected suspend fun isConnected(): Boolean = mutex.withLock { isConnected }
 
     protected suspend fun setConnected(isConnected: Boolean) {
         mutex.withLock {

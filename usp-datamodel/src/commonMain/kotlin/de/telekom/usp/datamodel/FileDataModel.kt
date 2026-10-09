@@ -11,6 +11,7 @@ import de.telekom.usp.Device
 import de.telekom.usp.ResolvedPath
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharedFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.serialization.ExperimentalSerializationApi
@@ -26,12 +27,10 @@ import okio.use
 class FileDataModel(private val fileSystem: FileSystem, private val directory: Path) : DataModel {
 
     private val _updates = MutableSharedFlow<InstanceObject>()
-    override val updates: SharedFlow<InstanceObject>
-        get() = _updates
+    override val updates: SharedFlow<InstanceObject> = _updates.asSharedFlow()
 
     private val _deletes = MutableSharedFlow<ResolvedPath>()
-    override val deletes: SharedFlow<ResolvedPath>
-        get() = _deletes
+    override val deletes: SharedFlow<ResolvedPath> = _deletes.asSharedFlow()
 
     private val mutex = Mutex()
 
