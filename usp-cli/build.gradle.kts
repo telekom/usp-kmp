@@ -4,7 +4,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-@Suppress("DSL_SCOPE_VIOLATION") // TODO: Remove once KTIJ-19369 is fixed
 plugins {
     id("application")
     alias(libs.plugins.kotlinJvm)
@@ -28,15 +27,15 @@ distributions {
 }
 
 dependencies {
-    implementation(project(":usp-core"))
-    implementation(project(":usp-records"))
-    implementation(project(":usp-mtp"))
-    implementation(project(":usp-exchange"))
+    implementation(projects.uspCore)
+    implementation(projects.uspRecords)
+    implementation(projects.uspMtp)
+    implementation(projects.uspExchange)
     implementation(libs.clikt)
     implementation(libs.kermit)
     implementation(libs.kotlinx.datetime)
     implementation(libs.kotlinx.serialization.json)
     implementation(libs.kotlinx.serialization.json.okio)
-    implementation(libs.slj4j.api)
-    implementation(libs.slj4j.simple)
+    implementation(libs.slf4j.api)
+    implementation(libs.slf4j.simple)
 }

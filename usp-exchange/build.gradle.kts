@@ -39,9 +39,9 @@ kotlin {
 
     sourceSets {
         commonMain.dependencies {
-            implementation(project(":usp-core"))
-            implementation(project(":usp-records"))
-            implementation(project(":usp-mtp"))
+            implementation(projects.uspCore)
+            implementation(projects.uspRecords)
+            implementation(projects.uspMtp)
             implementation(libs.kermit)
             implementation(libs.okio)
             api(libs.kotlinx.datetime)

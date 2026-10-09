@@ -8,6 +8,7 @@ agp = "9.1.0"
 kotlin = "2.4.10"
 kotlinx-coroutines = "1.10.1"
 kotlinx-serialization = "1.8.0"
+dependency-license-report = "3.1.4"
 wire = "7.0.3"
 okio = "3.10.2"
 moshi = "1.14.0"
@@ -45,8 +46,8 @@ kmqtt-common = { module = "io.github.davidepianca98:kmqtt-common", version.ref =
 kmqtt-client = { module = "io.github.davidepianca98:kmqtt-client", version.ref = "kmqtt" }
 mqtt-core = { module = "de.kempmobil.ktor.mqtt:mqtt-core", version.ref = "ktor-mqtt" }
 mqtt-client = { module = "de.kempmobil.ktor.mqtt:mqtt-client", version.ref = "ktor-mqtt" }
-slj4j-api = { module = "org.slf4j:slf4j-api", version.ref = "slf4j" }
-slj4j-simple = { module = "org.slf4j:slf4j-simple", version.ref = "slf4j" }
+slf4j-api = { module = "org.slf4j:slf4j-api", version.ref = "slf4j" }
+slf4j-simple = { module = "org.slf4j:slf4j-simple", version.ref = "slf4j" }
 
 [plugins]
 kotlinMultiplatform = { id = "org.jetbrains.kotlin.multiplatform", version.ref = "kotlin" }
@@ -57,3 +58,4 @@ wire = { id = "com.squareup.wire", version.ref = "wire" }
 mockery = { id = "dev.mokkery", version.ref = "mockery" }
 allOpen = { id = "org.jetbrains.kotlin.plugin.allopen", version.ref = "kotlin" } # Used to mock final classes
 kover = { id = "org.jetbrains.kotlinx.kover", version.ref = "kover" }
+dependencyLicenseReport = { id = "com.github.jk1.dependency-license-report", version.ref = "dependency-license-report" }

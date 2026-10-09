@@ -39,7 +39,7 @@ kotlin {
 
     sourceSets {
         commonMain.dependencies {
-            implementation(project(":usp-core"))
+            implementation(projects.uspCore)
             implementation(libs.kotlinx.serialization.json)
             implementation(libs.kermit)
             implementation(libs.kmqtt.common)

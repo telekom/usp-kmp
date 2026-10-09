@@ -80,9 +80,9 @@ publishing {
  * Kover configuration (see https://kotlin.github.io/kotlinx-kover/gradle-plugin/)
  */
 dependencies {
-    kover(project(":usp-datamodel"))
-    kover(project(":usp-mtp"))
-    kover(project(":usp-records"))
+    kover(projects.uspDatamodel)
+    kover(projects.uspMtp)
+    kover(projects.uspRecords)
 }
 
 kover {

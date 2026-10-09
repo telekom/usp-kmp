@@ -41,7 +41,7 @@ kotlin {
         commonMain {
             kotlin.srcDir("build/generated/source/wire") // Avoid errors in Intellij, Gradle works without this line
             dependencies {
-                implementation(project(":usp-core"))
+                implementation(projects.uspCore)
                 api(libs.kotlinx.datetime)
                 implementation(libs.kotlinx.coroutines.core)
                 implementation(libs.kermit)
