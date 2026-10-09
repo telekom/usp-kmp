@@ -44,7 +44,6 @@ class WebSocketTransfer(
         install(WebSockets) {
             pingInterval = pingDuration
         }
-        developmentMode = debugMode
     }
 
     private var receiverJob: Job? = null

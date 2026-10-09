@@ -22,7 +22,7 @@ class ByteStringDecoder {
         println("Parsed USP record:          $rec")
         assertNotNull(rec.no_session_context)
 
-        val msg = Msg.ADAPTER.decode(rec.no_session_context!!.payload)
+        val msg = Msg.ADAPTER.decode(rec.no_session_context.payload)
         println("No session context message: $msg")
     }
 }

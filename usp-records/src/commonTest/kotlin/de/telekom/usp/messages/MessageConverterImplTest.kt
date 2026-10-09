@@ -167,7 +167,7 @@ class MessageConverterImplTest {
         val bytes = converter.disconnect(MessageNotSupported)
         val record = Record.ADAPTER.decode(bytes)
         assertNotNull(record.disconnect)
-        assertEquals(MessageNotSupported.code, record.disconnect!!.reason_code)
+        assertEquals(MessageNotSupported.code, record.disconnect.reason_code)
     }
 
     @Test
@@ -189,7 +189,7 @@ class MessageConverterImplTest {
         val bytes = converter.mqttConnect("5.0", "test-topic")
         val record = Record.ADAPTER.decode(bytes)
         assertNotNull(record.mqtt_connect)
-        assertEquals("test-topic", record.mqtt_connect!!.subscribed_topic)
+        assertEquals("test-topic", record.mqtt_connect.subscribed_topic)
     }
 
     @Test
@@ -197,7 +197,7 @@ class MessageConverterImplTest {
         val bytes = converter.stompConnect("1.2", "test-destination")
         val record = Record.ADAPTER.decode(bytes)
         assertNotNull(record.stomp_connect)
-        assertEquals("test-destination", record.stomp_connect!!.subscribed_destination)
+        assertEquals("test-destination", record.stomp_connect.subscribed_destination)
     }
 
     // -- Session Context Tests --------------------------------------------------------------------
