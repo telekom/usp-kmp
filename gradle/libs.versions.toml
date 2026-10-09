@@ -19,9 +19,10 @@ mockery = "3.4.2"
 kover = "0.9.9"
 slf4j = "2.0.16"         # Used only in cli subproject
 
-# Android specifics:
+# Android & JVM specifics:
 minSdk = "24"
 compileSdk = "36"
+jvm = "17"
 
 [libraries]
 kotlin-test = { module = "org.jetbrains.kotlin:kotlin-test", version.ref = "kotlin" }

@@ -16,6 +16,17 @@ plugins {
 }
 
 kotlin {
+    jvmToolchain(libs.versions.jvm.get().toInt())
+
+    compilerOptions {
+        freeCompilerArgs.addAll(
+            // Suppress warnings for Beta expect/actual classes and interfaces (KT-61573)
+            "-Xexpect-actual-classes",
+            // Ensure data class copy() matches non-public primary constructor visibility (KT-11914)
+            "-Xconsistent-data-class-copy-visibility"
+        )
+    }
+
     jvm()
     android {
         namespace = "de.telekom.usp"
@@ -23,7 +34,7 @@ kotlin {
         minSdk = libs.versions.minSdk.get().toInt()
         compilerOptions {
             jvmTarget.set(
-                JvmTarget.JVM_1_8
+                JvmTarget.JVM_17
             )
         }
     }

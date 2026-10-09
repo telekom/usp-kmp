@@ -10,9 +10,8 @@ plugins {
     alias(libs.plugins.kotlinSerialization)
 }
 
-java {
-    sourceCompatibility = JavaVersion.VERSION_17
-    targetCompatibility = JavaVersion.VERSION_17
+kotlin {
+    jvmToolchain(libs.versions.jvm.get().toInt())
 }
 
 application {
